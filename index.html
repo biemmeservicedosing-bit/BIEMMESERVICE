@@ -745,8 +745,23 @@
     }
 
     await caricaCommittenti();
-    archivioRapportini = data || [];
-    renderArchivio(archivioRapportini);
+    const rapportiniConPdf = [];
+
+for (const r of data || []) {
+  if (!r.pdf_path) continue;
+
+  const { data: signed, error } = await supabaseClient
+    .storage
+    .from("pdf")
+    .createSignedUrl(r.pdf_path, 60);
+
+  if (!error && signed?.signedUrl) {
+    rapportiniConPdf.push(r);
+  }
+}
+
+archivioRapportini = rapportiniConPdf;
+renderArchivio(archivioRapportini);
   }
 
   function filtraArchivio() {
