@@ -1331,12 +1331,17 @@
           contentType: "application/pdf",
           upsert: true
         });
+if (uploadPdfError) {
+  mostraMessaggio(
+    "appMsg",
+    "Rapportino salvato, ma errore upload PDF: " + uploadPdfError.message,
+    "danger"
+  );
 
-      if (uploadPdfError) {
-        mostraMessaggio("appMsg", "Rapportino salvato, ma errore upload PDF: " + uploadPdfError.message, "danger");
-        return;
-      }
-
+  btn.disabled = false;
+  btn.textContent = "Riprova salvataggio PDF";
+  return;
+}
       const { error: updatePdfError } = await supabaseClient
         .from("rapportini")
         .update({
@@ -1358,10 +1363,18 @@
         window.location.reload();
       }, 1500);
 
-    } catch (err) {
-      mostraMessaggio("appMsg", "Rapportino salvato, ma errore generazione PDF: " + err.message, "danger");
-      return;
-    }
+   } catch (err) {
+  mostraMessaggio(
+    "appMsg",
+    "Rapportino salvato, ma errore generazione PDF: " + err.message,
+    "danger"
+  );
+
+  btn.disabled = false;
+  btn.textContent = "Riprova salvataggio PDF";
+  return;
+}
+
   }
 
   function raccogliDatiRapportino(userId) {
