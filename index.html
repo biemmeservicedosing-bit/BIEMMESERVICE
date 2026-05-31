@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BIEMME SERVICE</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body { font-family: Arial, sans-serif; background: #f3f5f7; margin: 0; color: #111; }
+    header { background: #254f7a; color: white; padding: 22px; text-align: center; font-size: 26px; font-weight: bold; }
+    .container { max-width: 760px; margin: 24px auto; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.12); }
+    label { display: block; margin-top: 16px; font-weight: bold; }
+    input, textarea, select, button { width: 100%; padding: 12px; margin-top: 6px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+    textarea { min-height: 120px; }
+    button { background: #254f7a; color: white; border: none; margin-top: 20px; font-weight: bold; cursor: pointer; }
+    button:disabled { background: #999; cursor: not-allowed; }
+    .hidden { display: none; }
+    .msg { margin-top: 18px; padding: 14px; border-radius: 8px; }
+    .danger { background: #ffecec; color: #900; }
+    .success { background: #eaffea; color: #176b17; }
+    #risultati_committenti { border: 1px solid #ccc; border-radius: 8px; background: white; margin-top: 6px; max-height: 220px; overflow-y: auto; }
+    .risultato-committente { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .risultato-committente:hover { background: #eef4ff; }
+    .ore-section, .firma-section { margin-top: 24px; border-top: 2px solid #222; padding-top: 14px; }
+    .plus-btn { font-size: 34px; height: 70px; }
+    .ore-card, .firma-box { border: 2px solid #254f7a; border-radius: 14px; padding: 14px; margin-top: 14px; background: #fff; }
+    canvas { width: 100%; height: 180px; border: 1px solid #bbb; border-radius: 10px; background: #fff; touch-action: none; display: block; margin-top: 10px; }
+    .secondary { background: #777; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; padding: 18px; z-index: 99; }
+    .modal.hidden { display: none; }
+    .modal-box { background: white; width: 100%; max-width: 620px; border-radius: 16px; padding: 22px; max-height: 90vh; overflow: auto; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  </style>
+</head>
+
+<body>
+
+<header>BIEMME SERVICE</header>
+
+<div class="container" id="loginBox">
+  <h2>Login</h2>
+  <label>Email</label>
+  <input type="email" id="email" />
+  <label>Password</label>
+  <input type="password" id="password" />
+  <button onclick="login()">Accedi</button>
+  <div id="loginMsg" class="msg hidden"></div>
+</div>
+
+<div class="container hidden" id="appBox">
+  <h2>Nuovo rapportino</h2>
+  <button onclick="logout()">Esci</button>
+
+  <label>Data intervento</label>
+  <input type="date" id="data_intervento" />
+
+  <label>Numero SO</label>
+  <input type="text" id="numero_so" placeholder="Facoltativo" />
+
+  <label>Committente</label>
+  <input type="text" id="committente_search" placeholder="Scrivi per cercare il committente..." oninput="cercaCommittente()" autocomplete="off" />
+  <input type="hidden" id="committente_id" />
+  <div id="risultati_committenti" class="hidden"></div>
+
+  <label>Cliente</label>
+  <input type="text" id="descrizione_cliente" placeholder="Nome cliente / hotel / stabilimento" />
+
+  <label>Indirizzo cliente</label>
+  <input type="text" id="indirizzo_cliente" placeholder="Indirizzo intervento" />
+
+  <label>Relazione intervento</label>
+  <textarea id="relazione"></textarea>
+
+  <div class="ore-section">
+    <h3>Ore</h3>
+    <button class="plus-btn" onclick="apriOre()">+</button>
+    <div class="ore-card">
+      <p><strong>Totali</strong></p>
+      <p>Numero di righe: <span id="numero_righe_ore">0</span></p>
+      <div id="riepilogo_ore"></div>
+    </div>
+  </div>
+
+  <label>Km percorsi</label>
+  <input type="number" id="km_percorsi" placeholder="0" />
+
+  <label>Materiali utilizzati</label>
+  <textarea id="materiali_note"></textarea>
+
+  <label>Tipo addebito</label>
+  <select id="tipo_addebito">
+    <option value="">Seleziona</option>
+    <option value="cliente">In conto cliente</option>
+    <option value="committente">In conto committente</option>
+    <option value="garanzia">Garanzia</option>
+  </select>
+
+  <div class="firma-section">
+    <h3>Firme</h3>
+
+    <div class="firma-box">
+      <h4>Firma tecnico</h4>
+      <label>Nome tecnico</label>
+      <input type="text" id="nome_tecnico" placeholder="Nome e cognome tecnico" />
+      <canvas id="firma_tecnico"></canvas>
+      <button class="secondary" onclick="pulisciFirma('firma_tecnico')">Cancella firma tecnico</button>
+    </div>
+
+    <div class="firma-box">
+      <h4>Firma cliente</h4>
+      <label>Nome cliente firmatario</label>
+      <input type="text" id="nome_cliente_firma" placeholder="Nome e cognome cliente" />
+      <canvas id="firma_cliente"></canvas>
+      <button class="secondary" onclick="pulisciFirma('firma_cliente')">Cancella firma cliente</button>
+    </div>
+  </div>
+
+  <button id="btnSalva" onclick="salvaRapportino()">Salva rapportino e archivia PDF</button>
+  <div id="appMsg" class="msg hidden"></div>
+</div>
+
+<div class="modal hidden" id="modalOre">
+  <div class="modal-box">
+    <h2>Aggiungi ore</h2>
+
+    <label>Tipologia ore</label>
+    <select id="modal_tipo_ore">
+      <option value="trasferta">Ore trasferta</option>
+      <option value="lavoro">Ore lavorate</option>
+    </select>
+
+    <h3>Intervallo 1</h3>
+    <label>Da</label>
+    <div class="row">
+      <input type="date" id="modal_data_inizio_1" />
+      <select id="modal_ora_inizio_1"></select>
+    </div>
+
+    <label>A</label>
+    <div class="row">
+      <input type="date" id="modal_data_fine_1" />
+      <select id="modal_ora_fine_1"></select>
+    </div>
+
+    <h3>Intervallo 2</h3>
+    <label>Da</label>
+    <div class="row">
+      <input type="date" id="modal_data_inizio_2" />
+      <select id="modal_ora_inizio_2"></select>
+    </div>
+
+    <label>A</label>
+    <div class="row">
+      <input type="date" id="modal_data_fine_2" />
+      <select id="modal_ora_fine_2"></select>
+    </div>
+
+    <button onclick="confermaOre()">Conferma</button>
+    <button class="secondary" onclick="chiudiOre()">Annulla</button>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://ehrmyyjojlgrdgxjsuzu.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_5GARNlBShnQXlLnQy-kCnA_JhlcIcr3";
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let listaCommittenti = [];
+  let oreInserite = [];
+
+  const firmeDisegnate = {
+    firma_tecnico: false,
+    firma_cliente: false
+  };
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const oggi = new Date().toISOString().split("T")[0];
+    document.getElementById("data_intervento").value = oggi;
+
+    creaMenuOre();
+    preparaCanvasFirma("firma_tecnico");
+    preparaCanvasFirma("firma_cliente");
+
+    const { data } = await supabaseClient.auth.getSession();
+    if (data.session) mostraApp();
+  });
+
+  async function login() {
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      mostraMessaggio("loginMsg", error.message, "danger");
+      return;
+    }
+
+    mostraApp();
+  }
+
+  async function logout() {
+    await supabaseClient.auth.signOut();
+    window.location.reload();
+  }
+
+  async function mostraApp() {
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("appBox").classList.remove("hidden");
+
+    setTimeout(() => {
+      ridimensionaCanvas("firma_tecnico");
+      ridimensionaCanvas("firma_cliente");
+    }, 200);
+
+    await caricaCommittenti();
+  }
+
+  async function caricaCommittenti() {
+    const { data, error } = await supabaseClient
+      .from("committenti")
+      .select("id, ragione_sociale")
+      .eq("attivo", true)
+      .order("ragione_sociale", { ascending: true });
+
+    if (error) {
+      mostraMessaggio("appMsg", "Errore caricamento committenti: " + error.message, "danger");
+      return;
+    }
+
+    listaCommittenti = data || [];
+  }
+
+  function cercaCommittente() {
+    const testo = document.getElementById("committente_search").value.toLowerCase();
+    const box = document.getElementById("risultati_committenti");
+
+    document.getElementById("committente_id").value = "";
+
+    if (testo.length < 2) {
+      box.classList.add("hidden");
+      box.innerHTML = "";
+      return;
+    }
+
+    const filtrati = listaCommittenti.filter(c =>
+      c.ragione_sociale.toLowerCase().includes(testo)
+    );
+
+    box.innerHTML = "";
+
+    filtrati.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "risultato-committente";
+      div.textContent = c.ragione_sociale;
+      div.onclick = () => selezionaCommittente(c);
+      box.appendChild(div);
+    });
+
+    if (filtrati.length === 0) {
+      const div = document.createElement("div");
+      div.className = "risultato-committente";
+      div.textContent = "Nessun committente trovato";
+      box.appendChild(div);
+    }
+
+    box.classList.remove("hidden");
+  }
+
+  function selezionaCommittente(committente) {
+    document.getElementById("committente_search").value = committente.ragione_sociale;
+    document.getElementById("committente_id").value = committente.id;
+    document.getElementById("risultati_committenti").classList.add("hidden");
+  }
+
+  function creaMenuOre() {
+    const ids = ["modal_ora_inizio_1", "modal_ora_fine_1", "modal_ora_inizio_2", "modal_ora_fine_2"];
+
+    ids.forEach(id => {
+      const select = document.getElementById(id);
+      select.innerHTML = '<option value="">Ora</option>';
+
+      for (let h = 0; h < 24; h++) {
+        for (let m of [0, 15, 30, 45]) {
+          const hh = String(h).padStart(2, "0");
+          const mm = String(m).padStart(2, "0");
+          const value = `${hh}:${mm}`;
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = value;
+          select.appendChild(option);
+        }
+      }
+    });
+  }
+
+  function apriOre() {
+    const data = document.getElementById("data_intervento").value || new Date().toISOString().split("T")[0];
+
+    document.getElementById("modal_data_inizio_1").value = data;
+    document.getElementById("modal_data_fine_1").value = data;
+    document.getElementById("modal_data_inizio_2").value = data;
+    document.getElementById("modal_data_fine_2").value = data;
+
+    document.getElementById("modal_ora_inizio_1").value = "";
+    document.getElementById("modal_ora_fine_1").value = "";
+    document.getElementById("modal_ora_inizio_2").value = "";
+    document.getElementById("modal_ora_fine_2").value = "";
+
+    document.getElementById("modalOre").classList.remove("hidden");
+  }
+
+  function chiudiOre() {
+    document.getElementById("modalOre").classList.add("hidden");
+  }
+
+  function confermaOre() {
+    const tipo = document.getElementById("modal_tipo_ore").value;
+
+    aggiungiIntervallo(tipo, "modal_data_inizio_1", "modal_ora_inizio_1", "modal_data_fine_1", "modal_ora_fine_1");
+    aggiungiIntervallo(tipo, "modal_data_inizio_2", "modal_ora_inizio_2", "modal_data_fine_2", "modal_ora_fine_2");
+
+    aggiornaRiepilogoOre();
+    chiudiOre();
+  }
+
+  function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, dataFineId, oraFineId) {
+    const dataInizio = document.getElementById(dataInizioId).value;
+    const oraInizio = document.getElementById(oraInizioId).value;
+    const dataFine = document.getElementById(dataFineId).value;
+    const oraFine = document.getElementById(oraFineId).value;
+
+    if (dataInizio && oraInizio && dataFine && oraFine) {
+      oreInserite.push({
+        tipo: tipo,
+        ora_inizio: `${dataInizio}T${oraInizio}:00`,
+        ora_fine: `${dataFine}T${oraFine}:00`
+      });
+    }
+  }
+
+  function aggiornaRiepilogoOre() {
+    document.getElementById("numero_righe_ore").textContent = oreInserite.length;
+
+    const box = document.getElementById("riepilogo_ore");
+    box.innerHTML = "";
+
+    oreInserite.forEach((o, index) => {
+      const nome = o.tipo === "trasferta" ? "Ore trasferta" : "Ore lavorate";
+      const p = document.createElement("p");
+      p.innerHTML = `<strong>${index + 1}. ${nome}</strong><br>${formattaDataOra(o.ora_inizio)} → ${formattaDataOra(o.ora_fine)}`;
+      box.appendChild(p);
+    });
+  }
+
+  function formattaDataOra(valore) {
+    const d = new Date(valore);
+    return d.toLocaleString("it-IT", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function preparaCanvasFirma(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+
+    ridimensionaCanvas(canvasId);
+
+    function posizione(evento) {
+      const rect = canvas.getBoundingClientRect();
+
+      if (evento.touches && evento.touches.length > 0) {
+        return {
+          x: evento.touches[0].clientX - rect.left,
+          y: evento.touches[0].clientY - rect.top
+        };
+      }
+
+      return {
+        x: evento.clientX - rect.left,
+        y: evento.clientY - rect.top
+      };
+    }
+
+    function inizia(evento) {
+      evento.preventDefault();
+      drawing = true;
+      const p = posizione(evento);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+    }
+
+    function disegna(evento) {
+      if (!drawing) return;
+      evento.preventDefault();
+
+      const p = posizione(evento);
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = "#111";
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+
+      firmeDisegnate[canvasId] = true;
+    }
+
+    function finisci(evento) {
+      if (evento) evento.preventDefault();
+      drawing = false;
+    }
+
+    canvas.addEventListener("mousedown", inizia);
+    canvas.addEventListener("mousemove", disegna);
+    canvas.addEventListener("mouseup", finisci);
+    canvas.addEventListener("mouseleave", finisci);
+
+    canvas.addEventListener("touchstart", inizia, { passive: false });
+    canvas.addEventListener("touchmove", disegna, { passive: false });
+    canvas.addEventListener("touchend", finisci, { passive: false });
+  }
+
+  function ridimensionaCanvas(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const rect = canvas.getBoundingClientRect();
+
+    if (rect.width === 0) return;
+
+    canvas.width = rect.width;
+    canvas.height = 180;
+
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function pulisciFirma(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    firmeDisegnate[canvasId] = false;
+  }
+
+  async function caricaFirmaSuStorage(canvasId, rapportinoId, tipoFirma) {
+    if (!firmeDisegnate[canvasId]) return null;
+
+    const canvas = document.getElementById(canvasId);
+
+    const blob = await new Promise(resolve => {
+      canvas.toBlob(resolve, "image/png");
+    });
+
+    const nomeFile = `${rapportinoId}/${tipoFirma}_${Date.now()}.png`;
+
+    const { error: uploadError } = await supabaseClient
+      .storage
+      .from("firme")
+      .upload(nomeFile, blob, {
+        contentType: "image/png",
+        upsert: true
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabaseClient.storage.from("firme").getPublicUrl(nomeFile);
+    return data.publicUrl;
+  }
+
+  async function salvaRapportino() {
+    const btn = document.getElementById("btnSalva");
+    btn.disabled = true;
+    btn.textContent = "Salvataggio in corso...";
+
+    const { data: userData } = await supabaseClient.auth.getUser();
+    const user = userData.user;
+
+    if (!user) {
+      mostraMessaggio("appMsg", "Utente non autenticato", "danger");
+      btn.disabled = false;
+      btn.textContent = "Salva rapportino e archivia PDF";
+      return;
+    }
+
+    const datiRapportino = raccogliDatiRapportino(user.id);
+
+    const { data: nuovoRapportino, error } = await supabaseClient
+      .from("rapportini")
+      .insert([datiRapportino])
+      .select()
+      .single();
+
+    if (error) {
+      mostraMessaggio("appMsg", "Errore salvataggio: " + error.message, "danger");
+      btn.disabled = false;
+      btn.textContent = "Salva rapportino e archivia PDF";
+      return;
+    }
+
+    if (oreInserite.length > 0) {
+      const righeOre = oreInserite.map(o => ({
+        rapportino_id: nuovoRapportino.id,
+        tipo: o.tipo,
+        ora_inizio: o.ora_inizio,
+        ora_fine: o.ora_fine
+      }));
+
+      const { error: oreError } = await supabaseClient.from("rapportino_ore").insert(righeOre);
+
+      if (oreError) {
+        mostraMessaggio("appMsg", "Rapportino salvato, ma errore ore: " + oreError.message, "danger");
+        return;
+      }
+    }
+
+    try {
+      const firmeDaSalvare = [];
+
+      const firmaTecnicoUrl = await caricaFirmaSuStorage("firma_tecnico", nuovoRapportino.id, "tecnico");
+      if (firmaTecnicoUrl) {
+        firmeDaSalvare.push({
+          rapportino_id: nuovoRapportino.id,
+          tipo: "tecnico",
+          nome_firmatario: document.getElementById("nome_tecnico").value || null,
+          file_url: firmaTecnicoUrl
+        });
+      }
+
+      const firmaClienteUrl = await caricaFirmaSuStorage("firma_cliente", nuovoRapportino.id, "cliente");
+      if (firmaClienteUrl) {
+        firmeDaSalvare.push({
+          rapportino_id: nuovoRapportino.id,
+          tipo: "cliente",
+          nome_firmatario: document.getElementById("nome_cliente_firma").value || null,
+          file_url: firmaClienteUrl
+        });
+      }
+
+      if (firmeDaSalvare.length > 0) {
+        const { error: firmeError } = await supabaseClient.from("firme").insert(firmeDaSalvare);
+
+        if (firmeError) {
+          mostraMessaggio("appMsg", "Rapportino salvato, ma errore firme: " + firmeError.message, "danger");
+          return;
+        }
+      }
+    } catch (err) {
+      mostraMessaggio("appMsg", "Rapportino salvato, ma errore upload firme: " + err.message, "danger");
+      return;
+    }
+
+    try {
+      const pdfBlob = generaPdfBlob(nuovoRapportino.id, datiRapportino);
+alert("Sto generando il PDF");
+      const pdfPath = creaPercorsoPdf(nuovoRapportino.id, datiRapportino);
+
+alert("Sto caricando il PDF su Supabase");
+      const { error: uploadPdfError } = await supabaseClient
+        .storage
+        .from("pdf")
+        .upload(pdfPath, pdfBlob, {
+          contentType: "application/pdf",
+          upsert: true
+        });
+
+      if (uploadPdfError) {
+        mostraMessaggio("appMsg", "Rapportino salvato, ma errore upload PDF: " + uploadPdfError.message, "danger");
+        return;
+      }
+
+      const { error: updatePdfError } = await supabaseClient
+        .from("rapportini")
+        .update({
+          pdf_path: pdfPath,
+          pdf_generato_at: new Date().toISOString(),
+          versione_pdf: 1
+        })
+        .eq("id", nuovoRapportino.id);
+
+      if (updatePdfError) {
+        mostraMessaggio("appMsg", "PDF caricato, ma errore aggiornamento rapportino: " + updatePdfError.message, "danger");
+        return;
+      }
+
+      mostraMessaggio("appMsg", "Rapportino salvato e PDF archiviato correttamente.", "success");
+      btn.textContent = "Salvato correttamente";
+    } catch (err) {
+      mostraMessaggio("appMsg", "Rapportino salvato, ma errore generazione PDF: " + err.message, "danger");
+      return;
+    }
+  }
+
+  function raccogliDatiRapportino(userId) {
+    return {
+      data_intervento: document.getElementById("data_intervento").value,
+      numero_so: document.getElementById("numero_so").value || null,
+      committente_id: document.getElementById("committente_id").value || null,
+      descrizione_cliente: document.getElementById("descrizione_cliente").value,
+      indirizzo_cliente: document.getElementById("indirizzo_cliente").value,
+      relazione: document.getElementById("relazione").value,
+      materiali_note: document.getElementById("materiali_note").value,
+      km_percorsi: document.getElementById("km_percorsi").value || null,
+      tipo_addebito: document.getElementById("tipo_addebito").value || null,
+      tecnico_id: userId,
+      created_by: userId,
+      updated_by: userId,
+      stato: "chiuso"
+    };
+  }
+
+  function generaPdfBlob(rapportinoId, dati) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let y = 15;
+
+    doc.setFontSize(18);
+    doc.text("BIEMME SERVICE", 14, y);
+    y += 8;
+
+    doc.setFontSize(13);
+    doc.text("Rapporto di intervento", 14, y);
+    y += 12;
+
+    doc.setFontSize(10);
+    doc.text(`ID rapportino: ${rapportinoId}`, 14, y);
+    y += 7;
+    doc.text(`Data intervento: ${formattaDataSolo(dati.data_intervento)}`, 14, y);
+    y += 7;
+    doc.text(`Numero SO: ${dati.numero_so || "-"}`, 14, y);
+    y += 10;
+
+    doc.setFontSize(12);
+    doc.text("Dati cliente", 14, y);
+    y += 7;
+
+    doc.setFontSize(10);
+    doc.text(`Committente: ${document.getElementById("committente_search").value || "-"}`, 14, y);
+    y += 6;
+    doc.text(`Cliente: ${dati.descrizione_cliente || "-"}`, 14, y);
+    y += 6;
+    doc.text(`Indirizzo: ${dati.indirizzo_cliente || "-"}`, 14, y);
+    y += 10;
+
+    doc.setFontSize(12);
+    doc.text("Relazione intervento", 14, y);
+    y += 7;
+
+    doc.setFontSize(10);
+    const relazione = doc.splitTextToSize(dati.relazione || "-", pageWidth - 28);
+    doc.text(relazione, 14, y);
+    y += relazione.length * 5 + 8;
+
+    if (y > 240) {
+      doc.addPage();
+      y = 15;
+    }
+
+    doc.setFontSize(12);
+    doc.text("Ore", 14, y);
+    y += 7;
+
+    doc.setFontSize(10);
+    if (oreInserite.length === 0) {
+      doc.text("-", 14, y);
+      y += 7;
+    } else {
+      oreInserite.forEach(o => {
+        if (y > 270) {
+          doc.addPage();
+          y = 15;
+        }
+
+        const tipo = o.tipo === "trasferta" ? "Ore trasferta" : "Ore lavorate";
+        doc.text(`${tipo}: ${formattaDataOra(o.ora_inizio)} -> ${formattaDataOra(o.ora_fine)}`, 14, y);
+        y += 6;
+      });
+    }
+
+    y += 5;
+
+    doc.setFontSize(12);
+    doc.text("Materiali e spese", 14, y);
+    y += 7;
+
+    doc.setFontSize(10);
+    doc.text(`Km percorsi: ${dati.km_percorsi || "-"}`, 14, y);
+    y += 6;
+    doc.text(`Tipo addebito: ${testoAddebito(dati.tipo_addebito)}`, 14, y);
+    y += 6;
+
+    const materiali = doc.splitTextToSize(`Materiali: ${dati.materiali_note || "-"}`, pageWidth - 28);
+    doc.text(materiali, 14, y);
+    y += materiali.length * 5 + 10;
+
+    if (y > 220) {
+      doc.addPage();
+      y = 15;
+    }
+
+    doc.setFontSize(12);
+    doc.text("Firme", 14, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    doc.text(`Tecnico: ${document.getElementById("nome_tecnico").value || "-"}`, 14, y);
+    doc.text(`Cliente: ${document.getElementById("nome_cliente_firma").value || "-"}`, 110, y);
+    y += 5;
+
+    if (firmeDisegnate.firma_tecnico) {
+      const imgTec = document.getElementById("firma_tecnico").toDataURL("image/png");
+      doc.addImage(imgTec, "PNG", 14, y, 70, 28);
+    }
+
+    if (firmeDisegnate.firma_cliente) {
+      const imgCli = document.getElementById("firma_cliente").toDataURL("image/png");
+      doc.addImage(imgCli, "PNG", 110, y, 70, 28);
+    }
+
+    return doc.output("blob");
+  }
+
+  function creaPercorsoPdf(rapportinoId, dati) {
+    const data = dati.data_intervento || new Date().toISOString().split("T")[0];
+    const anno = data.substring(0, 4);
+    const mese = data.substring(5, 7);
+
+    const committente = pulisciNomeFile(document.getElementById("committente_search").value || "committente");
+    const cliente = pulisciNomeFile(dati.descrizione_cliente || "cliente");
+    const so = pulisciNomeFile(dati.numero_so || "senza-so");
+
+    return `${anno}/${mese}/${data}_${committente}_${cliente}_${so}_${rapportinoId.substring(0, 8)}.pdf`;
+  }
+
+  function pulisciNomeFile(testo) {
+    return testo
+      .toString()
+      .trim()
+      .replace(/[àá]/gi, "a")
+      .replace(/[èé]/gi, "e")
+      .replace(/[ìí]/gi, "i")
+      .replace(/[òó]/gi, "o")
+      .replace(/[ùú]/gi, "u")
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-+|-+$/g, "")
+      .substring(0, 40);
+  }
+
+  function formattaDataSolo(data) {
+    if (!data) return "-";
+    const d = new Date(data);
+    return d.toLocaleDateString("it-IT");
+  }
+
+  function testoAddebito(value) {
+    if (value === "cliente") return "In conto cliente";
+    if (value === "committente") return "In conto committente";
+    if (value === "garanzia") return "Garanzia";
+    return "-";
+  }
+
+  function mostraMessaggio(id, testo, tipo) {
+    const box = document.getElementById(id);
+    box.textContent = testo;
+    box.className = "msg " + tipo;
+    box.classList.remove("hidden");
+  }
+</script>
+
+</body>
+</html>

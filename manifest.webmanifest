@@ -1,0 +1,20 @@
+{
+  "name": "BIEMMEAPP",
+  "short_name": "BIEMMEAPP",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#002e52",
+  "theme_color": "#002e52",
+  "icons": [
+    {
+      "src": "logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
