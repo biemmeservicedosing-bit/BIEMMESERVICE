@@ -1,103 +1,396 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>BIEMME SERVICE</title>
-<link rel="icon" type="image/jpeg" href="/logo.jpg" />
-<link rel="apple-touch-icon" href="/logo.jpg" />
-<link rel="manifest" href="/manifest.webmanifest" />
-<meta name="theme-color" content="#254f7a" />
+
+  <link rel="icon" type="image/jpeg" href="/logo.jpg" />
+  <link rel="apple-touch-icon" href="/logo.jpg" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#061f2c" />
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    body { font-family: Arial, sans-serif; background: #f3f5f7; margin: 0; color: #111; }
-    .app-header { background:#254f7a; color:white; padding:18px; text-align:center; font-size:26px; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:16px; }
-    .app-logo { width:56px; height:56px; object-fit:contain; background:white; border-radius:8px; padding:4px; }
+    :root {
+      --dark: #061f2c;
+      --dark-2: #0a3245;
+      --blue: #0e5a78;
+      --cyan: #18c7e8;
+      --cyan-soft: #e6faff;
+      --bg: #eef4f7;
+      --card: #ffffff;
+      --text: #101828;
+      --muted: #667085;
+      --border: #d8e2e8;
+      --success-bg: #e9fbe9;
+      --success-text: #176b17;
+      --danger-bg: #ffecec;
+      --danger-text: #9b1111;
+      --shadow: 0 18px 45px rgba(6, 31, 44, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(24,199,232,0.22), transparent 30%),
+        linear-gradient(180deg, #f8fcfd 0%, var(--bg) 100%);
+      min-height: 100vh;
+    }
+
+    .app-header {
+      background:
+        linear-gradient(135deg, rgba(6,31,44,0.96), rgba(10,50,69,0.96)),
+        radial-gradient(circle at 20% 20%, rgba(24,199,232,0.28), transparent 35%);
+      color: white;
+      padding: 24px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      box-shadow: 0 10px 28px rgba(6,31,44,0.28);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .app-logo {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      border-radius: 16px;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.26);
+    }
+
+    .header-title {
+      font-size: 34px;
+      font-weight: 850;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+
+    .header-subtitle {
+      margin-top: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #bff4ff;
+      letter-spacing: 0.4px;
+    }
+
     .container {
-  max-width:760px;
-  margin:24px auto;
-  background:white;
-  padding:34px;
-  border-radius:22px;
-  box-shadow:0 8px 28px rgba(0,0,0,.12);
-}
-    textarea { min-height:120px; }
-    button { background:#254f7a; color:white; border:none; margin-top:20px; font-weight:bold; cursor:pointer; }
-    button:disabled { background:#999; cursor:not-allowed; }
-    .hidden { display:none; }
-    .msg { margin-top:18px; padding:14px; border-radius:8px; }
-    .danger { background:#ffecec; color:#900; }
-    .success { background:#eaffea; color:#176b17; }
-    #risultati_committenti { border:1px solid #ccc; border-radius:8px; background:white; margin-top:6px; max-height:220px; overflow-y:auto; }
-    .risultato-committente { padding:12px; border-bottom:1px solid #eee; cursor:pointer; }
-    .risultato-committente:hover { background:#eef4ff; }
-    .ore-section, .firma-section { margin-top:24px; border-top:2px solid #222; padding-top:14px; }
-    .plus-btn { font-size:34px; height:70px; }
-    .ore-card, .firma-box { border:2px solid #254f7a; border-radius:14px; padding:14px; margin-top:14px; background:#fff; }
-    canvas { width:100%; height:180px; border:1px solid #bbb; border-radius:10px; background:#fff; touch-action:none; display:block; margin-top:10px; }
-    .secondary { background:#777; }
-    .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; padding:18px; z-index:99; }
-    .modal.hidden { display:none; }
-    .modal-box { background:white; width:100%; max-width:620px; border-radius:16px; padding:22px; max-height:90vh; overflow:auto; }
-    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.login-card {
-  max-width: 460px;
-  margin-top: 70px;
-  text-align: center;
-}
+      width: min(920px, calc(100% - 28px));
+      margin: 34px auto;
+      background: rgba(255,255,255,0.96);
+      padding: 32px;
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,0.9);
+    }
 
-.login-card h2 {
-  margin-top: 0;
-  font-size: 30px;
-  color: #254f7a;
-}
+    .login-card {
+      max-width: 460px;
+      margin-top: 70px;
+      padding: 38px;
+    }
 
-.login-card label {
-  text-align: left;
-}
+    h2 {
+      margin: 0 0 22px;
+      color: var(--dark);
+      font-size: 30px;
+      letter-spacing: -0.4px;
+    }
 
-.login-card input {
-  height: 52px;
-}
+    h3 {
+      margin: 0 0 14px;
+      color: var(--dark);
+      font-size: 22px;
+    }
 
-.login-card button {
-  height: 56px;
-  font-size: 18px;
-  border-radius: 12px;
-}
+    h4 {
+      margin: 0 0 12px;
+      color: var(--dark-2);
+      font-size: 18px;
+    }
 
-.login-card::before {
-  content: "Rapporti di assistenza tecnica";
-  display: block;
-  font-size: 17px;
-  color: #555;
-  margin-bottom: 22px;
-}
+    label {
+      display: block;
+      margin-top: 17px;
+      margin-bottom: 7px;
+      font-weight: 750;
+      color: var(--dark);
+      font-size: 15px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 14px 15px;
+      border-radius: 15px;
+      border: 1px solid var(--border);
+      font-size: 16px;
+      background: #fff;
+      color: var(--text);
+      outline: none;
+      transition: border-color .18s, box-shadow .18s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 4px rgba(24,199,232,0.16);
+    }
+
+    textarea {
+      min-height: 130px;
+      resize: vertical;
+      line-height: 1.45;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px 18px;
+      border-radius: 16px;
+      border: none;
+      margin-top: 20px;
+      background: linear-gradient(135deg, var(--dark-2), var(--blue));
+      color: white;
+      font-weight: 850;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 12px 26px rgba(10,50,69,0.22);
+      transition: transform .15s, box-shadow .15s, opacity .15s;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 32px rgba(10,50,69,0.28);
+    }
+
+    button:disabled {
+      background: #98a2b3;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .secondary {
+      background: #667085;
+      box-shadow: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .msg {
+      margin-top: 18px;
+      padding: 15px;
+      border-radius: 14px;
+      font-weight: 750;
+    }
+
+    .success {
+      background: var(--success-bg);
+      color: var(--success-text);
+    }
+
+    .danger {
+      background: var(--danger-bg);
+      color: var(--danger-text);
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .top-actions h2 {
+      flex: 1;
+      margin-bottom: 0;
+    }
+
+    .logout-btn {
+      max-width: 150px;
+      margin-top: 0;
+      background: #667085;
+    }
+
+    #risultati_committenti {
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: white;
+      margin-top: 8px;
+      max-height: 230px;
+      overflow-y: auto;
+      box-shadow: 0 14px 28px rgba(6,31,44,0.10);
+    }
+
+    .risultato-committente {
+      padding: 13px 15px;
+      border-bottom: 1px solid #eef2f4;
+      cursor: pointer;
+      font-weight: 650;
+    }
+
+    .risultato-committente:hover {
+      background: var(--cyan-soft);
+      color: var(--dark);
+    }
+
+    .ore-section, .firma-section {
+      margin-top: 28px;
+      padding-top: 22px;
+      border-top: 1px solid #dbe4ea;
+    }
+
+    .plus-btn {
+      font-size: 34px;
+      height: 70px;
+      border-radius: 18px;
+    }
+
+    .ore-card, .firma-box {
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px;
+      margin-top: 16px;
+      background: linear-gradient(180deg, #fff, #f8fbfc);
+    }
+
+    .ore-card p {
+      margin: 8px 0;
+      color: var(--muted);
+    }
+
+    canvas {
+      width: 100%;
+      height: 180px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: white;
+      touch-action: none;
+      display: block;
+      margin-top: 10px;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(6,31,44,0.58);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 99;
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-box {
+      background: white;
+      width: 100%;
+      max-width: 650px;
+      border-radius: 26px;
+      padding: 26px;
+      max-height: 90vh;
+      overflow: auto;
+      box-shadow: var(--shadow);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .app-header {
+        justify-content: flex-start;
+        padding: 18px;
+      }
+
+      .app-logo {
+        width: 58px;
+        height: 58px;
+      }
+
+      .header-title {
+        font-size: 24px;
+      }
+
+      .header-subtitle {
+        font-size: 12px;
+      }
+
+      .container {
+        width: calc(100% - 20px);
+        padding: 22px;
+        margin: 18px auto;
+        border-radius: 22px;
+      }
+
+      .login-card {
+        margin-top: 28px;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+      }
+
+      .top-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .logout-btn {
+        max-width: none;
+      }
+    }
   </style>
 </head>
 
 <body>
 
 <header class="app-header">
-  <img src="logo.jpg" class="app-logo" />
-  <span>BIEMME SERVICE</span>
+  <img src="logo.jpg" class="app-logo" alt="BIEMME Engineering" />
+  <div>
+    <div class="header-title">BIEMME SERVICE</div>
+    <div class="header-subtitle">Rapporti di assistenza tecnica</div>
+  </div>
 </header>
 
-<div class="container login-card" id="loginBox">  <h2>Login</h2>
+<div class="container login-card" id="loginBox">
+  <h2>Accesso tecnico</h2>
+
   <label>Email</label>
-  <input type="email" id="email" />
+  <input type="email" id="email" autocomplete="email" />
+
   <label>Password</label>
-  <input type="password" id="password" />
+  <input type="password" id="password" autocomplete="current-password" />
+
   <button onclick="login()">Accedi</button>
+
   <div id="loginMsg" class="msg hidden"></div>
 </div>
 
 <div class="container hidden" id="appBox">
-  <h2>Nuovo rapportino</h2>
-  <button onclick="logout()">Esci</button>
+  <div class="top-actions">
+    <h2>Nuovo rapportino</h2>
+    <button class="logout-btn" onclick="logout()">Esci</button>
+  </div>
 
   <label>Data intervento</label>
   <input type="date" id="data_intervento" />
@@ -122,6 +415,7 @@
   <div class="ore-section">
     <h3>Ore</h3>
     <button class="plus-btn" onclick="apriOre()">+</button>
+
     <div class="ore-card">
       <p><strong>Totali</strong></p>
       <p>Numero di righe: <span id="numero_righe_ore">0</span></p>
@@ -740,7 +1034,6 @@
       doc.text("www.biemmeengineering.it", 145, 43);
     }
 
-    // PAGINA 1
     intestazione();
 
     let y = 50;
@@ -775,7 +1068,6 @@
     doc.setFont("helvetica", "normal");
     doc.text(cliente, 17, y + 14);
     doc.text(indirizzoCliente, 17, y + 21);
-
     doc.text(committente, 110, y + 14);
 
     y += 31;
@@ -795,7 +1087,6 @@
     y += 7;
 
     doc.rect(12, y, 186, 7);
-    doc.text("", 14, y + 5);
     doc.text("da", 46, y + 5);
     doc.text("a", 88, y + 5);
     doc.text("da", 130, y + 5);
@@ -839,7 +1130,6 @@
     const relazione = doc.splitTextToSize(dati.relazione || "-", 180);
     doc.text(relazione, 14, y + 6);
 
-    // PAGINA 2
     doc.addPage();
     intestazione();
 
@@ -852,11 +1142,9 @@
     const startX = 12;
 
     doc.rect(startX, y, 186, 28);
-
     doc.line(startX + colW, y, startX + colW, y + 28);
     doc.line(startX + colW * 2, y, startX + colW * 2, y + 28);
     doc.line(startX + colW * 3, y, startX + colW * 3, y + 28);
-
     doc.line(startX, y + 9, startX + 186, y + 9);
     doc.line(startX, y + 18, startX + 186, y + 18);
 
