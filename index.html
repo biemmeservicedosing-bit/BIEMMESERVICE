@@ -9,49 +9,208 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    body { font-family: Arial, sans-serif; background: #f3f5f7; margin: 0; color: #111; }
-    header { background: #254f7a; color: white; padding: 22px; text-align: center; font-size: 26px; font-weight: bold; }
-    .container { max-width: 760px; margin: 24px auto; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.12); }
-    label { display: block; margin-top: 16px; font-weight: bold; }
-    input, textarea, select, button { width: 100%; padding: 12px; margin-top: 6px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
-    textarea { min-height: 120px; }
-    button { background: #254f7a; color: white; border: none; margin-top: 20px; font-weight: bold; cursor: pointer; }
-    button:disabled { background: #999; cursor: not-allowed; }
-    .hidden { display: none; }
-    .msg { margin-top: 18px; padding: 14px; border-radius: 8px; }
-    .danger { background: #ffecec; color: #900; }
-    .success { background: #eaffea; color: #176b17; }
-    #risultati_committenti { border: 1px solid #ccc; border-radius: 8px; background: white; margin-top: 6px; max-height: 220px; overflow-y: auto; }
-    .risultato-committente { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
-    .risultato-committente:hover { background: #eef4ff; }
-    .ore-section, .firma-section { margin-top: 24px; border-top: 2px solid #222; padding-top: 14px; }
-    .plus-btn { font-size: 34px; height: 70px; }
-    .ore-card, .firma-box { border: 2px solid #254f7a; border-radius: 14px; padding: 14px; margin-top: 14px; background: #fff; }
-    canvas { width: 100%; height: 180px; border: 1px solid #bbb; border-radius: 10px; background: #fff; touch-action: none; display: block; margin-top: 10px; }
-    .secondary { background: #777; }
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; padding: 18px; z-index: 99; }
-    .modal.hidden { display: none; }
-    .modal-box { background: white; width: 100%; max-width: 620px; border-radius: 16px; padding: 22px; max-height: 90vh; overflow: auto; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f5f7;
+      margin: 0;
+      color: #111;
+    }
+
+    .app-header {
+      background: #254f7a;
+      color: white;
+      padding: 18px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .app-logo {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+      background: white;
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 24px auto;
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+    }
+
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: bold;
+    }
+
+    input, textarea, select, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      min-height: 120px;
+    }
+
+    button {
+      background: #254f7a;
+      color: white;
+      border: none;
+      margin-top: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .msg {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 8px;
+    }
+
+    .danger {
+      background: #ffecec;
+      color: #900;
+    }
+
+    .success {
+      background: #eaffea;
+      color: #176b17;
+    }
+
+    #risultati_committenti {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: white;
+      margin-top: 6px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .risultato-committente {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+
+    .risultato-committente:hover {
+      background: #eef4ff;
+    }
+
+    .ore-section, .firma-section {
+      margin-top: 24px;
+      border-top: 2px solid #222;
+      padding-top: 14px;
+    }
+
+    .plus-btn {
+      font-size: 34px;
+      height: 70px;
+    }
+
+    .ore-card, .firma-box {
+      border: 2px solid #254f7a;
+      border-radius: 14px;
+      padding: 14px;
+      margin-top: 14px;
+      background: #fff;
+    }
+
+    canvas {
+      width: 100%;
+      height: 180px;
+      border: 1px solid #bbb;
+      border-radius: 10px;
+      background: #fff;
+      touch-action: none;
+      display: block;
+      margin-top: 10px;
+    }
+
+    .secondary {
+      background: #777;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 99;
+    }
+
+    .modal.hidden {
+      display: none;
+    }
+
+    .modal-box {
+      background: white;
+      width: 100%;
+      max-width: 620px;
+      border-radius: 16px;
+      padding: 22px;
+      max-height: 90vh;
+      overflow: auto;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
   </style>
 </head>
 
 <body>
 
-<header>BIEMME SERVICE</header>
+<header class="app-header">
+  <img src="logo.jpg" class="app-logo" />
+  <span>BIEMME SERVICE</span>
+</header>
 
 <div class="container" id="loginBox">
   <h2>Login</h2>
+
   <label>Email</label>
   <input type="email" id="email" />
+
   <label>Password</label>
   <input type="password" id="password" />
+
   <button onclick="login()">Accedi</button>
+
   <div id="loginMsg" class="msg hidden"></div>
 </div>
 
 <div class="container hidden" id="appBox">
   <h2>Nuovo rapportino</h2>
+
   <button onclick="logout()">Esci</button>
 
   <label>Data intervento</label>
@@ -77,6 +236,7 @@
   <div class="ore-section">
     <h3>Ore</h3>
     <button class="plus-btn" onclick="apriOre()">+</button>
+
     <div class="ore-card">
       <p><strong>Totali</strong></p>
       <p>Numero di righe: <span id="numero_righe_ore">0</span></p>
@@ -119,6 +279,7 @@
   </div>
 
   <button id="btnSalva" onclick="salvaRapportino()">Salva rapportino e archivia PDF</button>
+
   <div id="appMsg" class="msg hidden"></div>
 </div>
 
@@ -133,6 +294,7 @@
     </select>
 
     <h3>Intervallo 1</h3>
+
     <label>Da</label>
     <div class="row">
       <input type="date" id="modal_data_inizio_1" />
@@ -146,6 +308,7 @@
     </div>
 
     <h3>Intervallo 2</h3>
+
     <label>Da</label>
     <div class="row">
       <input type="date" id="modal_data_inizio_2" />
@@ -166,6 +329,7 @@
 <script>
   const SUPABASE_URL = "https://ehrmyyjojlgrdgxjsuzu.supabase.co";
   const SUPABASE_KEY = "sb_publishable_5GARNlBShnQXlLnQy-kCnA_JhlcIcr3";
+
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let listaCommittenti = [];
@@ -192,7 +356,10 @@
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    const { error } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
 
     if (error) {
       mostraMessaggio("loginMsg", error.message, "danger");
@@ -277,7 +444,12 @@
   }
 
   function creaMenuOre() {
-    const ids = ["modal_ora_inizio_1", "modal_ora_fine_1", "modal_ora_inizio_2", "modal_ora_fine_2"];
+    const ids = [
+      "modal_ora_inizio_1",
+      "modal_ora_fine_1",
+      "modal_ora_inizio_2",
+      "modal_ora_fine_2"
+    ];
 
     ids.forEach(id => {
       const select = document.getElementById(id);
@@ -288,6 +460,7 @@
           const hh = String(h).padStart(2, "0");
           const mm = String(m).padStart(2, "0");
           const value = `${hh}:${mm}`;
+
           const option = document.createElement("option");
           option.value = value;
           option.textContent = value;
@@ -320,8 +493,21 @@
   function confermaOre() {
     const tipo = document.getElementById("modal_tipo_ore").value;
 
-    aggiungiIntervallo(tipo, "modal_data_inizio_1", "modal_ora_inizio_1", "modal_data_fine_1", "modal_ora_fine_1");
-    aggiungiIntervallo(tipo, "modal_data_inizio_2", "modal_ora_inizio_2", "modal_data_fine_2", "modal_ora_fine_2");
+    aggiungiIntervallo(
+      tipo,
+      "modal_data_inizio_1",
+      "modal_ora_inizio_1",
+      "modal_data_fine_1",
+      "modal_ora_fine_1"
+    );
+
+    aggiungiIntervallo(
+      tipo,
+      "modal_data_inizio_2",
+      "modal_ora_inizio_2",
+      "modal_data_fine_2",
+      "modal_ora_fine_2"
+    );
 
     aggiornaRiepilogoOre();
     chiudiOre();
@@ -358,6 +544,7 @@
 
   function formattaDataOra(valore) {
     const d = new Date(valore);
+
     return d.toLocaleString("it-IT", {
       day: "2-digit",
       month: "2-digit",
@@ -514,7 +701,9 @@
         ora_fine: o.ora_fine
       }));
 
-      const { error: oreError } = await supabaseClient.from("rapportino_ore").insert(righeOre);
+      const { error: oreError } = await supabaseClient
+        .from("rapportino_ore")
+        .insert(righeOre);
 
       if (oreError) {
         mostraMessaggio("appMsg", "Rapportino salvato, ma errore ore: " + oreError.message, "danger");
@@ -546,7 +735,9 @@
       }
 
       if (firmeDaSalvare.length > 0) {
-        const { error: firmeError } = await supabaseClient.from("firme").insert(firmeDaSalvare);
+        const { error: firmeError } = await supabaseClient
+          .from("firme")
+          .insert(firmeDaSalvare);
 
         if (firmeError) {
           mostraMessaggio("appMsg", "Rapportino salvato, ma errore firme: " + firmeError.message, "danger");
@@ -559,11 +750,9 @@
     }
 
     try {
-      const pdfBlob = generaPdfBlob(nuovoRapportino.id, datiRapportino);
-alert("Sto generando il PDF");
+      const pdfBlob = await generaPdfBlob(nuovoRapportino.id, datiRapportino);
       const pdfPath = creaPercorsoPdf(nuovoRapportino.id, datiRapportino);
 
-alert("Sto caricando il PDF su Supabase");
       const { error: uploadPdfError } = await supabaseClient
         .storage
         .from("pdf")
@@ -617,63 +806,99 @@ alert("Sto caricando il PDF su Supabase");
     };
   }
 
-  function generaPdfBlob(rapportinoId, dati) {
+  async function caricaLogo() {
+    try {
+      const response = await fetch("logo.jpg");
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const blob = await response.blob();
+
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      return null;
+    }
+  }
+
+  async function generaPdfBlob(rapportinoId, dati) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+
+    const logoBase64 = await caricaLogo();
 
     const pageWidth = doc.internal.pageSize.getWidth();
     let y = 15;
 
-    doc.setFontSize(18);
-    doc.text("BIEMME SERVICE", 14, y);
-    y += 8;
+    if (logoBase64) {
+      doc.addImage(logoBase64, "JPEG", 14, 10, 28, 28);
+    }
 
-    doc.setFontSize(13);
-    doc.text("Rapporto di intervento", 14, y);
-    y += 12;
+    doc.setFontSize(16);
+    doc.text("RAPPORTO DI ASSISTENZA TECNICA", 50, 18);
 
     doc.setFontSize(10);
-    doc.text(`ID rapportino: ${rapportinoId}`, 14, y);
-    y += 7;
-    doc.text(`Data intervento: ${formattaDataSolo(dati.data_intervento)}`, 14, y);
-    y += 7;
-    doc.text(`Numero SO: ${dati.numero_so || "-"}`, 14, y);
-    y += 10;
+    doc.text(`Data: ${formattaDataSolo(dati.data_intervento)}`, 50, 26);
+    doc.text(`SO: ${dati.numero_so || "-"}`, 50, 32);
+
+    y = 45;
+
+    doc.setLineWidth(0.2);
+    doc.rect(14, y, pageWidth - 28, 18);
+    doc.setFontSize(10);
+    doc.text(`Numero rapporto: ${dati.numero_so || rapportinoId.substring(0, 8)}`, 18, y + 7);
+    doc.text(`ID: ${rapportinoId.substring(0, 8)}`, 18, y + 14);
+    y += 26;
 
     doc.setFontSize(12);
-    doc.text("Dati cliente", 14, y);
-    y += 7;
+    doc.text("DATI CLIENTE", 14, y);
+    y += 5;
 
+    doc.rect(14, y, pageWidth - 28, 28);
     doc.setFontSize(10);
-    doc.text(`Committente: ${document.getElementById("committente_search").value || "-"}`, 14, y);
-    y += 6;
-    doc.text(`Cliente: ${dati.descrizione_cliente || "-"}`, 14, y);
-    y += 6;
-    doc.text(`Indirizzo: ${dati.indirizzo_cliente || "-"}`, 14, y);
-    y += 10;
+    doc.text(`Committente: ${document.getElementById("committente_search").value || "-"}`, 18, y + 7);
+    doc.text(`Cliente: ${dati.descrizione_cliente || "-"}`, 18, y + 14);
+    doc.text(`Indirizzo: ${dati.indirizzo_cliente || "-"}`, 18, y + 21);
+    y += 38;
 
     doc.setFontSize(12);
-    doc.text("Relazione intervento", 14, y);
-    y += 7;
+    doc.text("RELAZIONE INTERVENTO", 14, y);
+    y += 5;
 
+    const relazione = doc.splitTextToSize(dati.relazione || "-", pageWidth - 34);
+    const altezzaRelazione = Math.max(35, relazione.length * 5 + 10);
+
+    doc.rect(14, y, pageWidth - 28, altezzaRelazione);
     doc.setFontSize(10);
-    const relazione = doc.splitTextToSize(dati.relazione || "-", pageWidth - 28);
-    doc.text(relazione, 14, y);
-    y += relazione.length * 5 + 8;
+    doc.text(relazione, 18, y + 8);
+    y += altezzaRelazione + 10;
 
-    if (y > 240) {
+    if (y > 230) {
       doc.addPage();
       y = 15;
     }
 
     doc.setFontSize(12);
-    doc.text("Ore", 14, y);
-    y += 7;
+    doc.text("ORE", 14, y);
+    y += 6;
 
-    doc.setFontSize(10);
+    doc.setFontSize(9);
+    doc.rect(14, y, pageWidth - 28, 8);
+    doc.text("Tipo", 18, y + 5);
+    doc.text("Data", 58, y + 5);
+    doc.text("Da", 98, y + 5);
+    doc.text("A", 128, y + 5);
+    y += 8;
+
     if (oreInserite.length === 0) {
-      doc.text("-", 14, y);
-      y += 7;
+      doc.rect(14, y, pageWidth - 28, 8);
+      doc.text("-", 18, y + 5);
+      y += 8;
     } else {
       oreInserite.forEach(o => {
         if (y > 270) {
@@ -681,27 +906,39 @@ alert("Sto caricando il PDF su Supabase");
           y = 15;
         }
 
-        const tipo = o.tipo === "trasferta" ? "Ore trasferta" : "Ore lavorate";
-        doc.text(`${tipo}: ${formattaDataOra(o.ora_inizio)} -> ${formattaDataOra(o.ora_fine)}`, 14, y);
-        y += 6;
+        const tipo = o.tipo === "trasferta" ? "Trasferta" : "Lavoro";
+        const inizio = new Date(o.ora_inizio);
+        const fine = new Date(o.ora_fine);
+
+        doc.rect(14, y, pageWidth - 28, 8);
+        doc.text(tipo, 18, y + 5);
+        doc.text(inizio.toLocaleDateString("it-IT"), 58, y + 5);
+        doc.text(inizio.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), 98, y + 5);
+        doc.text(fine.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), 128, y + 5);
+
+        y += 8;
       });
     }
 
-    y += 5;
+    y += 10;
+
+    if (y > 230) {
+      doc.addPage();
+      y = 15;
+    }
 
     doc.setFontSize(12);
-    doc.text("Materiali e spese", 14, y);
-    y += 7;
+    doc.text("MATERIALI E SPESE", 14, y);
+    y += 6;
 
     doc.setFontSize(10);
-    doc.text(`Km percorsi: ${dati.km_percorsi || "-"}`, 14, y);
-    y += 6;
-    doc.text(`Tipo addebito: ${testoAddebito(dati.tipo_addebito)}`, 14, y);
-    y += 6;
+    doc.rect(14, y, pageWidth - 28, 30);
+    doc.text(`Km percorsi: ${dati.km_percorsi || "-"}`, 18, y + 7);
+    doc.text(`Tipo addebito: ${testoAddebito(dati.tipo_addebito)}`, 18, y + 14);
 
-    const materiali = doc.splitTextToSize(`Materiali: ${dati.materiali_note || "-"}`, pageWidth - 28);
-    doc.text(materiali, 14, y);
-    y += materiali.length * 5 + 10;
+    const materiali = doc.splitTextToSize(`Materiali: ${dati.materiali_note || "-"}`, pageWidth - 36);
+    doc.text(materiali, 18, y + 21);
+    y += 42;
 
     if (y > 220) {
       doc.addPage();
@@ -709,23 +946,33 @@ alert("Sto caricando il PDF su Supabase");
     }
 
     doc.setFontSize(12);
-    doc.text("Firme", 14, y);
-    y += 8;
+    doc.text("FIRME", 14, y);
+    y += 6;
 
     doc.setFontSize(10);
-    doc.text(`Tecnico: ${document.getElementById("nome_tecnico").value || "-"}`, 14, y);
-    doc.text(`Cliente: ${document.getElementById("nome_cliente_firma").value || "-"}`, 110, y);
-    y += 5;
+    doc.rect(14, y, 82, 42);
+    doc.rect(110, y, 82, 42);
+
+    doc.text("Firma tecnico", 18, y + 6);
+    doc.text("Firma cliente", 114, y + 6);
 
     if (firmeDisegnate.firma_tecnico) {
       const imgTec = document.getElementById("firma_tecnico").toDataURL("image/png");
-      doc.addImage(imgTec, "PNG", 14, y, 70, 28);
+      doc.addImage(imgTec, "PNG", 20, y + 10, 65, 24);
     }
 
     if (firmeDisegnate.firma_cliente) {
       const imgCli = document.getElementById("firma_cliente").toDataURL("image/png");
-      doc.addImage(imgCli, "PNG", 110, y, 70, 28);
+      doc.addImage(imgCli, "PNG", 116, y + 10, 65, 24);
     }
+
+    doc.text(document.getElementById("nome_tecnico").value || "-", 18, y + 38);
+    doc.text(document.getElementById("nome_cliente_firma").value || "-", 114, y + 38);
+
+    y += 55;
+
+    doc.setFontSize(8);
+    doc.text("BIEMME SERVICE - Rapporto generato automaticamente", 14, 287);
 
     return doc.output("blob");
   }
@@ -739,7 +986,7 @@ alert("Sto caricando il PDF su Supabase");
     const cliente = pulisciNomeFile(dati.descrizione_cliente || "cliente");
     const so = pulisciNomeFile(dati.numero_so || "senza-so");
 
-    return `${anno}/${mese}/${data}_${committente}_${cliente}_${so}_${rapportinoId.substring(0, 8)}.pdf`;
+    return `${anno}/${mese}/RPT_${data}_${committente}_${cliente}_${so}_${rapportinoId.substring(0, 8)}.pdf`;
   }
 
   function pulisciNomeFile(testo) {
