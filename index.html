@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -17,346 +16,327 @@
 
   <style>
     :root {
-      --dark: #061f2c;
-      --dark-2: #0a3245;
-      --blue: #0e5a78;
-      --cyan: #18c7e8;
-      --cyan-soft: #e6faff;
-      --bg: #eef4f7;
-      --card: #ffffff;
-      --text: #101828;
-      --muted: #667085;
-      --border: #d8e2e8;
-      --success-bg: #e9fbe9;
-      --success-text: #176b17;
-      --danger-bg: #ffecec;
-      --danger-text: #9b1111;
-      --shadow: 0 18px 45px rgba(6, 31, 44, 0.14);
+      --dark:#061f2c;
+      --dark2:#0a3245;
+      --blue:#0e5a78;
+      --cyan:#18c7e8;
+      --cyanSoft:#e6faff;
+      --bg:#eef4f7;
+      --text:#101828;
+      --muted:#667085;
+      --border:#d8e2e8;
+      --shadow:0 18px 45px rgba(6,31,44,.14);
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing:border-box; }
 
     body {
-      margin: 0;
-      font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
-      color: var(--text);
+      margin:0;
+      font-family:"Inter","Segoe UI",Roboto,Arial,sans-serif;
       background:
-        radial-gradient(circle at 10% 0%, rgba(24,199,232,0.22), transparent 30%),
-        linear-gradient(180deg, #f8fcfd 0%, var(--bg) 100%);
-      min-height: 100vh;
+        radial-gradient(circle at 10% 0%,rgba(24,199,232,.22),transparent 30%),
+        linear-gradient(180deg,#f8fcfd 0%,var(--bg) 100%);
+      color:var(--text);
+      min-height:100vh;
     }
 
     .app-header {
-      background:
-        linear-gradient(135deg, rgba(6,31,44,0.96), rgba(10,50,69,0.96)),
-        radial-gradient(circle at 20% 20%, rgba(24,199,232,0.28), transparent 35%);
-      color: white;
-      padding: 24px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      box-shadow: 0 10px 28px rgba(6,31,44,0.28);
-      position: sticky;
-      top: 0;
-      z-index: 10;
+      background:linear-gradient(135deg,var(--dark),var(--dark2));
+      color:white;
+      padding:24px 20px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:20px;
+      box-shadow:0 10px 28px rgba(6,31,44,.28);
+      position:sticky;
+      top:0;
+      z-index:10;
     }
 
     .app-logo {
-      width: 72px;
-      height: 72px;
-      object-fit: contain;
-      border-radius: 16px;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.26);
+      width:72px;
+      height:72px;
+      object-fit:contain;
+      border-radius:16px;
+      box-shadow:0 10px 28px rgba(0,0,0,.26);
     }
 
     .header-title {
-      font-size: 34px;
-      font-weight: 850;
-      letter-spacing: 0.5px;
-      line-height: 1;
+      font-size:34px;
+      font-weight:850;
+      letter-spacing:.5px;
+      line-height:1;
     }
 
     .header-subtitle {
-      margin-top: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      color: #bff4ff;
-      letter-spacing: 0.4px;
+      margin-top:8px;
+      font-size:14px;
+      color:#bff4ff;
+      letter-spacing:.4px;
     }
 
     .container {
-      width: min(920px, calc(100% - 28px));
-      margin: 34px auto;
-      background: rgba(255,255,255,0.96);
-      padding: 32px;
-      border-radius: 28px;
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(255,255,255,0.9);
+      width:min(920px,calc(100% - 28px));
+      margin:34px auto;
+      background:rgba(255,255,255,.97);
+      padding:32px;
+      border-radius:28px;
+      box-shadow:var(--shadow);
+      border:1px solid rgba(255,255,255,.9);
     }
 
     .login-card {
-      max-width: 460px;
-      margin-top: 70px;
-      padding: 38px;
+      max-width:460px;
+      margin-top:70px;
+      padding:38px;
     }
 
     h2 {
-      margin: 0 0 22px;
-      color: var(--dark);
-      font-size: 30px;
-      letter-spacing: -0.4px;
+      margin:0 0 22px;
+      color:var(--dark);
+      font-size:30px;
+      letter-spacing:-.4px;
     }
 
     h3 {
-      margin: 0 0 14px;
-      color: var(--dark);
-      font-size: 22px;
+      margin:0 0 14px;
+      color:var(--dark);
+      font-size:22px;
     }
 
     h4 {
-      margin: 0 0 12px;
-      color: var(--dark-2);
-      font-size: 18px;
+      margin:0 0 12px;
+      color:var(--dark2);
+      font-size:18px;
     }
 
     label {
-      display: block;
-      margin-top: 17px;
-      margin-bottom: 7px;
-      font-weight: 750;
-      color: var(--dark);
-      font-size: 15px;
+      display:block;
+      margin-top:17px;
+      margin-bottom:7px;
+      font-weight:750;
+      color:var(--dark);
+      font-size:15px;
     }
 
     input, textarea, select {
-      width: 100%;
-      padding: 14px 15px;
-      border-radius: 15px;
-      border: 1px solid var(--border);
-      font-size: 16px;
-      background: #fff;
-      color: var(--text);
-      outline: none;
-      transition: border-color .18s, box-shadow .18s;
+      width:100%;
+      padding:14px 15px;
+      border-radius:15px;
+      border:1px solid var(--border);
+      font-size:16px;
+      background:#fff;
+      color:var(--text);
+      outline:none;
     }
 
     input:focus, textarea:focus, select:focus {
-      border-color: var(--cyan);
-      box-shadow: 0 0 0 4px rgba(24,199,232,0.16);
+      border-color:var(--cyan);
+      box-shadow:0 0 0 4px rgba(24,199,232,.16);
     }
 
     textarea {
-      min-height: 130px;
-      resize: vertical;
-      line-height: 1.45;
+      min-height:130px;
+      resize:vertical;
+      line-height:1.45;
     }
 
     button {
-      width: 100%;
-      padding: 15px 18px;
-      border-radius: 16px;
-      border: none;
-      margin-top: 20px;
-      background: linear-gradient(135deg, var(--dark-2), var(--blue));
-      color: white;
-      font-weight: 850;
-      font-size: 16px;
-      cursor: pointer;
-      box-shadow: 0 12px 26px rgba(10,50,69,0.22);
-      transition: transform .15s, box-shadow .15s, opacity .15s;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 16px 32px rgba(10,50,69,0.28);
+      width:100%;
+      padding:15px 18px;
+      border-radius:16px;
+      border:none;
+      margin-top:20px;
+      background:linear-gradient(135deg,var(--dark2),var(--blue));
+      color:white;
+      font-weight:850;
+      font-size:16px;
+      cursor:pointer;
+      box-shadow:0 12px 26px rgba(10,50,69,.22);
     }
 
     button:disabled {
-      background: #98a2b3;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+      background:#98a2b3;
+      cursor:not-allowed;
+      box-shadow:none;
     }
 
     .secondary {
-      background: #667085;
-      box-shadow: none;
+      background:#667085;
+      box-shadow:none;
     }
 
     .hidden {
-      display: none !important;
+      display:none!important;
     }
 
     .msg {
-      margin-top: 18px;
-      padding: 15px;
-      border-radius: 14px;
-      font-weight: 750;
+      margin-top:18px;
+      padding:15px;
+      border-radius:14px;
+      font-weight:750;
     }
 
     .success {
-      background: var(--success-bg);
-      color: var(--success-text);
+      background:#e9fbe9;
+      color:#176b17;
     }
 
     .danger {
-      background: var(--danger-bg);
-      color: var(--danger-text);
+      background:#ffecec;
+      color:#9b1111;
     }
 
     .top-actions {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-bottom: 22px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      margin-bottom:22px;
     }
 
     .top-actions h2 {
-      flex: 1;
-      margin-bottom: 0;
+      flex:1;
+      margin-bottom:0;
     }
 
     .logout-btn {
-      max-width: 150px;
-      margin-top: 0;
-      background: #667085;
+      max-width:150px;
+      margin-top:0;
+      background:#667085;
     }
 
     #risultati_committenti {
-      border: 1px solid var(--border);
-      border-radius: 15px;
-      background: white;
-      margin-top: 8px;
-      max-height: 230px;
-      overflow-y: auto;
-      box-shadow: 0 14px 28px rgba(6,31,44,0.10);
+      border:1px solid var(--border);
+      border-radius:15px;
+      background:white;
+      margin-top:8px;
+      max-height:230px;
+      overflow-y:auto;
+      box-shadow:0 14px 28px rgba(6,31,44,.10);
     }
 
     .risultato-committente {
-      padding: 13px 15px;
-      border-bottom: 1px solid #eef2f4;
-      cursor: pointer;
-      font-weight: 650;
+      padding:13px 15px;
+      border-bottom:1px solid #eef2f4;
+      cursor:pointer;
+      font-weight:650;
     }
 
     .risultato-committente:hover {
-      background: var(--cyan-soft);
-      color: var(--dark);
+      background:var(--cyanSoft);
     }
 
-    .ore-section, .firma-section {
-      margin-top: 28px;
-      padding-top: 22px;
-      border-top: 1px solid #dbe4ea;
+    .ore-section, .firma-section, .biossido-section, .spese-section {
+      margin-top:28px;
+      padding-top:22px;
+      border-top:1px solid #dbe4ea;
     }
 
     .plus-btn {
-      font-size: 34px;
-      height: 70px;
-      border-radius: 18px;
+      font-size:34px;
+      height:70px;
+      border-radius:18px;
     }
 
-    .ore-card, .firma-box {
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 18px;
-      margin-top: 16px;
-      background: linear-gradient(180deg, #fff, #f8fbfc);
+    .ore-card, .firma-box, .sub-card {
+      border:1px solid var(--border);
+      border-radius:22px;
+      padding:18px;
+      margin-top:16px;
+      background:linear-gradient(180deg,#fff,#f8fbfc);
     }
 
     .ore-card p {
-      margin: 8px 0;
-      color: var(--muted);
+      margin:8px 0;
+      color:var(--muted);
     }
 
     canvas {
-      width: 100%;
-      height: 180px;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: white;
-      touch-action: none;
-      display: block;
-      margin-top: 10px;
+      width:100%;
+      height:180px;
+      border:1px solid var(--border);
+      border-radius:16px;
+      background:white;
+      touch-action:none;
+      display:block;
+      margin-top:10px;
     }
 
     .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(6,31,44,0.58);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      z-index: 99;
+      position:fixed;
+      inset:0;
+      background:rgba(6,31,44,.58);
+      backdrop-filter:blur(4px);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:99;
     }
 
     .modal.hidden {
-      display: none;
+      display:none;
     }
 
     .modal-box {
-      background: white;
-      width: 100%;
-      max-width: 650px;
-      border-radius: 26px;
-      padding: 26px;
-      max-height: 90vh;
-      overflow: auto;
-      box-shadow: var(--shadow);
+      background:white;
+      width:100%;
+      max-width:650px;
+      border-radius:26px;
+      padding:26px;
+      max-height:90vh;
+      overflow:auto;
+      box-shadow:var(--shadow);
     }
 
     .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
     }
 
-    @media (max-width: 720px) {
+    @media (max-width:720px) {
       .app-header {
-        justify-content: flex-start;
-        padding: 18px;
+        justify-content:flex-start;
+        padding:18px;
       }
 
       .app-logo {
-        width: 58px;
-        height: 58px;
+        width:58px;
+        height:58px;
       }
 
       .header-title {
-        font-size: 24px;
+        font-size:24px;
       }
 
       .header-subtitle {
-        font-size: 12px;
+        font-size:12px;
       }
 
       .container {
-        width: calc(100% - 20px);
-        padding: 22px;
-        margin: 18px auto;
-        border-radius: 22px;
+        width:calc(100% - 20px);
+        padding:22px;
+        margin:18px auto;
+        border-radius:22px;
       }
 
       .login-card {
-        margin-top: 28px;
+        margin-top:28px;
       }
 
       .row {
-        grid-template-columns: 1fr;
+        grid-template-columns:1fr;
       }
 
       .top-actions {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction:column;
+        align-items:stretch;
       }
 
       .logout-btn {
-        max-width: none;
+        max-width:none;
       }
     }
   </style>
@@ -392,6 +372,12 @@
     <button class="logout-btn" onclick="logout()">Esci</button>
   </div>
 
+  <label>Tipo rapportino</label>
+  <select id="tipo_rapportino" onchange="cambiaTipoRapportino()">
+    <option value="dosaggio">Sistemi di dosaggio</option>
+    <option value="biossido">Biossido di cloro</option>
+  </select>
+
   <label>Data intervento</label>
   <input type="date" id="data_intervento" />
 
@@ -409,6 +395,35 @@
   <label>Indirizzo cliente</label>
   <input type="text" id="indirizzo_cliente" placeholder="Indirizzo intervento" />
 
+  <div id="biossidoBox" class="biossido-section hidden">
+    <h3>Dati biossido di cloro</h3>
+
+    <div class="sub-card">
+      <label>Tipologia intervento</label>
+      <select id="bio_tipologia_intervento">
+        <option value="">Seleziona</option>
+        <option value="Service">Service</option>
+        <option value="Nuova installazione">Nuova installazione</option>
+        <option value="Da richiesta">Da richiesta</option>
+      </select>
+
+      <label>Tipologia prodotto</label>
+      <input type="text" id="bio_tipologia_prodotto" placeholder="Es. OCD-162 5" />
+
+      <label>Nr matricola</label>
+      <input type="text" id="bio_matricola" placeholder="Es. S/N: 1000098" />
+
+      <label>Codice</label>
+      <input type="text" id="bio_codice" placeholder="Es. 95735160" />
+
+      <label>Modalità dosaggio</label>
+      <input type="text" id="bio_modalita_dosaggio" placeholder="Es. Combinato" />
+
+      <label>Concentrazione impostata</label>
+      <input type="text" id="bio_concentrazione_impostata" />
+    </div>
+  </div>
+
   <label>Relazione intervento</label>
   <textarea id="relazione"></textarea>
 
@@ -423,8 +438,27 @@
     </div>
   </div>
 
-  <label>Km percorsi</label>
-  <input type="number" id="km_percorsi" placeholder="0" />
+  <div class="spese-section">
+    <h3>Spese</h3>
+
+    <label>Km percorsi</label>
+    <input type="number" id="km_percorsi" placeholder="0" />
+
+    <label>Spese viaggio</label>
+    <input type="number" id="spese_viaggio" placeholder="0" />
+
+    <label>Parcheggio</label>
+    <input type="number" id="parcheggio" placeholder="0" />
+
+    <label>Pranzi</label>
+    <input type="number" id="pranzi" placeholder="0" />
+
+    <label>Cene</label>
+    <input type="number" id="cene" placeholder="0" />
+
+    <label>Pernottamento</label>
+    <input type="number" id="pernottamento" placeholder="0" />
+  </div>
 
   <label>Materiali utilizzati</label>
   <textarea id="materiali_note"></textarea>
@@ -467,8 +501,8 @@
 
     <label>Tipologia ore</label>
     <select id="modal_tipo_ore">
-      <option value="trasferta">Ore trasferta</option>
-      <option value="lavoro">Ore lavorate</option>
+      <option value="trasferta">Ore trasferta / trasferimento</option>
+      <option value="lavoro">Ore lavorate / mano d'opera</option>
     </select>
 
     <h3>Intervallo 1</h3>
@@ -528,6 +562,11 @@
     const { data } = await supabaseClient.auth.getSession();
     if (data.session) mostraApp();
   });
+
+  function cambiaTipoRapportino() {
+    const tipo = document.getElementById("tipo_rapportino").value;
+    document.getElementById("biossidoBox").classList.toggle("hidden", tipo !== "biossido");
+  }
 
   async function login() {
     const email = document.getElementById("email").value;
@@ -682,7 +721,7 @@
 
     if (dataInizio && oraInizio && dataFine && oraFine) {
       oreInserite.push({
-        tipo: tipo,
+        tipo,
         ora_inizio: `${dataInizio}T${oraInizio}:00`,
         ora_fine: `${dataFine}T${oraFine}:00`
       });
@@ -768,7 +807,6 @@
     canvas.addEventListener("mousemove", disegna);
     canvas.addEventListener("mouseup", finisci);
     canvas.addEventListener("mouseleave", finisci);
-
     canvas.addEventListener("touchstart", inizia, { passive: false });
     canvas.addEventListener("touchmove", disegna, { passive: false });
     canvas.addEventListener("touchend", finisci, { passive: false });
@@ -851,6 +889,19 @@
       btn.disabled = false;
       btn.textContent = "Salva rapportino e archivia PDF";
       return;
+    }
+
+    if (datiRapportino.tipo_rapportino === "biossido") {
+      const bio = raccogliDatiBiossido(nuovoRapportino.id);
+
+      const { error: bioError } = await supabaseClient
+        .from("rapportini_biossido")
+        .insert([bio]);
+
+      if (bioError) {
+        mostraMessaggio("appMsg", "Rapportino salvato, ma errore dati biossido: " + bioError.message, "danger");
+        return;
+      }
     }
 
     if (oreInserite.length > 0) {
@@ -955,6 +1006,7 @@
 
   function raccogliDatiRapportino(userId) {
     return {
+      tipo_rapportino: document.getElementById("tipo_rapportino").value,
       data_intervento: document.getElementById("data_intervento").value,
       numero_so: document.getElementById("numero_so").value || null,
       committente_id: document.getElementById("committente_id").value || null,
@@ -963,11 +1015,28 @@
       relazione: document.getElementById("relazione").value,
       materiali_note: document.getElementById("materiali_note").value,
       km_percorsi: document.getElementById("km_percorsi").value || null,
+      spese_viaggio: document.getElementById("spese_viaggio").value || null,
+      parcheggio: document.getElementById("parcheggio").value || null,
+      pranzi: document.getElementById("pranzi").value || null,
+      cene: document.getElementById("cene").value || null,
+      pernottamento: document.getElementById("pernottamento").value || null,
       tipo_addebito: document.getElementById("tipo_addebito").value || null,
       tecnico_id: userId,
       created_by: userId,
       updated_by: userId,
       stato: "chiuso"
+    };
+  }
+
+  function raccogliDatiBiossido(rapportinoId) {
+    return {
+      rapportino_id: rapportinoId,
+      tipologia_intervento: document.getElementById("bio_tipologia_intervento").value || null,
+      tipologia_prodotto: document.getElementById("bio_tipologia_prodotto").value || null,
+      matricola: document.getElementById("bio_matricola").value || null,
+      codice: document.getElementById("bio_codice").value || null,
+      modalita_dosaggio: document.getElementById("bio_modalita_dosaggio").value || null,
+      concentrazione_impostata: document.getElementById("bio_concentrazione_impostata").value || null
     };
   }
 
@@ -998,17 +1067,19 @@
   }
 
   async function generaPdfBlob(rapportinoId, dati) {
+    if (dati.tipo_rapportino === "biossido") {
+      return generaPdfBiossido(rapportinoId, dati);
+    }
+
+    return generaPdfDosaggio(rapportinoId, dati);
+  }
+
+  async function creaDocBase() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF("p", "mm", "a4");
     const logoBase64 = await caricaLogo();
 
-    const committente = document.getElementById("committente_search").value || "-";
-    const cliente = dati.descrizione_cliente || "-";
-    const indirizzoCliente = dati.indirizzo_cliente || "-";
-    const tecnico = document.getElementById("nome_tecnico").value || "-";
-    const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
-
-    function intestazione() {
+    function intestazione(pagina) {
       if (logoBase64) {
         doc.addImage(logoBase64, "JPEG", 12, 12, 28, 28);
       }
@@ -1032,7 +1103,23 @@
       doc.text("0362-240467", 162, 31);
       doc.text("info@biemmeengineering.it", 145, 37);
       doc.text("www.biemmeengineering.it", 145, 43);
+
+      if (pagina) {
+        doc.text(pagina, 188, 48);
+      }
     }
+
+    return { doc, intestazione };
+  }
+
+  async function generaPdfDosaggio(rapportinoId, dati) {
+    const { doc, intestazione } = await creaDocBase();
+
+    const committente = document.getElementById("committente_search").value || "-";
+    const cliente = dati.descrizione_cliente || "-";
+    const indirizzoCliente = dati.indirizzo_cliente || "-";
+    const tecnico = document.getElementById("nome_tecnico").value || "-";
+    const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
 
     intestazione();
 
@@ -1058,6 +1145,160 @@
 
     y += 16;
 
+    disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committente);
+    y += 31;
+
+    doc.rect(12, y, 186, 7);
+    doc.setFont("helvetica", "bold");
+    doc.text("INTERVENTO EFFETTUATO DA:", 14, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.text(tecnico.toUpperCase(), 68, y + 5);
+
+    y += 7;
+
+    y = disegnaTabellaOre(doc, y, "Ore trasferta", "Ore lavorate");
+
+    y += 16;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("RELAZIONE", 105, y, { align: "center" });
+
+    y += 8;
+
+    doc.rect(12, y, 186, 95);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    const relazione = doc.splitTextToSize(dati.relazione || "-", 180);
+    doc.text(relazione, 14, y + 6);
+
+    doc.addPage();
+    intestazione();
+
+    disegnaPagina2SpeseFirme(doc, dati, tecnico, clienteFirma);
+
+    return doc.output("blob");
+  }
+
+  async function generaPdfBiossido(rapportinoId, dati) {
+    const { doc, intestazione } = await creaDocBase();
+
+    const committente = document.getElementById("committente_search").value || "-";
+    const cliente = dati.descrizione_cliente || "-";
+    const indirizzoCliente = dati.indirizzo_cliente || "-";
+    const tecnico = document.getElementById("nome_tecnico").value || "-";
+    const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
+
+    const bio = {
+      tipologia_intervento: document.getElementById("bio_tipologia_intervento").value || "-",
+      tipologia_prodotto: document.getElementById("bio_tipologia_prodotto").value || "-",
+      matricola: document.getElementById("bio_matricola").value || "-",
+      codice: document.getElementById("bio_codice").value || "-",
+      modalita_dosaggio: document.getElementById("bio_modalita_dosaggio").value || "-",
+      concentrazione_impostata: document.getElementById("bio_concentrazione_impostata").value || "-"
+    };
+
+    intestazione("1 / 2");
+
+    let y = 50;
+
+    doc.rect(12, y, 186, 7);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("Assistenza su Produtt. CLO2", 14, y + 5);
+
+    doc.setFont("helvetica", "normal");
+    doc.text("Data", 86, y + 5);
+    doc.text(formattaDataSolo(dati.data_intervento), 98, y + 5);
+    doc.text("Intervento n.", 132, y + 5);
+    doc.text(dati.numero_so || rapportinoId.substring(0, 8), 156, y + 5);
+
+    y += 10;
+
+    doc.rect(12, y, 186, 13);
+    doc.text("Numero SO", 18, y + 8);
+    doc.text(dati.numero_so || "-", 55, y + 8);
+
+    y += 16;
+
+    disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committente);
+    y += 31;
+
+    doc.rect(12, y, 186, 7);
+    doc.setFont("helvetica", "bold");
+    doc.text("INTERVENTO EFFETTUATO DA:", 14, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.text(tecnico, 68, y + 5);
+
+    y += 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Tipologia Intervento", 14, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(bio.tipologia_intervento, 55, y);
+
+    y += 6;
+
+    y = disegnaTabellaOre(doc, y, "Ore Trasferimento", "Ore Mano D'opera");
+
+    y += 8;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("DATI PRODOTTO", 105, y, { align: "center" });
+
+    y += 6;
+
+    doc.rect(12, y, 186, 34);
+    doc.setFont("helvetica", "bold");
+    doc.text("Tipologia Prodotto", 16, y + 7);
+    doc.text("Nr Matricola", 78, y + 7);
+    doc.text("Codice", 140, y + 7);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(bio.tipologia_prodotto, 16, y + 17);
+    doc.text(bio.matricola, 78, y + 17);
+    doc.text(bio.codice, 140, y + 17);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("DATI PRODUTTORE", 105, y + 29, { align: "center" });
+
+    y += 40;
+
+    doc.rect(12, y, 186, 18);
+    doc.setFont("helvetica", "bold");
+    doc.text("Modalità Dosaggio", 16, y + 7);
+    doc.text("Concentrazione Impostata", 100, y + 7);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(bio.modalita_dosaggio, 16, y + 15);
+    doc.text(bio.concentrazione_impostata, 100, y + 15);
+
+    doc.addPage();
+    intestazione("2 / 2");
+
+    y = 55;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("RELAZIONE D'INTERVENTO", 105, y, { align: "center" });
+
+    y += 8;
+
+    doc.rect(12, y, 186, 60);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    const relazione = doc.splitTextToSize(dati.relazione || "-", 180);
+    doc.text(relazione, 14, y + 6);
+
+    y += 68;
+
+    disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma);
+
+    return doc.output("blob");
+  }
+
+  function disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committente) {
     doc.rect(12, y, 93, 28);
     doc.rect(105, y, 93, 28);
 
@@ -1069,17 +1310,9 @@
     doc.text(cliente, 17, y + 14);
     doc.text(indirizzoCliente, 17, y + 21);
     doc.text(committente, 110, y + 14);
+  }
 
-    y += 31;
-
-    doc.rect(12, y, 186, 7);
-    doc.setFont("helvetica", "bold");
-    doc.text("INTERVENTO EFFETTUATO DA:", 14, y + 5);
-    doc.setFont("helvetica", "normal");
-    doc.text(tecnico.toUpperCase(), 68, y + 5);
-
-    y += 7;
-
+  function disegnaTabellaOre(doc, y, labelTrasferta, labelLavoro) {
     doc.rect(12, y, 186, 7);
     doc.setFont("helvetica", "bold");
     doc.text("TIPOLOGIA ORE", 93, y + 5, { align: "center" });
@@ -1112,61 +1345,52 @@
       y += 7;
     }
 
-    rigaOrePdf("Ore trasferta", gruppoOre("trasferta"));
-    rigaOrePdf("Ore lavorate", gruppoOre("lavoro"));
+    rigaOrePdf(labelTrasferta, gruppoOre("trasferta"));
+    rigaOrePdf(labelLavoro, gruppoOre("lavoro"));
 
-    y += 16;
+    return y;
+  }
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("RELAZIONE", 105, y, { align: "center" });
+  function disegnaPagina2SpeseFirme(doc, dati, tecnico, clienteFirma) {
+    let y = 55;
+    disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma);
+  }
 
-    y += 8;
-
-    doc.rect(12, y, 186, 95);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-
-    const relazione = doc.splitTextToSize(dati.relazione || "-", 180);
-    doc.text(relazione, 14, y + 6);
-
-    doc.addPage();
-    intestazione();
-
-    y = 55;
-
+  function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma) {
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
 
-    const colW = 46.5;
+    const colW = 31;
     const startX = 12;
 
-    doc.rect(startX, y, 186, 28);
-    doc.line(startX + colW, y, startX + colW, y + 28);
-    doc.line(startX + colW * 2, y, startX + colW * 2, y + 28);
-    doc.line(startX + colW * 3, y, startX + colW * 3, y + 28);
-    doc.line(startX, y + 9, startX + 186, y + 9);
-    doc.line(startX, y + 18, startX + 186, y + 18);
+    doc.rect(startX, y, 186, 32);
 
-    doc.text("Km percorsi", startX + colW / 2, y + 6, { align: "center" });
-    doc.text("Materiale extra", startX + colW * 1.5, y + 6, { align: "center" });
-    doc.text("Spese viaggio", startX + colW * 2.5, y + 6, { align: "center" });
-    doc.text("Parcheggio", startX + colW * 3.5, y + 6, { align: "center" });
+    for (let i = 1; i < 6; i++) {
+      doc.line(startX + colW * i, y, startX + colW * i, y + 32);
+    }
+
+    doc.line(startX, y + 12, startX + 186, y + 12);
+
+    doc.text("Km percorsi", startX + colW * 0.5, y + 7, { align: "center" });
+    doc.text("Spese viaggio", startX + colW * 1.5, y + 7, { align: "center" });
+    doc.text("Parcheggio", startX + colW * 2.5, y + 7, { align: "center" });
+    doc.text("Pranzi", startX + colW * 3.5, y + 7, { align: "center" });
+    doc.text("Cene", startX + colW * 4.5, y + 7, { align: "center" });
+    doc.text("Pernott.", startX + colW * 5.5, y + 7, { align: "center" });
 
     doc.setFont("helvetica", "normal");
-    doc.text(String(dati.km_percorsi || ""), startX + colW / 2, y + 15, { align: "center" });
+    doc.text(String(dati.km_percorsi || ""), startX + colW * 0.5, y + 22, { align: "center" });
+    doc.text(String(dati.spese_viaggio || ""), startX + colW * 1.5, y + 22, { align: "center" });
+    doc.text(String(dati.parcheggio || ""), startX + colW * 2.5, y + 22, { align: "center" });
+    doc.text(String(dati.pranzi || ""), startX + colW * 3.5, y + 22, { align: "center" });
+    doc.text(String(dati.cene || ""), startX + colW * 4.5, y + 22, { align: "center" });
+    doc.text(String(dati.pernottamento || ""), startX + colW * 5.5, y + 22, { align: "center" });
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Pranzi", startX + colW / 2, y + 24, { align: "center" });
-    doc.text("Cene", startX + colW * 1.5, y + 24, { align: "center" });
-    doc.text("Pernottamento", startX + colW * 2.5, y + 24, { align: "center" });
-    doc.text("Varie", startX + colW * 3.5, y + 24, { align: "center" });
-
-    y += 34;
+    y += 38;
 
     doc.rect(12, y, 186, 35);
     doc.setFont("helvetica", "bold");
-    doc.text("Materiali", 105, y + 6, { align: "center" });
+    doc.text("MATERIALI", 105, y + 6, { align: "center" });
     doc.line(12, y + 9, 198, y + 9);
 
     doc.setFont("helvetica", "normal");
@@ -1223,20 +1447,18 @@
     doc.text(tecnico, 58, y);
     doc.text(new Date().toLocaleDateString("it-IT"), 150, y);
     doc.text(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), 170, y);
-
-    return doc.output("blob");
   }
 
   function creaPercorsoPdf(rapportinoId, dati) {
     const data = dati.data_intervento || new Date().toISOString().split("T")[0];
     const anno = data.substring(0, 4);
     const mese = data.substring(5, 7);
-
+    const tipo = dati.tipo_rapportino === "biossido" ? "BIO" : "DOS";
     const committente = pulisciNomeFile(document.getElementById("committente_search").value || "committente");
     const cliente = pulisciNomeFile(dati.descrizione_cliente || "cliente");
     const so = pulisciNomeFile(dati.numero_so || "senza-so");
 
-    return `${anno}/${mese}/RPT_${data}_${committente}_${cliente}_${so}_${rapportinoId.substring(0, 8)}.pdf`;
+    return `${anno}/${mese}/${tipo}_RPT_${data}_${committente}_${cliente}_${so}_${rapportinoId.substring(0, 8)}.pdf`;
   }
 
   function pulisciNomeFile(testo) {
@@ -1257,13 +1479,6 @@
     if (!data) return "-";
     const d = new Date(data);
     return d.toLocaleDateString("it-IT");
-  }
-
-  function testoAddebito(value) {
-    if (value === "cliente") return "In conto cliente";
-    if (value === "committente") return "In conto committente";
-    if (value === "garanzia") return "Garanzia";
-    return "-";
   }
 
   function mostraMessaggio(id, testo, tipo) {
