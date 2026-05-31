@@ -16,9 +16,14 @@
     body { font-family: Arial, sans-serif; background: #f3f5f7; margin: 0; color: #111; }
     .app-header { background:#254f7a; color:white; padding:18px; text-align:center; font-size:26px; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:16px; }
     .app-logo { width:56px; height:56px; object-fit:contain; background:white; border-radius:8px; padding:4px; }
-    .container { max-width:760px; margin:24px auto; background:white; padding:24px; border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,.12); }
-    label { display:block; margin-top:16px; font-weight:bold; }
-    input, textarea, select, button { width:100%; padding:12px; margin-top:6px; border-radius:8px; border:1px solid #ccc; font-size:16px; box-sizing:border-box; }
+    .container {
+  max-width:760px;
+  margin:24px auto;
+  background:white;
+  padding:34px;
+  border-radius:22px;
+  box-shadow:0 8px 28px rgba(0,0,0,.12);
+}
     textarea { min-height:120px; }
     button { background:#254f7a; color:white; border:none; margin-top:20px; font-weight:bold; cursor:pointer; }
     button:disabled { background:#999; cursor:not-allowed; }
@@ -38,6 +43,39 @@
     .modal.hidden { display:none; }
     .modal-box { background:white; width:100%; max-width:620px; border-radius:16px; padding:22px; max-height:90vh; overflow:auto; }
     .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.login-card {
+  max-width: 460px;
+  margin-top: 70px;
+  text-align: center;
+}
+
+.login-card h2 {
+  margin-top: 0;
+  font-size: 30px;
+  color: #254f7a;
+}
+
+.login-card label {
+  text-align: left;
+}
+
+.login-card input {
+  height: 52px;
+}
+
+.login-card button {
+  height: 56px;
+  font-size: 18px;
+  border-radius: 12px;
+}
+
+.login-card::before {
+  content: "Rapporti di assistenza tecnica";
+  display: block;
+  font-size: 17px;
+  color: #555;
+  margin-bottom: 22px;
+}
   </style>
 </head>
 
@@ -48,8 +86,7 @@
   <span>BIEMME SERVICE</span>
 </header>
 
-<div class="container" id="loginBox">
-  <h2>Login</h2>
+<div class="container login-card" id="loginBox">  <h2>Login</h2>
   <label>Email</label>
   <input type="email" id="email" />
   <label>Password</label>
