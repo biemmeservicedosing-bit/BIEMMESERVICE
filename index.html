@@ -26,17 +26,6 @@
       --muted:#667085;
       --border:#d8e2e8;
       --shadow:0 18px 45px rgba(6,31,44,.14);
- .row-time {
-        display: grid;
-        grid-template-columns: 1fr 90px 90px;
-        gap: 12px;
-}
-
-@media (max-width:720px) {
-  .row-time {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-}
     }
 
     * { box-sizing:border-box; }
@@ -307,6 +296,67 @@
       gap:12px;
     }
 
+    .row-time {
+      display:grid;
+      grid-template-columns:1fr 90px 90px;
+      gap:12px;
+    }
+
+    .admin-filters {
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:12px;
+      margin-bottom:18px;
+    }
+
+    .admin-list {
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .admin-card {
+      border:1px solid var(--border);
+      border-radius:20px;
+      padding:16px;
+      background:#fff;
+      box-shadow:0 8px 20px rgba(6,31,44,.08);
+    }
+
+    .admin-card-title {
+      font-weight:850;
+      color:var(--dark);
+      font-size:17px;
+      margin-bottom:6px;
+    }
+
+    .admin-card-meta {
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+    }
+
+    .admin-actions {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .admin-actions button {
+      margin-top:0;
+      padding:12px;
+      font-size:14px;
+    }
+
+    iframe {
+      width:100%;
+      height:75vh;
+      border:0;
+      border-radius:16px;
+      background:#fff;
+    }
+
     @media (max-width:720px) {
       .app-header {
         justify-content:flex-start;
@@ -337,8 +387,12 @@
         margin-top:28px;
       }
 
-      .row {
+      .row, .admin-filters {
         grid-template-columns:1fr;
+      }
+
+      .row-time {
+        grid-template-columns:1fr 1fr 1fr;
       }
 
       .top-actions {
@@ -364,7 +418,7 @@
 </header>
 
 <div class="container login-card" id="loginBox">
-  <h2>Accesso tecnico</h2>
+  <h2>Accesso</h2>
 
   <label>Email</label>
   <input type="email" id="email" autocomplete="email" />
@@ -375,6 +429,26 @@
   <button onclick="login()">Accedi</button>
 
   <div id="loginMsg" class="msg hidden"></div>
+</div>
+
+<div class="container hidden" id="adminBox">
+  <div class="top-actions">
+    <h2>Archivio rapportini</h2>
+    <button class="logout-btn" onclick="logout()">Esci</button>
+  </div>
+
+  <div class="admin-filters">
+    <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
+    <select id="admin_tipo" onchange="filtraArchivio()">
+      <option value="">Tutti i tipi</option>
+      <option value="dosaggio">Sistemi di dosaggio</option>
+      <option value="biossido">Biossido di cloro</option>
+    </select>
+    <input type="date" id="admin_data" onchange="filtraArchivio()" />
+  </div>
+
+  <div id="adminMsg" class="msg hidden"></div>
+  <div id="adminLista" class="admin-list"></div>
 </div>
 
 <div class="container hidden" id="appBox">
@@ -506,6 +580,14 @@
   <div id="appMsg" class="msg hidden"></div>
 </div>
 
+<div class="modal hidden" id="modalAnteprima">
+  <div class="modal-box" style="max-width:950px;">
+    <h2>Anteprima PDF</h2>
+    <iframe id="pdfFrame"></iframe>
+    <button class="secondary" onclick="chiudiAnteprima()">Chiudi</button>
+  </div>
+</div>
+
 <div class="modal hidden" id="modalOre">
   <div class="modal-box">
     <h2>Aggiungi ore</h2>
@@ -553,37 +635,17 @@
   </div>
 </div>
 
-    <label>A</label>
-    <div class="row">
-      <input type="date" id="modal_data_fine_1" />
-      <select id="modal_ora_fine_1"></select>
-    </div>
-
-    <h3>Intervallo 2</h3>
-
-    <label>Da</label>
-    <div class="row">
-      <input type="date" id="modal_data_inizio_2" />
-      <select id="modal_ora_inizio_2"></select>
-    </div>
-
-    <label>A</label>
-    <div class="row">
-      <input type="date" id="modal_data_fine_2" />
-      <select id="modal_ora_fine_2"></select>
-    </div>
-
-    <button onclick="confermaOre()">Conferma</button>
-    <button class="secondary" onclick="chiudiOre()">Annulla</button>
-  </div>
-</div>
-
 <script>
   const SUPABASE_URL = "https://ehrmyyjojlgrdgxjsuzu.supabase.co";
   const SUPABASE_KEY = "sb_publishable_5GARNlBShnQXlLnQy-kCnA_JhlcIcr3";
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  const ADMIN_EMAIL = "biemmeservice.dosing@gmail.com";
+
   let listaCommittenti = [];
+  let archivioRapportini = [];
+  let utenteCorrente = null;
+  let ruoloCorrente = "tecnico";
   let oreInserite = [];
 
   const firmeDisegnate = {
@@ -600,12 +662,51 @@
     preparaCanvasFirma("firma_cliente");
 
     const { data } = await supabaseClient.auth.getSession();
-    if (data.session) mostraApp();
+
+    if (data.session) {
+      await avviaSessione();
+    }
   });
 
-  function cambiaTipoRapportino() {
-    const tipo = document.getElementById("tipo_rapportino").value;
-    document.getElementById("biossidoBox").classList.toggle("hidden", tipo !== "biossido");
+  async function avviaSessione() {
+    const { data: userData } = await supabaseClient.auth.getUser();
+    utenteCorrente = userData.user;
+
+    if (!utenteCorrente) return;
+
+    ruoloCorrente = await leggiRuoloUtente(utenteCorrente.email);
+
+    document.getElementById("loginBox").classList.add("hidden");
+
+    if (ruoloCorrente === "admin") {
+      document.getElementById("adminBox").classList.remove("hidden");
+      document.getElementById("appBox").classList.add("hidden");
+      await caricaArchivioRapportini();
+    } else {
+      document.getElementById("adminBox").classList.add("hidden");
+      document.getElementById("appBox").classList.remove("hidden");
+
+      setTimeout(() => {
+        ridimensionaCanvas("firma_tecnico");
+        ridimensionaCanvas("firma_cliente");
+      }, 200);
+
+      await caricaCommittenti();
+    }
+  }
+
+  async function leggiRuoloUtente(email) {
+    if (email === ADMIN_EMAIL) return "admin";
+
+    const { data, error } = await supabaseClient
+      .from("utenti")
+      .select("ruolo")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (error || !data || !data.ruolo) return "tecnico";
+
+    return data.ruolo;
   }
 
   async function login() {
@@ -619,7 +720,7 @@
       return;
     }
 
-    mostraApp();
+    await avviaSessione();
   }
 
   async function logout() {
@@ -627,16 +728,118 @@
     window.location.reload();
   }
 
-  async function mostraApp() {
-    document.getElementById("loginBox").classList.add("hidden");
-    document.getElementById("appBox").classList.remove("hidden");
+  async function caricaArchivioRapportini() {
+    const box = document.getElementById("adminLista");
+    box.innerHTML = "Caricamento archivio...";
 
-    setTimeout(() => {
-      ridimensionaCanvas("firma_tecnico");
-      ridimensionaCanvas("firma_cliente");
-    }, 200);
+    const { data, error } = await supabaseClient
+      .from("rapportini")
+      .select("id, data_intervento, numero_so, descrizione_cliente, indirizzo_cliente, committente_id, tipo_rapportino, pdf_path, pdf_generato_at, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      mostraMessaggio("adminMsg", "Errore archivio: " + error.message, "danger");
+      box.innerHTML = "";
+      return;
+    }
 
     await caricaCommittenti();
+    archivioRapportini = data || [];
+    renderArchivio(archivioRapportini);
+  }
+
+  function filtraArchivio() {
+    const cerca = document.getElementById("admin_cerca").value.toLowerCase();
+    const tipo = document.getElementById("admin_tipo").value;
+    const data = document.getElementById("admin_data").value;
+
+    const filtrati = archivioRapportini.filter(r => {
+      const committente = nomeCommittente(r.committente_id).toLowerCase();
+      const testo = [
+        r.numero_so,
+        r.descrizione_cliente,
+        r.indirizzo_cliente,
+        committente
+      ].join(" ").toLowerCase();
+
+      const okCerca = !cerca || testo.includes(cerca);
+      const okTipo = !tipo || r.tipo_rapportino === tipo;
+      const okData = !data || r.data_intervento === data;
+
+      return okCerca && okTipo && okData;
+    });
+
+    renderArchivio(filtrati);
+  }
+
+  function renderArchivio(lista) {
+    const box = document.getElementById("adminLista");
+    box.innerHTML = "";
+
+    if (lista.length === 0) {
+      box.innerHTML = "<p>Nessun rapportino trovato.</p>";
+      return;
+    }
+
+    lista.forEach(r => {
+      const card = document.createElement("div");
+      card.className = "admin-card";
+
+      const tipo = r.tipo_rapportino === "biossido" ? "Biossido di cloro" : "Sistemi di dosaggio";
+      const committente = nomeCommittente(r.committente_id);
+
+      card.innerHTML = `
+        <div class="admin-card-title">${r.descrizione_cliente || "-"}</div>
+        <div class="admin-card-meta">
+          <strong>Data:</strong> ${formattaDataSolo(r.data_intervento)}<br>
+          <strong>Tipo:</strong> ${tipo}<br>
+          <strong>Committente:</strong> ${committente}<br>
+          <strong>SO:</strong> ${r.numero_so || "-"}<br>
+          <strong>PDF:</strong> ${r.pdf_path ? "Disponibile" : "Non generato"}
+        </div>
+        <div class="admin-actions">
+          <button ${r.pdf_path ? "" : "disabled"} onclick="anteprimaPdf('${r.pdf_path || ""}')">Anteprima</button>
+          <button ${r.pdf_path ? "" : "disabled"} onclick="scaricaPdf('${r.pdf_path || ""}')">Scarica</button>
+        </div>
+      `;
+
+      box.appendChild(card);
+    });
+  }
+
+  async function creaSignedUrlPdf(path) {
+    const { data, error } = await supabaseClient
+      .storage
+      .from("pdf")
+      .createSignedUrl(path, 60 * 10);
+
+    if (error) {
+      alert("Errore apertura PDF: " + error.message);
+      return null;
+    }
+
+    return data.signedUrl;
+  }
+
+  async function anteprimaPdf(path) {
+    const url = await creaSignedUrlPdf(path);
+    if (!url) return;
+
+    document.getElementById("pdfFrame").src = url;
+    document.getElementById("modalAnteprima").classList.remove("hidden");
+  }
+
+  function chiudiAnteprima() {
+    document.getElementById("pdfFrame").src = "";
+    document.getElementById("modalAnteprima").classList.add("hidden");
+  }
+
+  async function scaricaPdf(path) {
+    const url = await creaSignedUrlPdf(path);
+    if (!url) return;
+
+    window.open(url, "_blank");
   }
 
   async function caricaCommittenti() {
@@ -652,6 +855,16 @@
     }
 
     listaCommittenti = data || [];
+  }
+
+  function nomeCommittente(id) {
+    const c = listaCommittenti.find(x => x.id === id);
+    return c ? c.ragione_sociale : "-";
+  }
+
+  function cambiaTipoRapportino() {
+    const tipo = document.getElementById("tipo_rapportino").value;
+    document.getElementById("biossidoBox").classList.toggle("hidden", tipo !== "biossido");
   }
 
   function cercaCommittente() {
@@ -697,120 +910,117 @@
   }
 
   function creaMenuOre() {
-  const oreIds = [
-    "modal_ora_inizio_1",
-    "modal_ora_fine_1",
-    "modal_ora_inizio_2",
-    "modal_ora_fine_2"
-  ];
+    const oreIds = [
+      "modal_ora_inizio_1",
+      "modal_ora_fine_1",
+      "modal_ora_inizio_2",
+      "modal_ora_fine_2"
+    ];
 
-  const minutiIds = [
-    "modal_minuti_inizio_1",
-    "modal_minuti_fine_1",
-    "modal_minuti_inizio_2",
-    "modal_minuti_fine_2"
-  ];
+    const minutiIds = [
+      "modal_minuti_inizio_1",
+      "modal_minuti_fine_1",
+      "modal_minuti_inizio_2",
+      "modal_minuti_fine_2"
+    ];
 
-  oreIds.forEach(id => {
-    const select = document.getElementById(id);
-    select.innerHTML = '<option value="">Ora</option>';
+    oreIds.forEach(id => {
+      const select = document.getElementById(id);
+      select.innerHTML = '<option value="">Ora</option>';
 
-    for (let h = 0; h < 24; h++) {
-      const value = String(h).padStart(2, "0");
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = value;
-      select.appendChild(option);
-    }
-  });
-
-  minutiIds.forEach(id => {
-    const select = document.getElementById(id);
-    select.innerHTML = '<option value="">Min</option>';
-
-    ["00", "15", "30", "45"].forEach(value => {
-      const option = document.createElement("option");
-      option.value = value;
-      option.textContent = value;
-      select.appendChild(option);
+      for (let h = 0; h < 24; h++) {
+        const value = String(h).padStart(2, "0");
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      }
     });
-  });
-}
 
- function apriOre() {
-  const data = document.getElementById("data_intervento").value || new Date().toISOString().split("T")[0];
+    minutiIds.forEach(id => {
+      const select = document.getElementById(id);
+      select.innerHTML = '<option value="">Min</option>';
 
-  document.getElementById("modal_data_inizio_1").value = data;
-  document.getElementById("modal_data_fine_1").value = data;
-  document.getElementById("modal_data_inizio_2").value = data;
-  document.getElementById("modal_data_fine_2").value = data;
+      ["00", "15", "30", "45"].forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        select.appendChild(option);
+      });
+    });
+  }
 
-  const campi = [
-    "modal_ora_inizio_1",
-    "modal_minuti_inizio_1",
-    "modal_ora_fine_1",
-    "modal_minuti_fine_1",
-    "modal_ora_inizio_2",
-    "modal_minuti_inizio_2",
-    "modal_ora_fine_2",
-    "modal_minuti_fine_2"
-  ];
+  function apriOre() {
+    const data = document.getElementById("data_intervento").value || new Date().toISOString().split("T")[0];
 
-  campi.forEach(id => {
-    document.getElementById(id).value = "";
-  });
+    document.getElementById("modal_data_inizio_1").value = data;
+    document.getElementById("modal_data_fine_1").value = data;
+    document.getElementById("modal_data_inizio_2").value = data;
+    document.getElementById("modal_data_fine_2").value = data;
 
-  document.getElementById("modalOre").classList.remove("hidden");
-}
+    [
+      "modal_ora_inizio_1",
+      "modal_minuti_inizio_1",
+      "modal_ora_fine_1",
+      "modal_minuti_fine_1",
+      "modal_ora_inizio_2",
+      "modal_minuti_inizio_2",
+      "modal_ora_fine_2",
+      "modal_minuti_fine_2"
+    ].forEach(id => {
+      document.getElementById(id).value = "";
+    });
+
+    document.getElementById("modalOre").classList.remove("hidden");
+  }
 
   function chiudiOre() {
     document.getElementById("modalOre").classList.add("hidden");
   }
 
   function confermaOre() {
-  const tipo = document.getElementById("modal_tipo_ore").value;
+    const tipo = document.getElementById("modal_tipo_ore").value;
 
-  aggiungiIntervallo(
-    tipo,
-    "modal_data_inizio_1",
-    "modal_ora_inizio_1",
-    "modal_minuti_inizio_1",
-    "modal_data_fine_1",
-    "modal_ora_fine_1",
-    "modal_minuti_fine_1"
-  );
-
-  aggiungiIntervallo(
-    tipo,
-    "modal_data_inizio_2",
-    "modal_ora_inizio_2",
-    "modal_minuti_inizio_2",
-    "modal_data_fine_2",
-    "modal_ora_fine_2",
-    "modal_minuti_fine_2"
-  );
-
-  aggiornaRiepilogoOre();
-  chiudiOre();
-}
-
-function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, minutiInizioId, dataFineId, oraFineId, minutiFineId) {
-  const dataInizio = document.getElementById(dataInizioId).value;
-  const oraInizio = document.getElementById(oraInizioId).value;
-  const minutiInizio = document.getElementById(minutiInizioId).value;
-
-  const dataFine = document.getElementById(dataFineId).value;
-  const oraFine = document.getElementById(oraFineId).value;
-  const minutiFine = document.getElementById(minutiFineId).value;
-
-  if (dataInizio && oraInizio && minutiInizio && dataFine && oraFine && minutiFine) {
-    oreInserite.push({
+    aggiungiIntervallo(
       tipo,
-      ora_inizio: `${dataInizio}T${oraInizio}:${minutiInizio}:00`,
-      ora_fine: `${dataFine}T${oraFine}:${minutiFine}:00`
-    });
+      "modal_data_inizio_1",
+      "modal_ora_inizio_1",
+      "modal_minuti_inizio_1",
+      "modal_data_fine_1",
+      "modal_ora_fine_1",
+      "modal_minuti_fine_1"
+    );
+
+    aggiungiIntervallo(
+      tipo,
+      "modal_data_inizio_2",
+      "modal_ora_inizio_2",
+      "modal_minuti_inizio_2",
+      "modal_data_fine_2",
+      "modal_ora_fine_2",
+      "modal_minuti_fine_2"
+    );
+
+    aggiornaRiepilogoOre();
+    chiudiOre();
   }
-}
+
+  function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, minutiInizioId, dataFineId, oraFineId, minutiFineId) {
+    const dataInizio = document.getElementById(dataInizioId).value;
+    const oraInizio = document.getElementById(oraInizioId).value;
+    const minutiInizio = document.getElementById(minutiInizioId).value;
+    const dataFine = document.getElementById(dataFineId).value;
+    const oraFine = document.getElementById(oraFineId).value;
+    const minutiFine = document.getElementById(minutiFineId).value;
+
+    if (dataInizio && oraInizio && minutiInizio && dataFine && oraFine && minutiFine) {
+      oreInserite.push({
+        tipo,
+        ora_inizio: `${dataInizio}T${oraInizio}:${minutiInizio}:00`,
+        ora_fine: `${dataFine}T${oraFine}:${minutiFine}:00`
+      });
+    }
+  }
 
   function aggiornaRiepilogoOre() {
     document.getElementById("numero_righe_ore").textContent = oreInserite.length;
@@ -946,6 +1156,11 @@ function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, minutiInizioId, dat
   }
 
   async function salvaRapportino() {
+    if (ruoloCorrente === "admin") {
+      mostraMessaggio("appMsg", "L'admin non può compilare rapportini.", "danger");
+      return;
+    }
+
     const btn = document.getElementById("btnSalva");
     btn.disabled = true;
     btn.textContent = "Salvataggio in corso...";
@@ -1239,9 +1454,7 @@ function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, minutiInizioId, dat
     doc.text(tecnico.toUpperCase(), 68, y + 5);
 
     y += 7;
-
     y = disegnaTabellaOre(doc, y, "Ore trasferta", "Ore lavorate");
-
     y += 16;
 
     doc.setFont("helvetica", "bold");
@@ -1260,7 +1473,7 @@ function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, minutiInizioId, dat
     doc.addPage();
     intestazione();
 
-    disegnaPagina2SpeseFirme(doc, dati, tecnico, clienteFirma);
+    disegnaSpeseMaterialiFirme(doc, 55, dati, tecnico, clienteFirma);
 
     return doc.output("blob");
   }
@@ -1325,7 +1538,6 @@ function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, minutiInizioId, dat
     y += 6;
 
     y = disegnaTabellaOre(doc, y, "Ore Trasferimento", "Ore Mano D'opera");
-
     y += 8;
 
     doc.setFont("helvetica", "bold");
@@ -1433,11 +1645,6 @@ function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, minutiInizioId, dat
     rigaOrePdf(labelLavoro, gruppoOre("lavoro"));
 
     return y;
-  }
-
-  function disegnaPagina2SpeseFirme(doc, dati, tecnico, clienteFirma) {
-    let y = 55;
-    disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma);
   }
 
   function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma) {
