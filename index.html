@@ -26,6 +26,17 @@
       --muted:#667085;
       --border:#d8e2e8;
       --shadow:0 18px 45px rgba(6,31,44,.14);
+ .row-time {
+        display: grid;
+        grid-template-columns: 1fr 90px 90px;
+        gap: 12px;
+}
+
+@media (max-width:720px) {
+  .row-time {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
     }
 
     * { box-sizing:border-box; }
@@ -508,10 +519,39 @@
     <h3>Intervallo 1</h3>
 
     <label>Da</label>
-    <div class="row">
+    <div class="row-time">
       <input type="date" id="modal_data_inizio_1" />
       <select id="modal_ora_inizio_1"></select>
+      <select id="modal_minuti_inizio_1"></select>
     </div>
+
+    <label>A</label>
+    <div class="row-time">
+      <input type="date" id="modal_data_fine_1" />
+      <select id="modal_ora_fine_1"></select>
+      <select id="modal_minuti_fine_1"></select>
+    </div>
+
+    <h3>Intervallo 2</h3>
+
+    <label>Da</label>
+    <div class="row-time">
+      <input type="date" id="modal_data_inizio_2" />
+      <select id="modal_ora_inizio_2"></select>
+      <select id="modal_minuti_inizio_2"></select>
+    </div>
+
+    <label>A</label>
+    <div class="row-time">
+      <input type="date" id="modal_data_fine_2" />
+      <select id="modal_ora_fine_2"></select>
+      <select id="modal_minuti_fine_2"></select>
+    </div>
+
+    <button onclick="confermaOre()">Conferma</button>
+    <button class="secondary" onclick="chiudiOre()">Annulla</button>
+  </div>
+</div>
 
     <label>A</label>
     <div class="row">
@@ -657,76 +697,120 @@
   }
 
   function creaMenuOre() {
-    const ids = [
-      "modal_ora_inizio_1",
-      "modal_ora_fine_1",
-      "modal_ora_inizio_2",
-      "modal_ora_fine_2"
-    ];
+  const oreIds = [
+    "modal_ora_inizio_1",
+    "modal_ora_fine_1",
+    "modal_ora_inizio_2",
+    "modal_ora_fine_2"
+  ];
 
-    ids.forEach(id => {
-      const select = document.getElementById(id);
-      select.innerHTML = '<option value="">Ora</option>';
+  const minutiIds = [
+    "modal_minuti_inizio_1",
+    "modal_minuti_fine_1",
+    "modal_minuti_inizio_2",
+    "modal_minuti_fine_2"
+  ];
 
-      for (let h = 0; h < 24; h++) {
-        for (let m of [0, 15, 30, 45]) {
-          const hh = String(h).padStart(2, "0");
-          const mm = String(m).padStart(2, "0");
-          const value = `${hh}:${mm}`;
+  oreIds.forEach(id => {
+    const select = document.getElementById(id);
+    select.innerHTML = '<option value="">Ora</option>';
 
-          const option = document.createElement("option");
-          option.value = value;
-          option.textContent = value;
-          select.appendChild(option);
-        }
-      }
+    for (let h = 0; h < 24; h++) {
+      const value = String(h).padStart(2, "0");
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      select.appendChild(option);
+    }
+  });
+
+  minutiIds.forEach(id => {
+    const select = document.getElementById(id);
+    select.innerHTML = '<option value="">Min</option>';
+
+    ["00", "15", "30", "45"].forEach(value => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = value;
+      select.appendChild(option);
     });
-  }
+  });
+}
 
-  function apriOre() {
-    const data = document.getElementById("data_intervento").value || new Date().toISOString().split("T")[0];
+ function apriOre() {
+  const data = document.getElementById("data_intervento").value || new Date().toISOString().split("T")[0];
 
-    document.getElementById("modal_data_inizio_1").value = data;
-    document.getElementById("modal_data_fine_1").value = data;
-    document.getElementById("modal_data_inizio_2").value = data;
-    document.getElementById("modal_data_fine_2").value = data;
+  document.getElementById("modal_data_inizio_1").value = data;
+  document.getElementById("modal_data_fine_1").value = data;
+  document.getElementById("modal_data_inizio_2").value = data;
+  document.getElementById("modal_data_fine_2").value = data;
 
-    document.getElementById("modal_ora_inizio_1").value = "";
-    document.getElementById("modal_ora_fine_1").value = "";
-    document.getElementById("modal_ora_inizio_2").value = "";
-    document.getElementById("modal_ora_fine_2").value = "";
+  const campi = [
+    "modal_ora_inizio_1",
+    "modal_minuti_inizio_1",
+    "modal_ora_fine_1",
+    "modal_minuti_fine_1",
+    "modal_ora_inizio_2",
+    "modal_minuti_inizio_2",
+    "modal_ora_fine_2",
+    "modal_minuti_fine_2"
+  ];
 
-    document.getElementById("modalOre").classList.remove("hidden");
-  }
+  campi.forEach(id => {
+    document.getElementById(id).value = "";
+  });
+
+  document.getElementById("modalOre").classList.remove("hidden");
+}
 
   function chiudiOre() {
     document.getElementById("modalOre").classList.add("hidden");
   }
 
   function confermaOre() {
-    const tipo = document.getElementById("modal_tipo_ore").value;
+  const tipo = document.getElementById("modal_tipo_ore").value;
 
-    aggiungiIntervallo(tipo, "modal_data_inizio_1", "modal_ora_inizio_1", "modal_data_fine_1", "modal_ora_fine_1");
-    aggiungiIntervallo(tipo, "modal_data_inizio_2", "modal_ora_inizio_2", "modal_data_fine_2", "modal_ora_fine_2");
+  aggiungiIntervallo(
+    tipo,
+    "modal_data_inizio_1",
+    "modal_ora_inizio_1",
+    "modal_minuti_inizio_1",
+    "modal_data_fine_1",
+    "modal_ora_fine_1",
+    "modal_minuti_fine_1"
+  );
 
-    aggiornaRiepilogoOre();
-    chiudiOre();
+  aggiungiIntervallo(
+    tipo,
+    "modal_data_inizio_2",
+    "modal_ora_inizio_2",
+    "modal_minuti_inizio_2",
+    "modal_data_fine_2",
+    "modal_ora_fine_2",
+    "modal_minuti_fine_2"
+  );
+
+  aggiornaRiepilogoOre();
+  chiudiOre();
+}
+
+function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, minutiInizioId, dataFineId, oraFineId, minutiFineId) {
+  const dataInizio = document.getElementById(dataInizioId).value;
+  const oraInizio = document.getElementById(oraInizioId).value;
+  const minutiInizio = document.getElementById(minutiInizioId).value;
+
+  const dataFine = document.getElementById(dataFineId).value;
+  const oraFine = document.getElementById(oraFineId).value;
+  const minutiFine = document.getElementById(minutiFineId).value;
+
+  if (dataInizio && oraInizio && minutiInizio && dataFine && oraFine && minutiFine) {
+    oreInserite.push({
+      tipo,
+      ora_inizio: `${dataInizio}T${oraInizio}:${minutiInizio}:00`,
+      ora_fine: `${dataFine}T${oraFine}:${minutiFine}:00`
+    });
   }
-
-  function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, dataFineId, oraFineId) {
-    const dataInizio = document.getElementById(dataInizioId).value;
-    const oraInizio = document.getElementById(oraInizioId).value;
-    const dataFine = document.getElementById(dataFineId).value;
-    const oraFine = document.getElementById(oraFineId).value;
-
-    if (dataInizio && oraInizio && dataFine && oraFine) {
-      oreInserite.push({
-        tipo,
-        ora_inizio: `${dataInizio}T${oraInizio}:00`,
-        ora_fine: `${dataFine}T${oraFine}:00`
-      });
-    }
-  }
+}
 
   function aggiornaRiepilogoOre() {
     document.getElementById("numero_righe_ore").textContent = oreInserite.length;
