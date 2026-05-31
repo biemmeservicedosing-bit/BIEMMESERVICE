@@ -481,7 +481,7 @@
   <input type="text" id="indirizzo_cliente" placeholder="Indirizzo intervento" />
 
   <div id="biossidoBox" class="biossido-section hidden">
-    <h3>Dati biossido di cloro</h3>
+    <h3>Dati produttore biossido di cloro</h3>
 
     <div class="sub-card">
       <label>Tipologia intervento</label>
@@ -492,7 +492,7 @@
         <option value="Da richiesta">Da richiesta</option>
       </select>
 
-      <label>Tipologia prodotto</label>
+      <label>Modello produttore</label>
       <input type="text" id="bio_tipologia_prodotto" placeholder="Es. OCD-162 5" />
 
       <label>Nr matricola</label>
@@ -502,7 +502,7 @@
       <input type="text" id="bio_codice" placeholder="Es. 95735160" />
 
       <label>Modalità dosaggio</label>
-      <input type="text" id="bio_modalita_dosaggio" placeholder="Es. Combinato" />
+      <input type="text" id="bio_modalita_dosaggio" placeholder="Es. Proporzionale" />
 
       <label>Concentrazione impostata</label>
       <input type="text" id="bio_concentrazione_impostata" />
@@ -692,6 +692,7 @@
       }, 200);
 
       await caricaCommittenti();
+      impostaNomeTecnicoDaUtente();
     }
   }
 
@@ -707,6 +708,22 @@
     if (error || !data || !data.ruolo) return "tecnico";
 
     return data.ruolo;
+  }
+
+  async function impostaNomeTecnicoDaUtente() {
+    if (!utenteCorrente) return;
+
+    const { data } = await supabaseClient
+      .from("utenti")
+      .select("nome, email")
+      .eq("email", utenteCorrente.email)
+      .maybeSingle();
+
+    if (data?.nome) {
+      document.getElementById("nome_tecnico").value = data.nome;
+    } else if (utenteCorrente.email) {
+      document.getElementById("nome_tecnico").value = utenteCorrente.email;
+    }
   }
 
   async function login() {
@@ -732,6 +749,8 @@
     const box = document.getElementById("adminLista");
     box.innerHTML = "Caricamento archivio...";
 
+    await caricaCommittenti();
+
     const { data, error } = await supabaseClient
       .from("rapportini")
       .select("id, data_intervento, numero_so, descrizione_cliente, indirizzo_cliente, committente_id, tipo_rapportino, pdf_path, pdf_generato_at, created_at")
@@ -744,24 +763,23 @@
       return;
     }
 
-    await caricaCommittenti();
     const rapportiniConPdf = [];
 
-for (const r of data || []) {
-  if (!r.pdf_path) continue;
+    for (const r of data || []) {
+      if (!r.pdf_path) continue;
 
-  const { data: signed, error } = await supabaseClient
-    .storage
-    .from("pdf")
-    .createSignedUrl(r.pdf_path, 60);
+      const { data: signed, error: signedError } = await supabaseClient
+        .storage
+        .from("pdf")
+        .createSignedUrl(r.pdf_path, 60);
 
-  if (!error && signed?.signedUrl) {
-    rapportiniConPdf.push(r);
-  }
-}
+      if (!signedError && signed?.signedUrl) {
+        rapportiniConPdf.push(r);
+      }
+    }
 
-archivioRapportini = rapportiniConPdf;
-renderArchivio(archivioRapportini);
+    archivioRapportini = rapportiniConPdf;
+    renderArchivio(archivioRapportini);
   }
 
   function filtraArchivio() {
@@ -824,13 +842,18 @@ renderArchivio(archivioRapportini);
   }
 
   async function creaSignedUrlPdf(path) {
+    if (!path || path === "null" || path === "undefined") {
+      alert("PDF non disponibile per questo rapportino.");
+      return null;
+    }
+
     const { data, error } = await supabaseClient
       .storage
       .from("pdf")
       .createSignedUrl(path, 60 * 10);
 
     if (error) {
-      alert("Errore apertura PDF: " + error.message);
+      alert("PDF non trovato nello Storage.");
       return null;
     }
 
@@ -860,7 +883,7 @@ renderArchivio(archivioRapportini);
   async function caricaCommittenti() {
     const { data, error } = await supabaseClient
       .from("committenti")
-      .select("id, ragione_sociale")
+      .select("id, ragione_sociale, codice, indirizzo, citta, cap, provincia, nazione, attivo")
       .eq("attivo", true)
       .order("ragione_sociale", { ascending: true });
 
@@ -872,9 +895,32 @@ renderArchivio(archivioRapportini);
     listaCommittenti = data || [];
   }
 
+  function committenteSelezionato() {
+    const id = document.getElementById("committente_id").value;
+    return listaCommittenti.find(x => x.id === id) || null;
+  }
+
   function nomeCommittente(id) {
     const c = listaCommittenti.find(x => x.id === id);
     return c ? c.ragione_sociale : "-";
+  }
+
+  function righeCommittente(c) {
+    if (!c) return ["-"];
+
+    const r = [];
+    if (c.ragione_sociale) r.push(c.ragione_sociale);
+    if (c.indirizzo) r.push(c.indirizzo);
+
+    const luogo = [c.cap, c.citta, c.provincia ? `(${c.provincia})` : ""]
+      .filter(Boolean)
+      .join(" ");
+
+    if (luogo.trim()) r.push(luogo);
+    if (c.nazione) r.push(c.nazione);
+    if (c.codice) r.push(`Codice: ${c.codice}`);
+
+    return r;
   }
 
   function cambiaTipoRapportino() {
@@ -1393,245 +1439,93 @@ renderArchivio(archivioRapportini);
     const doc = new jsPDF("p", "mm", "a4");
     const logoBase64 = await caricaLogo();
 
-    function intestazione(pagina) {
+    function intestazione(titolo, pagina) {
       if (logoBase64) {
-        doc.addImage(logoBase64, "JPEG", 12, 12, 28, 28);
+        doc.addImage(logoBase64, "JPEG", 16, 10, 26, 26);
       }
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(18);
-      doc.text("BIEMME ENGINEERING SRL", 52, 17);
+      doc.setFontSize(15);
+      doc.text("BIEMME ENGINEERING SRL", 105, 13, { align: "center" });
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
-      doc.text("VIA MONTELLO 43", 52, 25);
-      doc.text("20831", 52, 31);
-      doc.text("Monza", 76, 31);
-      doc.text("MB", 124, 31);
-      doc.text("Italia", 52, 37);
-      doc.text("PI 02323360962", 52, 43);
+      doc.text("Via Montello 43 - 20831 Monza (MB) - Italia", 105, 19, { align: "center" });
+      doc.text("P.IVA 02323360962", 105, 24, { align: "center" });
+      doc.text("Tel. 0362 244145 - Fax 0362 240467", 105, 29, { align: "center" });
+      doc.text("info@biemmeengineering.it - www.biemmeengineering.it", 105, 34, { align: "center" });
 
-      doc.text("Tel.", 145, 25);
-      doc.text("0362-244145", 162, 25);
-      doc.text("Fax", 145, 31);
-      doc.text("0362-240467", 162, 31);
-      doc.text("info@biemmeengineering.it", 145, 37);
-      doc.text("www.biemmeengineering.it", 145, 43);
+      doc.setLineWidth(0.3);
+      doc.line(12, 40, 198, 40);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.text(titolo, 105, 47, { align: "center" });
 
       if (pagina) {
-        doc.text(pagina, 188, 48);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.text(pagina, 190, 47, { align: "right" });
       }
     }
 
     return { doc, intestazione };
   }
 
-  async function generaPdfDosaggio(rapportinoId, dati) {
-    const { doc, intestazione } = await creaDocBase();
-
-    const committente = document.getElementById("committente_search").value || "-";
-    const cliente = dati.descrizione_cliente || "-";
-    const indirizzoCliente = dati.indirizzo_cliente || "-";
-    const tecnico = document.getElementById("nome_tecnico").value || "-";
-    const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
-
-    intestazione();
-
-    let y = 50;
-
-    doc.setLineWidth(0.3);
-    doc.rect(12, y, 186, 7);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.text("RAPPORTO ASSISTENZA TECNICA", 14, y + 5);
-
-    doc.setFont("helvetica", "normal");
-    doc.text("Data", 86, y + 5);
-    doc.text(formattaDataSolo(dati.data_intervento), 98, y + 5);
-    doc.text("Intervento n.", 132, y + 5);
-    doc.text(dati.numero_so || rapportinoId.substring(0, 8), 156, y + 5);
-
-    y += 10;
-
-    doc.rect(12, y, 186, 13);
-    doc.text("Numero SO", 18, y + 8);
-    doc.text(dati.numero_so || "-", 55, y + 8);
-
-    y += 16;
-
-    disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committente);
-    y += 31;
-
-    doc.rect(12, y, 186, 7);
-    doc.setFont("helvetica", "bold");
-    doc.text("INTERVENTO EFFETTUATO DA:", 14, y + 5);
-    doc.setFont("helvetica", "normal");
-    doc.text(tecnico.toUpperCase(), 68, y + 5);
-
-    y += 7;
-    y = disegnaTabellaOre(doc, y, "Ore trasferta", "Ore lavorate");
-    y += 16;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("RELAZIONE", 105, y, { align: "center" });
-
-    y += 8;
-
-    doc.rect(12, y, 186, 95);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-
-    const relazione = doc.splitTextToSize(dati.relazione || "-", 180);
-    doc.text(relazione, 14, y + 6);
-
-    doc.addPage();
-    intestazione();
-
-    disegnaSpeseMaterialiFirme(doc, 55, dati, tecnico, clienteFirma);
-
-    return doc.output("blob");
+  function testoAddebito(value) {
+    if (value === "cliente") return "In conto cliente";
+    if (value === "committente") return "In conto committente";
+    if (value === "garanzia") return "Garanzia";
+    return "-";
   }
 
-  async function generaPdfBiossido(rapportinoId, dati) {
-    const { doc, intestazione } = await creaDocBase();
-
-    const committente = document.getElementById("committente_search").value || "-";
-    const cliente = dati.descrizione_cliente || "-";
-    const indirizzoCliente = dati.indirizzo_cliente || "-";
-    const tecnico = document.getElementById("nome_tecnico").value || "-";
-    const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
-
-    const bio = {
-      tipologia_intervento: document.getElementById("bio_tipologia_intervento").value || "-",
-      tipologia_prodotto: document.getElementById("bio_tipologia_prodotto").value || "-",
-      matricola: document.getElementById("bio_matricola").value || "-",
-      codice: document.getElementById("bio_codice").value || "-",
-      modalita_dosaggio: document.getElementById("bio_modalita_dosaggio").value || "-",
-      concentrazione_impostata: document.getElementById("bio_concentrazione_impostata").value || "-"
-    };
-
-    intestazione("1 / 2");
-
-    let y = 50;
-
-    doc.rect(12, y, 186, 7);
+  function disegnaRigaLabelValore(doc, x, y, w, label, valore) {
+    doc.rect(x, y, w, 11);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("Assistenza su Produtt. CLO2", 14, y + 5);
-
+    doc.text(label, x + 3, y + 4);
     doc.setFont("helvetica", "normal");
-    doc.text("Data", 86, y + 5);
-    doc.text(formattaDataSolo(dati.data_intervento), 98, y + 5);
-    doc.text("Intervento n.", 132, y + 5);
-    doc.text(dati.numero_so || rapportinoId.substring(0, 8), 156, y + 5);
-
-    y += 10;
-
-    doc.rect(12, y, 186, 13);
-    doc.text("Numero SO", 18, y + 8);
-    doc.text(dati.numero_so || "-", 55, y + 8);
-
-    y += 16;
-
-    disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committente);
-    y += 31;
-
-    doc.rect(12, y, 186, 7);
-    doc.setFont("helvetica", "bold");
-    doc.text("INTERVENTO EFFETTUATO DA:", 14, y + 5);
-    doc.setFont("helvetica", "normal");
-    doc.text(tecnico, 68, y + 5);
-
-    y += 10;
-
-    doc.setFont("helvetica", "bold");
-    doc.text("Tipologia Intervento", 14, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(bio.tipologia_intervento, 55, y);
-
-    y += 6;
-
-    y = disegnaTabellaOre(doc, y, "Ore Trasferimento", "Ore Mano D'opera");
-    y += 8;
-
-    doc.setFont("helvetica", "bold");
-    doc.text("DATI PRODOTTO", 105, y, { align: "center" });
-
-    y += 6;
-
-    doc.rect(12, y, 186, 34);
-    doc.setFont("helvetica", "bold");
-    doc.text("Tipologia Prodotto", 16, y + 7);
-    doc.text("Nr Matricola", 78, y + 7);
-    doc.text("Codice", 140, y + 7);
-
-    doc.setFont("helvetica", "normal");
-    doc.text(bio.tipologia_prodotto, 16, y + 17);
-    doc.text(bio.matricola, 78, y + 17);
-    doc.text(bio.codice, 140, y + 17);
-
-    doc.setFont("helvetica", "bold");
-    doc.text("DATI PRODUTTORE", 105, y + 29, { align: "center" });
-
-    y += 40;
-
-    doc.rect(12, y, 186, 18);
-    doc.setFont("helvetica", "bold");
-    doc.text("Modalità Dosaggio", 16, y + 7);
-    doc.text("Concentrazione Impostata", 100, y + 7);
-
-    doc.setFont("helvetica", "normal");
-    doc.text(bio.modalita_dosaggio, 16, y + 15);
-    doc.text(bio.concentrazione_impostata, 100, y + 15);
-
-    doc.addPage();
-    intestazione("2 / 2");
-
-    y = 55;
-
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("RELAZIONE D'INTERVENTO", 105, y, { align: "center" });
-
-    y += 8;
-
-    doc.rect(12, y, 186, 60);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    const relazione = doc.splitTextToSize(dati.relazione || "-", 180);
-    doc.text(relazione, 14, y + 6);
-
-    y += 68;
-
-    disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma);
-
-    return doc.output("blob");
+    doc.text(String(valore || "-"), x + 3, y + 9);
   }
 
-  function disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committente) {
-    doc.rect(12, y, 93, 28);
-    doc.rect(105, y, 93, 28);
+  function disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committenteObj) {
+    doc.rect(12, y, 93, 38);
+    doc.rect(105, y, 93, 38);
 
     doc.setFont("helvetica", "bold");
-    doc.text("Cliente", 17, y + 6);
-    doc.text("Committente", 110, y + 6);
+    doc.setFontSize(8);
+    doc.text("CLIENTE", 17, y + 6);
+    doc.text("COMMITTENTE", 110, y + 6);
 
     doc.setFont("helvetica", "normal");
-    doc.text(cliente, 17, y + 14);
-    doc.text(indirizzoCliente, 17, y + 21);
-    doc.text(committente, 110, y + 14);
+
+    const righeCliente = [
+      cliente || "-",
+      indirizzoCliente || "-"
+    ];
+
+    righeCliente.forEach((r, i) => {
+      doc.text(String(r), 17, y + 14 + i * 5);
+    });
+
+    const righeComm = righeCommittente(committenteObj);
+    righeComm.slice(0, 5).forEach((r, i) => {
+      doc.text(String(r), 110, y + 14 + i * 5);
+    });
+
+    return y + 43;
   }
 
   function disegnaTabellaOre(doc, y, labelTrasferta, labelLavoro) {
     doc.rect(12, y, 186, 7);
     doc.setFont("helvetica", "bold");
-    doc.text("TIPOLOGIA ORE", 93, y + 5, { align: "center" });
+    doc.setFontSize(8);
+    doc.text("TIPOLOGIA ORE", 105, y + 5, { align: "center" });
 
     y += 7;
 
     doc.rect(12, y, 186, 7);
-    doc.text("da", 46, y + 5);
+    doc.text("da", 48, y + 5);
     doc.text("a", 88, y + 5);
     doc.text("da", 130, y + 5);
     doc.text("a", 172, y + 5);
@@ -1644,13 +1538,13 @@ renderArchivio(archivioRapportini);
       doc.text(label, 14, y + 5);
 
       if (lista[0]) {
-        doc.text(testoDataOra(lista[0].ora_inizio), 46, y + 5);
-        doc.text(testoDataOra(lista[0].ora_fine), 88, y + 5);
+        doc.text(testoDataOra(lista[0].ora_inizio), 42, y + 5);
+        doc.text(testoDataOra(lista[0].ora_fine), 82, y + 5);
       }
 
       if (lista[1]) {
-        doc.text(testoDataOra(lista[1].ora_inizio), 130, y + 5);
-        doc.text(testoDataOra(lista[1].ora_fine), 172, y + 5);
+        doc.text(testoDataOra(lista[1].ora_inizio), 124, y + 5);
+        doc.text(testoDataOra(lista[1].ora_fine), 164, y + 5);
       }
 
       y += 7;
@@ -1659,7 +1553,24 @@ renderArchivio(archivioRapportini);
     rigaOrePdf(labelTrasferta, gruppoOre("trasferta"));
     rigaOrePdf(labelLavoro, gruppoOre("lavoro"));
 
-    return y;
+    return y + 6;
+  }
+
+  function disegnaRelazione(doc, y, titolo, testo, altezza) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(titolo, 105, y, { align: "center" });
+
+    y += 5;
+
+    doc.rect(12, y, 186, altezza);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    const righe = doc.splitTextToSize(testo || "-", 178);
+    doc.text(righe, 16, y + 7);
+
+    return y + altezza + 8;
   }
 
   function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma) {
@@ -1704,14 +1615,14 @@ renderArchivio(archivioRapportini);
     const materiali = doc.splitTextToSize(dati.materiali_note || "-", 180);
     doc.text(materiali, 14, y + 15);
 
-    y += 35;
+    y += 42;
 
-    doc.rect(12, y, 60, 34);
-    doc.rect(72, y, 63, 34);
-    doc.rect(135, y, 63, 34);
+    doc.rect(12, y, 60, 38);
+    doc.rect(72, y, 63, 38);
+    doc.rect(135, y, 63, 38);
 
     const checkX = 16;
-    let checkY = y + 8;
+    let checkY = y + 9;
 
     function checkbox(label, value) {
       doc.rect(checkX, checkY - 3, 4, 4);
@@ -1720,7 +1631,7 @@ renderArchivio(archivioRapportini);
         doc.line(checkX + 4, checkY - 3, checkX, checkY + 1);
       }
       doc.text(label, checkX + 7, checkY);
-      checkY += 9;
+      checkY += 10;
     }
 
     doc.setFontSize(8);
@@ -1734,25 +1645,142 @@ renderArchivio(archivioRapportini);
 
     if (firmeDisegnate.firma_tecnico) {
       const imgTec = document.getElementById("firma_tecnico").toDataURL("image/png");
-      doc.addImage(imgTec, "PNG", 78, y + 10, 48, 16);
+      doc.addImage(imgTec, "PNG", 78, y + 11, 48, 18);
     }
 
     if (firmeDisegnate.firma_cliente) {
       const imgCli = document.getElementById("firma_cliente").toDataURL("image/png");
-      doc.addImage(imgCli, "PNG", 143, y + 10, 48, 16);
+      doc.addImage(imgCli, "PNG", 143, y + 11, 48, 18);
     }
 
     doc.setFont("helvetica", "normal");
-    doc.text(tecnico, 103, y + 30, { align: "center" });
-    doc.text(clienteFirma, 166, y + 30, { align: "center" });
+    doc.text(tecnico, 103, y + 34, { align: "center" });
+    doc.text(clienteFirma, 166, y + 34, { align: "center" });
 
-    y += 45;
+    y += 50;
 
     doc.setFontSize(8);
     doc.text("Autore dello Step:", 16, y);
     doc.text(tecnico, 58, y);
     doc.text(new Date().toLocaleDateString("it-IT"), 150, y);
     doc.text(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), 170, y);
+  }
+
+  async function generaPdfDosaggio(rapportinoId, dati) {
+    const { doc, intestazione } = await creaDocBase();
+
+    const committenteObj = committenteSelezionato();
+    const cliente = dati.descrizione_cliente || "-";
+    const indirizzoCliente = dati.indirizzo_cliente || "-";
+    const tecnico = document.getElementById("nome_tecnico").value || "-";
+    const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
+
+    intestazione("RAPPORTO ASSISTENZA TECNICA");
+
+    let y = 55;
+
+    disegnaRigaLabelValore(doc, 12, y, 60, "Data intervento", formattaDataSolo(dati.data_intervento));
+    disegnaRigaLabelValore(doc, 72, y, 60, "Numero SO", dati.numero_so || "-");
+    disegnaRigaLabelValore(doc, 132, y, 66, "Intervento n.", dati.numero_so || rapportinoId.substring(0, 8));
+
+    y += 16;
+
+    y = disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committenteObj);
+
+    doc.rect(12, y, 186, 11);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("INTERVENTO EFFETTUATO DA", 16, y + 7);
+    doc.setFont("helvetica", "normal");
+    doc.text(tecnico.toUpperCase(), 78, y + 7);
+
+    y += 16;
+
+    y = disegnaTabellaOre(doc, y, "Ore trasferta", "Ore lavorate");
+
+    y = disegnaRelazione(doc, y + 6, "RELAZIONE INTERVENTO", dati.relazione, 88);
+
+    doc.addPage();
+    intestazione("RAPPORTO ASSISTENZA TECNICA");
+    disegnaSpeseMaterialiFirme(doc, 58, dati, tecnico, clienteFirma);
+
+    return doc.output("blob");
+  }
+
+  async function generaPdfBiossido(rapportinoId, dati) {
+    const { doc, intestazione } = await creaDocBase();
+
+    const committenteObj = committenteSelezionato();
+    const cliente = dati.descrizione_cliente || "-";
+    const indirizzoCliente = dati.indirizzo_cliente || "-";
+    const tecnico = document.getElementById("nome_tecnico").value || "-";
+    const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
+
+    const bio = {
+      tipologia_intervento: document.getElementById("bio_tipologia_intervento").value || "-",
+      tipologia_prodotto: document.getElementById("bio_tipologia_prodotto").value || "-",
+      matricola: document.getElementById("bio_matricola").value || "-",
+      codice: document.getElementById("bio_codice").value || "-",
+      modalita_dosaggio: document.getElementById("bio_modalita_dosaggio").value || "-",
+      concentrazione_impostata: document.getElementById("bio_concentrazione_impostata").value || "-"
+    };
+
+    intestazione("ASSISTENZA PRODUTTORI CLO2", "1 / 2");
+
+    let y = 55;
+
+    disegnaRigaLabelValore(doc, 12, y, 60, "Data intervento", formattaDataSolo(dati.data_intervento));
+    disegnaRigaLabelValore(doc, 72, y, 60, "Numero SO", dati.numero_so || "-");
+    disegnaRigaLabelValore(doc, 132, y, 66, "Intervento n.", dati.numero_so || rapportinoId.substring(0, 8));
+
+    y += 16;
+
+    y = disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committenteObj);
+
+    disegnaRigaLabelValore(doc, 12, y, 93, "Intervento effettuato da", tecnico);
+    disegnaRigaLabelValore(doc, 105, y, 93, "Tipologia intervento", bio.tipologia_intervento);
+
+    y += 18;
+
+    y = disegnaTabellaOre(doc, y, "Ore trasferimento", "Ore mano d'opera");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("DATI PRODUTTORE", 105, y, { align: "center" });
+
+    y += 5;
+
+    doc.rect(12, y, 186, 38);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("Modello produttore", 16, y + 7);
+    doc.text("Nr matricola", 78, y + 7);
+    doc.text("Codice", 140, y + 7);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(bio.tipologia_prodotto, 16, y + 15);
+    doc.text(bio.matricola, 78, y + 15);
+    doc.text(bio.codice, 140, y + 15);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Modalità dosaggio", 16, y + 27);
+    doc.text("Concentrazione impostata", 100, y + 27);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(bio.modalita_dosaggio, 16, y + 35);
+    doc.text(bio.concentrazione_impostata, 100, y + 35);
+
+    doc.addPage();
+    intestazione("ASSISTENZA PRODUTTORI CLO2", "2 / 2");
+
+    y = 58;
+
+    y = disegnaRelazione(doc, y, "RELAZIONE INTERVENTO", dati.relazione, 66);
+
+    disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma);
+
+    return doc.output("blob");
   }
 
   function creaPercorsoPdf(rapportinoId, dati) {
