@@ -692,7 +692,7 @@
       }, 200);
 
       await caricaCommittenti();
-      impostaNomeTecnicoDaUtente();
+      await impostaNomeTecnicoDaUtente();
     }
   }
 
@@ -922,6 +922,23 @@
 
     return r;
   }
+async function impostaNomeTecnicoDaUtente() {
+  if (!utenteCorrente) return;
+
+  const { data, error } = await supabaseClient
+    .from("utenti")
+    .select("nome, email")
+    .eq("email", utenteCorrente.email)
+    .maybeSingle();
+
+  const campoTecnico = document.getElementById("nome_tecnico");
+
+  if (data && data.nome) {
+    campoTecnico.value = data.nome;
+  } else {
+    campoTecnico.value = "";
+  }
+}
 
   function cambiaTipoRapportino() {
     const tipo = document.getElementById("tipo_rapportino").value;
