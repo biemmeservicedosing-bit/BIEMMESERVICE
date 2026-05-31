@@ -9,181 +9,31 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f3f5f7;
-      margin: 0;
-      color: #111;
-    }
-
-    .app-header {
-      background: #254f7a;
-      color: white;
-      padding: 18px;
-      text-align: center;
-      font-size: 26px;
-      font-weight: bold;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-    }
-
-    .app-logo {
-      width: 56px;
-      height: 56px;
-      object-fit: contain;
-      background: white;
-      border-radius: 8px;
-      padding: 4px;
-    }
-
-    .container {
-      max-width: 760px;
-      margin: 24px auto;
-      background: white;
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
-    }
-
-    label {
-      display: block;
-      margin-top: 16px;
-      font-weight: bold;
-    }
-
-    input, textarea, select, button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-
-    textarea {
-      min-height: 120px;
-    }
-
-    button {
-      background: #254f7a;
-      color: white;
-      border: none;
-      margin-top: 20px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:disabled {
-      background: #999;
-      cursor: not-allowed;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .msg {
-      margin-top: 18px;
-      padding: 14px;
-      border-radius: 8px;
-    }
-
-    .danger {
-      background: #ffecec;
-      color: #900;
-    }
-
-    .success {
-      background: #eaffea;
-      color: #176b17;
-    }
-
-    #risultati_committenti {
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background: white;
-      margin-top: 6px;
-      max-height: 220px;
-      overflow-y: auto;
-    }
-
-    .risultato-committente {
-      padding: 12px;
-      border-bottom: 1px solid #eee;
-      cursor: pointer;
-    }
-
-    .risultato-committente:hover {
-      background: #eef4ff;
-    }
-
-    .ore-section, .firma-section {
-      margin-top: 24px;
-      border-top: 2px solid #222;
-      padding-top: 14px;
-    }
-
-    .plus-btn {
-      font-size: 34px;
-      height: 70px;
-    }
-
-    .ore-card, .firma-box {
-      border: 2px solid #254f7a;
-      border-radius: 14px;
-      padding: 14px;
-      margin-top: 14px;
-      background: #fff;
-    }
-
-    canvas {
-      width: 100%;
-      height: 180px;
-      border: 1px solid #bbb;
-      border-radius: 10px;
-      background: #fff;
-      touch-action: none;
-      display: block;
-      margin-top: 10px;
-    }
-
-    .secondary {
-      background: #777;
-    }
-
-    .modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-      z-index: 99;
-    }
-
-    .modal.hidden {
-      display: none;
-    }
-
-    .modal-box {
-      background: white;
-      width: 100%;
-      max-width: 620px;
-      border-radius: 16px;
-      padding: 22px;
-      max-height: 90vh;
-      overflow: auto;
-    }
-
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
+    body { font-family: Arial, sans-serif; background: #f3f5f7; margin: 0; color: #111; }
+    .app-header { background:#254f7a; color:white; padding:18px; text-align:center; font-size:26px; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:16px; }
+    .app-logo { width:56px; height:56px; object-fit:contain; background:white; border-radius:8px; padding:4px; }
+    .container { max-width:760px; margin:24px auto; background:white; padding:24px; border-radius:16px; box-shadow:0 2px 10px rgba(0,0,0,.12); }
+    label { display:block; margin-top:16px; font-weight:bold; }
+    input, textarea, select, button { width:100%; padding:12px; margin-top:6px; border-radius:8px; border:1px solid #ccc; font-size:16px; box-sizing:border-box; }
+    textarea { min-height:120px; }
+    button { background:#254f7a; color:white; border:none; margin-top:20px; font-weight:bold; cursor:pointer; }
+    button:disabled { background:#999; cursor:not-allowed; }
+    .hidden { display:none; }
+    .msg { margin-top:18px; padding:14px; border-radius:8px; }
+    .danger { background:#ffecec; color:#900; }
+    .success { background:#eaffea; color:#176b17; }
+    #risultati_committenti { border:1px solid #ccc; border-radius:8px; background:white; margin-top:6px; max-height:220px; overflow-y:auto; }
+    .risultato-committente { padding:12px; border-bottom:1px solid #eee; cursor:pointer; }
+    .risultato-committente:hover { background:#eef4ff; }
+    .ore-section, .firma-section { margin-top:24px; border-top:2px solid #222; padding-top:14px; }
+    .plus-btn { font-size:34px; height:70px; }
+    .ore-card, .firma-box { border:2px solid #254f7a; border-radius:14px; padding:14px; margin-top:14px; background:#fff; }
+    canvas { width:100%; height:180px; border:1px solid #bbb; border-radius:10px; background:#fff; touch-action:none; display:block; margin-top:10px; }
+    .secondary { background:#777; }
+    .modal { position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; padding:18px; z-index:99; }
+    .modal.hidden { display:none; }
+    .modal-box { background:white; width:100%; max-width:620px; border-radius:16px; padding:22px; max-height:90vh; overflow:auto; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   </style>
 </head>
 
@@ -196,21 +46,16 @@
 
 <div class="container" id="loginBox">
   <h2>Login</h2>
-
   <label>Email</label>
   <input type="email" id="email" />
-
   <label>Password</label>
   <input type="password" id="password" />
-
   <button onclick="login()">Accedi</button>
-
   <div id="loginMsg" class="msg hidden"></div>
 </div>
 
 <div class="container hidden" id="appBox">
   <h2>Nuovo rapportino</h2>
-
   <button onclick="logout()">Esci</button>
 
   <label>Data intervento</label>
@@ -236,7 +81,6 @@
   <div class="ore-section">
     <h3>Ore</h3>
     <button class="plus-btn" onclick="apriOre()">+</button>
-
     <div class="ore-card">
       <p><strong>Totali</strong></p>
       <p>Numero di righe: <span id="numero_righe_ore">0</span></p>
@@ -279,7 +123,6 @@
   </div>
 
   <button id="btnSalva" onclick="salvaRapportino()">Salva rapportino e archivia PDF</button>
-
   <div id="appMsg" class="msg hidden"></div>
 </div>
 
@@ -329,7 +172,6 @@
 <script>
   const SUPABASE_URL = "https://ehrmyyjojlgrdgxjsuzu.supabase.co";
   const SUPABASE_KEY = "sb_publishable_5GARNlBShnQXlLnQy-kCnA_JhlcIcr3";
-
   const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let listaCommittenti = [];
@@ -356,10 +198,7 @@
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    const { error } = await supabaseClient.auth.signInWithPassword({
-      email,
-      password
-    });
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
     if (error) {
       mostraMessaggio("loginMsg", error.message, "danger");
@@ -493,21 +332,8 @@
   function confermaOre() {
     const tipo = document.getElementById("modal_tipo_ore").value;
 
-    aggiungiIntervallo(
-      tipo,
-      "modal_data_inizio_1",
-      "modal_ora_inizio_1",
-      "modal_data_fine_1",
-      "modal_ora_fine_1"
-    );
-
-    aggiungiIntervallo(
-      tipo,
-      "modal_data_inizio_2",
-      "modal_ora_inizio_2",
-      "modal_data_fine_2",
-      "modal_ora_fine_2"
-    );
+    aggiungiIntervallo(tipo, "modal_data_inizio_1", "modal_ora_inizio_1", "modal_data_fine_1", "modal_ora_fine_1");
+    aggiungiIntervallo(tipo, "modal_data_inizio_2", "modal_ora_inizio_2", "modal_data_fine_2", "modal_ora_fine_2");
 
     aggiornaRiepilogoOre();
     chiudiOre();
@@ -544,7 +370,6 @@
 
   function formattaDataOra(valore) {
     const d = new Date(valore);
-
     return d.toLocaleString("it-IT", {
       day: "2-digit",
       month: "2-digit",
@@ -782,6 +607,11 @@
 
       mostraMessaggio("appMsg", "Rapportino salvato e PDF archiviato correttamente.", "success");
       btn.textContent = "Salvato correttamente";
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+
     } catch (err) {
       mostraMessaggio("appMsg", "Rapportino salvato, ma errore generazione PDF: " + err.message, "danger");
       return;
@@ -809,10 +639,7 @@
   async function caricaLogo() {
     try {
       const response = await fetch("logo.jpg");
-
-      if (!response.ok) {
-        return null;
-      }
+      if (!response.ok) return null;
 
       const blob = await response.blob();
 
@@ -826,153 +653,247 @@
     }
   }
 
+  function testoDataOra(valore) {
+    const d = new Date(valore);
+    return `${d.toLocaleDateString("it-IT")} ${d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}`;
+  }
+
+  function gruppoOre(tipo) {
+    return oreInserite.filter(o => o.tipo === tipo);
+  }
+
   async function generaPdfBlob(rapportinoId, dati) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
+    const doc = new jsPDF("p", "mm", "a4");
     const logoBase64 = await caricaLogo();
 
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let y = 15;
+    const committente = document.getElementById("committente_search").value || "-";
+    const cliente = dati.descrizione_cliente || "-";
+    const indirizzoCliente = dati.indirizzo_cliente || "-";
+    const tecnico = document.getElementById("nome_tecnico").value || "-";
+    const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
 
-    if (logoBase64) {
-      doc.addImage(logoBase64, "JPEG", 14, 10, 28, 28);
+    function intestazione() {
+      if (logoBase64) {
+        doc.addImage(logoBase64, "JPEG", 12, 12, 28, 28);
+      }
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text("BIEMME ENGINEERING SRL", 52, 17);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text("VIA MONTELLO 43", 52, 25);
+      doc.text("20831", 52, 31);
+      doc.text("Monza", 76, 31);
+      doc.text("MB", 124, 31);
+      doc.text("Italia", 52, 37);
+      doc.text("PI 02323360962", 52, 43);
+
+      doc.text("Tel.", 145, 25);
+      doc.text("0362-244145", 162, 25);
+      doc.text("Fax", 145, 31);
+      doc.text("0362-240467", 162, 31);
+      doc.text("info@biemmeengineering.it", 145, 37);
+      doc.text("www.biemmeengineering.it", 145, 43);
     }
 
-    doc.setFontSize(16);
-    doc.text("RAPPORTO DI ASSISTENZA TECNICA", 50, 18);
+    // PAGINA 1
+    intestazione();
 
-    doc.setFontSize(10);
-    doc.text(`Data: ${formattaDataSolo(dati.data_intervento)}`, 50, 26);
-    doc.text(`SO: ${dati.numero_so || "-"}`, 50, 32);
+    let y = 50;
 
-    y = 45;
+    doc.setLineWidth(0.3);
+    doc.rect(12, y, 186, 7);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("RAPPORTO ASSISTENZA TECNICA", 14, y + 5);
 
-    doc.setLineWidth(0.2);
-    doc.rect(14, y, pageWidth - 28, 18);
-    doc.setFontSize(10);
-    doc.text(`Numero rapporto: ${dati.numero_so || rapportinoId.substring(0, 8)}`, 18, y + 7);
-    doc.text(`ID: ${rapportinoId.substring(0, 8)}`, 18, y + 14);
-    y += 26;
-
-    doc.setFontSize(12);
-    doc.text("DATI CLIENTE", 14, y);
-    y += 5;
-
-    doc.rect(14, y, pageWidth - 28, 28);
-    doc.setFontSize(10);
-    doc.text(`Committente: ${document.getElementById("committente_search").value || "-"}`, 18, y + 7);
-    doc.text(`Cliente: ${dati.descrizione_cliente || "-"}`, 18, y + 14);
-    doc.text(`Indirizzo: ${dati.indirizzo_cliente || "-"}`, 18, y + 21);
-    y += 38;
-
-    doc.setFontSize(12);
-    doc.text("RELAZIONE INTERVENTO", 14, y);
-    y += 5;
-
-    const relazione = doc.splitTextToSize(dati.relazione || "-", pageWidth - 34);
-    const altezzaRelazione = Math.max(35, relazione.length * 5 + 10);
-
-    doc.rect(14, y, pageWidth - 28, altezzaRelazione);
-    doc.setFontSize(10);
-    doc.text(relazione, 18, y + 8);
-    y += altezzaRelazione + 10;
-
-    if (y > 230) {
-      doc.addPage();
-      y = 15;
-    }
-
-    doc.setFontSize(12);
-    doc.text("ORE", 14, y);
-    y += 6;
-
-    doc.setFontSize(9);
-    doc.rect(14, y, pageWidth - 28, 8);
-    doc.text("Tipo", 18, y + 5);
-    doc.text("Data", 58, y + 5);
-    doc.text("Da", 98, y + 5);
-    doc.text("A", 128, y + 5);
-    y += 8;
-
-    if (oreInserite.length === 0) {
-      doc.rect(14, y, pageWidth - 28, 8);
-      doc.text("-", 18, y + 5);
-      y += 8;
-    } else {
-      oreInserite.forEach(o => {
-        if (y > 270) {
-          doc.addPage();
-          y = 15;
-        }
-
-        const tipo = o.tipo === "trasferta" ? "Trasferta" : "Lavoro";
-        const inizio = new Date(o.ora_inizio);
-        const fine = new Date(o.ora_fine);
-
-        doc.rect(14, y, pageWidth - 28, 8);
-        doc.text(tipo, 18, y + 5);
-        doc.text(inizio.toLocaleDateString("it-IT"), 58, y + 5);
-        doc.text(inizio.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), 98, y + 5);
-        doc.text(fine.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), 128, y + 5);
-
-        y += 8;
-      });
-    }
+    doc.setFont("helvetica", "normal");
+    doc.text("Data", 86, y + 5);
+    doc.text(formattaDataSolo(dati.data_intervento), 98, y + 5);
+    doc.text("Intervento n.", 132, y + 5);
+    doc.text(dati.numero_so || rapportinoId.substring(0, 8), 156, y + 5);
 
     y += 10;
 
-    if (y > 230) {
-      doc.addPage();
-      y = 15;
+    doc.rect(12, y, 186, 13);
+    doc.text("Numero SO", 18, y + 8);
+    doc.text(dati.numero_so || "-", 55, y + 8);
+
+    y += 16;
+
+    doc.rect(12, y, 93, 28);
+    doc.rect(105, y, 93, 28);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Cliente", 17, y + 6);
+    doc.text("Committente", 110, y + 6);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(cliente, 17, y + 14);
+    doc.text(indirizzoCliente, 17, y + 21);
+
+    doc.text(committente, 110, y + 14);
+
+    y += 31;
+
+    doc.rect(12, y, 186, 7);
+    doc.setFont("helvetica", "bold");
+    doc.text("INTERVENTO EFFETTUATO DA:", 14, y + 5);
+    doc.setFont("helvetica", "normal");
+    doc.text(tecnico.toUpperCase(), 68, y + 5);
+
+    y += 7;
+
+    doc.rect(12, y, 186, 7);
+    doc.setFont("helvetica", "bold");
+    doc.text("TIPOLOGIA ORE", 93, y + 5, { align: "center" });
+
+    y += 7;
+
+    doc.rect(12, y, 186, 7);
+    doc.text("", 14, y + 5);
+    doc.text("da", 46, y + 5);
+    doc.text("a", 88, y + 5);
+    doc.text("da", 130, y + 5);
+    doc.text("a", 172, y + 5);
+
+    y += 7;
+
+    function rigaOrePdf(label, lista) {
+      doc.rect(12, y, 186, 7);
+      doc.setFont("helvetica", "normal");
+      doc.text(label, 14, y + 5);
+
+      if (lista[0]) {
+        doc.text(testoDataOra(lista[0].ora_inizio), 46, y + 5);
+        doc.text(testoDataOra(lista[0].ora_fine), 88, y + 5);
+      }
+
+      if (lista[1]) {
+        doc.text(testoDataOra(lista[1].ora_inizio), 130, y + 5);
+        doc.text(testoDataOra(lista[1].ora_fine), 172, y + 5);
+      }
+
+      y += 7;
     }
 
-    doc.setFontSize(12);
-    doc.text("MATERIALI E SPESE", 14, y);
-    y += 6;
+    rigaOrePdf("Ore trasferta", gruppoOre("trasferta"));
+    rigaOrePdf("Ore lavorate", gruppoOre("lavoro"));
 
-    doc.setFontSize(10);
-    doc.rect(14, y, pageWidth - 28, 30);
-    doc.text(`Km percorsi: ${dati.km_percorsi || "-"}`, 18, y + 7);
-    doc.text(`Tipo addebito: ${testoAddebito(dati.tipo_addebito)}`, 18, y + 14);
+    y += 16;
 
-    const materiali = doc.splitTextToSize(`Materiali: ${dati.materiali_note || "-"}`, pageWidth - 36);
-    doc.text(materiali, 18, y + 21);
-    y += 42;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("RELAZIONE", 105, y, { align: "center" });
 
-    if (y > 220) {
-      doc.addPage();
-      y = 15;
+    y += 8;
+
+    doc.rect(12, y, 186, 95);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+
+    const relazione = doc.splitTextToSize(dati.relazione || "-", 180);
+    doc.text(relazione, 14, y + 6);
+
+    // PAGINA 2
+    doc.addPage();
+    intestazione();
+
+    y = 55;
+
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+
+    const colW = 46.5;
+    const startX = 12;
+
+    doc.rect(startX, y, 186, 28);
+
+    doc.line(startX + colW, y, startX + colW, y + 28);
+    doc.line(startX + colW * 2, y, startX + colW * 2, y + 28);
+    doc.line(startX + colW * 3, y, startX + colW * 3, y + 28);
+
+    doc.line(startX, y + 9, startX + 186, y + 9);
+    doc.line(startX, y + 18, startX + 186, y + 18);
+
+    doc.text("Km percorsi", startX + colW / 2, y + 6, { align: "center" });
+    doc.text("Materiale extra", startX + colW * 1.5, y + 6, { align: "center" });
+    doc.text("Spese viaggio", startX + colW * 2.5, y + 6, { align: "center" });
+    doc.text("Parcheggio", startX + colW * 3.5, y + 6, { align: "center" });
+
+    doc.setFont("helvetica", "normal");
+    doc.text(String(dati.km_percorsi || ""), startX + colW / 2, y + 15, { align: "center" });
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Pranzi", startX + colW / 2, y + 24, { align: "center" });
+    doc.text("Cene", startX + colW * 1.5, y + 24, { align: "center" });
+    doc.text("Pernottamento", startX + colW * 2.5, y + 24, { align: "center" });
+    doc.text("Varie", startX + colW * 3.5, y + 24, { align: "center" });
+
+    y += 34;
+
+    doc.rect(12, y, 186, 35);
+    doc.setFont("helvetica", "bold");
+    doc.text("Materiali", 105, y + 6, { align: "center" });
+    doc.line(12, y + 9, 198, y + 9);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    const materiali = doc.splitTextToSize(dati.materiali_note || "-", 180);
+    doc.text(materiali, 14, y + 15);
+
+    y += 35;
+
+    doc.rect(12, y, 60, 34);
+    doc.rect(72, y, 63, 34);
+    doc.rect(135, y, 63, 34);
+
+    const checkX = 16;
+    let checkY = y + 8;
+
+    function checkbox(label, value) {
+      doc.rect(checkX, checkY - 3, 4, 4);
+      if (dati.tipo_addebito === value) {
+        doc.line(checkX, checkY - 3, checkX + 4, checkY + 1);
+        doc.line(checkX + 4, checkY - 3, checkX, checkY + 1);
+      }
+      doc.text(label, checkX + 7, checkY);
+      checkY += 9;
     }
 
-    doc.setFontSize(12);
-    doc.text("FIRME", 14, y);
-    y += 6;
+    doc.setFontSize(8);
+    checkbox("In conto cliente", "cliente");
+    checkbox("Garanzia", "garanzia");
+    checkbox("In conto committente", "committente");
 
-    doc.setFontSize(10);
-    doc.rect(14, y, 82, 42);
-    doc.rect(110, y, 82, 42);
-
-    doc.text("Firma tecnico", 18, y + 6);
-    doc.text("Firma cliente", 114, y + 6);
+    doc.setFont("helvetica", "bold");
+    doc.text("Firma Tecnico", 103, y + 7, { align: "center" });
+    doc.text("Visto per accettazione cliente", 166, y + 7, { align: "center" });
 
     if (firmeDisegnate.firma_tecnico) {
       const imgTec = document.getElementById("firma_tecnico").toDataURL("image/png");
-      doc.addImage(imgTec, "PNG", 20, y + 10, 65, 24);
+      doc.addImage(imgTec, "PNG", 78, y + 10, 48, 16);
     }
 
     if (firmeDisegnate.firma_cliente) {
       const imgCli = document.getElementById("firma_cliente").toDataURL("image/png");
-      doc.addImage(imgCli, "PNG", 116, y + 10, 65, 24);
+      doc.addImage(imgCli, "PNG", 143, y + 10, 48, 16);
     }
 
-    doc.text(document.getElementById("nome_tecnico").value || "-", 18, y + 38);
-    doc.text(document.getElementById("nome_cliente_firma").value || "-", 114, y + 38);
+    doc.setFont("helvetica", "normal");
+    doc.text(tecnico, 103, y + 30, { align: "center" });
+    doc.text(clienteFirma, 166, y + 30, { align: "center" });
 
-    y += 55;
+    y += 45;
 
     doc.setFontSize(8);
-    doc.text("BIEMME SERVICE - Rapporto generato automaticamente", 14, 287);
+    doc.text("Autore dello Step:", 16, y);
+    doc.text(tecnico, 58, y);
+    doc.text(new Date().toLocaleDateString("it-IT"), 150, y);
+    doc.text(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), 170, y);
 
     return doc.output("blob");
   }
