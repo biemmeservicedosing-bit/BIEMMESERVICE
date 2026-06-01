@@ -444,6 +444,222 @@
   }
 }
 
+
+.tech-shell {
+  width:min(1180px,calc(100% - 28px));
+  margin:28px auto;
+  display:grid;
+  grid-template-columns:240px 1fr;
+  gap:22px;
+}
+
+.tech-sidebar {
+  background:linear-gradient(180deg,var(--dark),var(--dark2));
+  border-radius:28px;
+  padding:20px;
+  color:white;
+  box-shadow:var(--shadow);
+  align-self:start;
+  position:sticky;
+  top:120px;
+}
+
+.tech-brand {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-bottom:24px;
+}
+
+.tech-brand img {
+  width:46px;
+  height:46px;
+  object-fit:contain;
+  border-radius:12px;
+  background:white;
+}
+
+.tech-brand strong {
+  display:block;
+  font-size:18px;
+  line-height:1;
+}
+
+.tech-brand span {
+  display:block;
+  color:#bff4ff;
+  font-size:12px;
+  margin-top:4px;
+}
+
+.tech-nav-btn {
+  width:100%;
+  margin-top:8px;
+  padding:13px 14px;
+  border-radius:16px;
+  background:rgba(255,255,255,.08);
+  box-shadow:none;
+  text-align:left;
+  font-size:15px;
+}
+
+.tech-nav-btn:hover,
+.tech-nav-btn.active {
+  background:rgba(24,199,232,.22);
+}
+
+.tech-sidebar-logout {
+  margin-top:24px;
+  background:#667085;
+  box-shadow:none;
+}
+
+.tech-main {
+  min-width:0;
+}
+
+.tech-page {
+  background:rgba(255,255,255,.97);
+  padding:28px;
+  border-radius:28px;
+  box-shadow:var(--shadow);
+  border:1px solid rgba(255,255,255,.9);
+}
+
+.tech-page-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:22px;
+}
+
+.tech-page-header h2 {
+  margin-bottom:6px;
+}
+
+.tech-page-header p {
+  margin:0;
+  color:var(--muted);
+  font-weight:650;
+}
+
+.tech-quick-actions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-top:18px;
+}
+
+.tech-big-card {
+  min-height:150px;
+  border:1px solid var(--border);
+  border-radius:24px;
+  background:linear-gradient(180deg,#fff,#f8fbfc);
+  box-shadow:0 8px 22px rgba(6,31,44,.08);
+  padding:22px;
+  text-align:left;
+  color:var(--dark);
+  margin-top:0;
+}
+
+.tech-big-card strong {
+  display:block;
+  font-size:22px;
+  line-height:1.15;
+}
+
+.tech-big-card span {
+  display:block;
+  margin-top:10px;
+  color:var(--muted);
+  font-size:14px;
+  font-weight:650;
+}
+
+.tech-big-card:hover {
+  transform:translateY(-1px);
+}
+
+.tech-form-card {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:22px;
+  box-shadow:0 8px 22px rgba(6,31,44,.08);
+}
+
+.tech-form-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+}
+
+.tech-form-header h3 {
+  margin:0;
+}
+
+.tech-small-btn {
+  width:auto;
+  min-width:130px;
+  margin-top:0;
+  padding:12px 14px;
+}
+
+.tech-profile-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:18px;
+}
+
+.tech-report-actions {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
+
+.tech-report-actions button {
+  margin-top:0;
+  padding:12px;
+  font-size:14px;
+}
+
+@media (max-width:900px) {
+  .tech-shell {
+    grid-template-columns:1fr;
+  }
+
+  .tech-sidebar {
+    position:static;
+  }
+
+  .tech-brand {
+    margin-bottom:14px;
+  }
+
+  .tech-nav-btn {
+    text-align:center;
+  }
+
+  .tech-page-header,
+  .tech-form-header {
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .tech-small-btn {
+    width:100%;
+  }
+
+  .tech-quick-actions,
+  .tech-profile-grid {
+    grid-template-columns:1fr;
+  }
+}
+
 .dashboard-cards {
   display:grid;
   grid-template-columns:repeat(3, 1fr);
@@ -1000,133 +1216,291 @@
 
 </div>
 
-<div class="container hidden" id="appBox">
-  <div class="top-actions">
-    <h2>Nuovo rapportino</h2>
-    <button class="logout-btn" onclick="logout()">Esci</button>
-  </div>
+<div class="tech-shell hidden" id="appBox">
 
-  <label>Tipo rapportino</label>
-  <select id="tipo_rapportino" onchange="cambiaTipoRapportino()">
-    <option value="dosaggio">Sistemi di dosaggio</option>
-    <option value="biossido">Biossido di cloro</option>
-  </select>
-
-  <label>Data intervento</label>
-  <input type="date" id="data_intervento" />
-
-  <label>Numero SO</label>
-  <input type="text" id="numero_so" placeholder="Facoltativo" />
-
-  <label>Committente</label>
-  <input type="text" id="committente_search" placeholder="Scrivi per cercare il committente..." oninput="cercaCommittente()" autocomplete="off" />
-  <input type="hidden" id="committente_id" />
-  <div id="risultati_committenti" class="hidden"></div>
-
-  <label>Cliente</label>
-  <input type="text" id="descrizione_cliente" placeholder="Nome cliente / hotel / stabilimento" />
-
-  <label>Indirizzo cliente</label>
-  <input type="text" id="indirizzo_cliente" placeholder="Indirizzo intervento" />
-
-  <div id="biossidoBox" class="biossido-section hidden">
-    <h3>Dati produttore biossido di cloro</h3>
-
-    <div class="sub-card">
-      <label>Tipologia intervento</label>
-      <select id="bio_tipologia_intervento">
-        <option value="">Seleziona</option>
-        <option value="Service">Service</option>
-        <option value="Nuova installazione">Nuova installazione</option>
-        <option value="Da richiesta">Da richiesta</option>
-      </select>
-
-      <label>Modello produttore</label>
-      <input type="text" id="bio_tipologia_prodotto" placeholder="Es. OCD-162 5" />
-
-      <label>Nr matricola</label>
-      <input type="text" id="bio_matricola" placeholder="Es. S/N: 1000098" />
-
-      <label>Codice</label>
-      <input type="text" id="bio_codice" placeholder="Es. 95735160" />
-
-      <label>Modalità dosaggio</label>
-      <input type="text" id="bio_modalita_dosaggio" placeholder="Es. Proporzionale" />
-
-      <label>Concentrazione impostata</label>
-      <input type="text" id="bio_concentrazione_impostata" />
-    </div>
-  </div>
-
-  <label>Relazione intervento</label>
-  <textarea id="relazione"></textarea>
-
-  <div class="ore-section">
-    <h3>Ore</h3>
-    <button class="plus-btn" onclick="apriOre()">+</button>
-
-    <div class="ore-card">
-      <p><strong>Totali</strong></p>
-      <p>Numero di righe: <span id="numero_righe_ore">0</span></p>
-      <div id="riepilogo_ore"></div>
-    </div>
-  </div>
-
-  <div class="spese-section">
-    <h3>Spese</h3>
-
-    <label>Km percorsi</label>
-    <input type="number" id="km_percorsi" placeholder="0" />
-
-    <label>Spese viaggio</label>
-    <input type="number" id="spese_viaggio" placeholder="0" />
-
-    <label>Parcheggio</label>
-    <input type="number" id="parcheggio" placeholder="0" />
-
-    <label>Pranzi</label>
-    <input type="number" id="pranzi" placeholder="0" />
-
-    <label>Cene</label>
-    <input type="number" id="cene" placeholder="0" />
-
-    <label>Pernottamento</label>
-    <input type="number" id="pernottamento" placeholder="0" />
-  </div>
-
-  <label>Materiali utilizzati</label>
-  <textarea id="materiali_note"></textarea>
-
-  <label>Tipo addebito</label>
-  <select id="tipo_addebito">
-    <option value="">Seleziona</option>
-    <option value="cliente">In conto cliente</option>
-    <option value="committente">In conto committente</option>
-    <option value="garanzia">Garanzia</option>
-  </select>
-
-  <div class="firma-section">
-    <h3>Firme</h3>
-
-    <div class="firma-box">
-      <h4>Firma tecnico</h4>
-      <label>Nome tecnico</label>
-      <input type="text" id="nome_tecnico" placeholder="Nome e cognome tecnico" autocomplete="off" />
-      <canvas id="firma_tecnico"></canvas>
-      <button class="secondary" onclick="pulisciFirma('firma_tecnico')">Cancella firma tecnico</button>
+  <aside class="tech-sidebar">
+    <div class="tech-brand">
+      <img src="logo.jpg" alt="BIEMME" />
+      <div>
+        <strong>BIEMME</strong>
+        <span>Service Tecnico</span>
+      </div>
     </div>
 
-    <div class="firma-box">
-      <h4>Firma cliente</h4>
-      <label>Nome cliente firmatario</label>
-      <input type="text" id="nome_cliente_firma" placeholder="Nome e cognome cliente" />
-      <canvas id="firma_cliente"></canvas>
-      <button class="secondary" onclick="pulisciFirma('firma_cliente')">Cancella firma cliente</button>
-    </div>
-  </div>
+    <button class="tech-nav-btn active" id="tech_nav_home" onclick="showTechPage('home')">Home</button>
+    <button class="tech-nav-btn" id="tech_nav_nuovo" onclick="showTechPage('nuovo')">Nuovo rapportino</button>
+    <button class="tech-nav-btn" id="tech_nav_miei" onclick="showTechPage('miei')">I miei rapportini</button>
+    <button class="tech-nav-btn" id="tech_nav_calendario" onclick="showTechPage('calendario')">Calendario</button>
+    <button class="tech-nav-btn" id="tech_nav_profilo" onclick="showTechPage('profilo')">Profilo</button>
 
-  <button id="btnSalva" onclick="salvaRapportino()">Salva rapportino e archivia PDF</button>
-  <div id="appMsg" class="msg hidden"></div>
+    <button class="tech-sidebar-logout" onclick="logout()">Esci</button>
+  </aside>
+
+  <main class="tech-main">
+
+    <section class="tech-page" id="techHomePage">
+      <div class="tech-page-header">
+        <div>
+          <h2 id="tech_home_titolo">Home tecnico</h2>
+          <p>Riepilogo delle tue attività del mese corrente.</p>
+        </div>
+        <button class="tech-small-btn" onclick="refreshTecnico()">Aggiorna</button>
+      </div>
+
+      <div class="dashboard-cards">
+        <div class="dashboard-card">
+          <span>Rapportini mese</span>
+          <strong id="tech_stat_rapportini_mese">0</strong>
+        </div>
+        <div class="dashboard-card">
+          <span>Ore registrate</span>
+          <strong id="tech_stat_ore_mese">0</strong>
+        </div>
+        <div class="dashboard-card">
+          <span>Km registrati</span>
+          <strong id="tech_stat_km_mese">0</strong>
+        </div>
+      </div>
+
+      <div class="tech-quick-actions">
+        <button class="tech-big-card" onclick="showTechPage('nuovo')">
+          <strong>Nuovo rapportino</strong>
+          <span>Compila un nuovo intervento tecnico.</span>
+        </button>
+
+        <button class="tech-big-card" onclick="showTechPage('miei')">
+          <strong>I miei rapportini</strong>
+          <span>Visualizza e scarica i tuoi PDF archiviati.</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="tech-page hidden" id="techNuovoPage">
+      <div class="tech-page-header">
+        <div>
+          <h2>Nuovo rapportino</h2>
+          <p>Scegli il tipo di rapportino da compilare.</p>
+        </div>
+      </div>
+
+      <div id="techSceltaRapportino" class="tech-quick-actions">
+        <button class="tech-big-card" onclick="iniziaNuovoRapportino('dosaggio')">
+          <strong>Nuovo rapporto sistemi di dosaggio</strong>
+          <span>Interventi su pompe, impianti e sistemi di dosaggio.</span>
+        </button>
+
+        <button class="tech-big-card" onclick="iniziaNuovoRapportino('biossido')">
+          <strong>Nuovo rapporto impianti biossido di cloro</strong>
+          <span>Assistenza produttori CLO2 e relativi controlli.</span>
+        </button>
+      </div>
+
+      <div id="techFormRapportino" class="tech-form-card hidden">
+
+        <div class="tech-form-header">
+          <h3 id="tech_form_titolo">Nuovo rapportino</h3>
+          <button class="secondary tech-small-btn" onclick="tornaSceltaRapportino()">Cambia tipo</button>
+        </div>
+
+        <label>Tipo rapportino</label>
+        <select id="tipo_rapportino" onchange="cambiaTipoRapportino()">
+          <option value="dosaggio">Sistemi di dosaggio</option>
+          <option value="biossido">Biossido di cloro</option>
+        </select>
+
+        <label>Data intervento</label>
+        <input type="date" id="data_intervento" />
+
+        <label>Numero SO</label>
+        <input type="text" id="numero_so" placeholder="Facoltativo" />
+
+        <label>Committente</label>
+        <input type="text" id="committente_search" placeholder="Scrivi per cercare il committente..." oninput="cercaCommittente()" autocomplete="off" />
+        <input type="hidden" id="committente_id" />
+        <div id="risultati_committenti" class="hidden"></div>
+
+        <label>Cliente</label>
+        <input type="text" id="descrizione_cliente" placeholder="Nome cliente / hotel / stabilimento" />
+
+        <label>Indirizzo cliente</label>
+        <input type="text" id="indirizzo_cliente" placeholder="Indirizzo intervento" />
+
+        <div id="biossidoBox" class="biossido-section hidden">
+          <h3>Dati produttore biossido di cloro</h3>
+
+          <div class="sub-card">
+            <label>Tipologia intervento</label>
+            <select id="bio_tipologia_intervento">
+              <option value="">Seleziona</option>
+              <option value="Service">Service</option>
+              <option value="Nuova installazione">Nuova installazione</option>
+              <option value="Da richiesta">Da richiesta</option>
+            </select>
+
+            <label>Modello produttore</label>
+            <input type="text" id="bio_tipologia_prodotto" placeholder="Es. OCD-162 5" />
+
+            <label>Nr matricola</label>
+            <input type="text" id="bio_matricola" placeholder="Es. S/N: 1000098" />
+
+            <label>Codice</label>
+            <input type="text" id="bio_codice" placeholder="Es. 95735160" />
+
+            <label>Modalità dosaggio</label>
+            <input type="text" id="bio_modalita_dosaggio" placeholder="Es. Proporzionale" />
+
+            <label>Concentrazione impostata</label>
+            <input type="text" id="bio_concentrazione_impostata" />
+          </div>
+        </div>
+
+        <label>Relazione intervento</label>
+        <textarea id="relazione"></textarea>
+
+        <div class="ore-section">
+          <h3>Ore</h3>
+          <button class="plus-btn" onclick="apriOre()">+</button>
+
+          <div class="ore-card">
+            <p><strong>Totali</strong></p>
+            <p>Numero di righe: <span id="numero_righe_ore">0</span></p>
+            <div id="riepilogo_ore"></div>
+          </div>
+        </div>
+
+        <div class="spese-section">
+          <h3>Spese</h3>
+
+          <label>Km percorsi</label>
+          <input type="number" id="km_percorsi" placeholder="0" />
+
+          <label>Spese viaggio</label>
+          <input type="number" id="spese_viaggio" placeholder="0" />
+
+          <label>Parcheggio</label>
+          <input type="number" id="parcheggio" placeholder="0" />
+
+          <label>Pranzi</label>
+          <input type="number" id="pranzi" placeholder="0" />
+
+          <label>Cene</label>
+          <input type="number" id="cene" placeholder="0" />
+
+          <label>Pernottamento</label>
+          <input type="number" id="pernottamento" placeholder="0" />
+        </div>
+
+        <label>Materiali utilizzati</label>
+        <textarea id="materiali_note"></textarea>
+
+        <label>Tipo addebito</label>
+        <select id="tipo_addebito">
+          <option value="">Seleziona</option>
+          <option value="cliente">In conto cliente</option>
+          <option value="committente">In conto committente</option>
+          <option value="garanzia">Garanzia</option>
+        </select>
+
+        <div class="firma-section">
+          <h3>Firme</h3>
+
+          <div class="firma-box">
+            <h4>Firma tecnico</h4>
+            <label>Nome tecnico</label>
+            <input type="text" id="nome_tecnico" placeholder="Nome e cognome tecnico" autocomplete="off" />
+            <canvas id="firma_tecnico"></canvas>
+            <button class="secondary" onclick="pulisciFirma('firma_tecnico')">Cancella firma tecnico</button>
+          </div>
+
+          <div class="firma-box">
+            <h4>Firma cliente</h4>
+            <label>Nome cliente firmatario</label>
+            <input type="text" id="nome_cliente_firma" placeholder="Nome e cognome cliente" />
+            <canvas id="firma_cliente"></canvas>
+            <button class="secondary" onclick="pulisciFirma('firma_cliente')">Cancella firma cliente</button>
+          </div>
+        </div>
+
+        <button id="btnSalva" onclick="salvaRapportino()">Salva rapportino e archivia PDF</button>
+        <div id="appMsg" class="msg hidden"></div>
+      </div>
+    </section>
+
+    <section class="tech-page hidden" id="techMieiPage">
+      <div class="tech-page-header">
+        <div>
+          <h2>I miei rapportini</h2>
+          <p>Archivio personale dei rapportini compilati da te.</p>
+        </div>
+        <button class="tech-small-btn" onclick="caricaMieiRapportini()">Aggiorna</button>
+      </div>
+
+      <div class="admin-filters">
+        <input type="text" id="miei_cerca" placeholder="Cerca cliente, committente, SO..." oninput="renderMieiRapportini()" />
+        <select id="miei_tipo" onchange="renderMieiRapportini()">
+          <option value="">Tutti i tipi</option>
+          <option value="dosaggio">Sistemi di dosaggio</option>
+          <option value="biossido">Biossido di cloro</option>
+        </select>
+        <input type="date" id="miei_data" onchange="renderMieiRapportini()" />
+      </div>
+
+      <div id="mieiRapportiniLista" class="admin-list"></div>
+    </section>
+
+    <section class="tech-page hidden" id="techCalendarioPage">
+      <div class="tech-page-header">
+        <div>
+          <h2>Calendario</h2>
+          <p>Area pronta per interventi programmati e richiami condivisi.</p>
+        </div>
+      </div>
+
+      <div class="dashboard-panel">
+        <h3>Calendario BIEMME</h3>
+        <p class="admin-empty">
+          Qui vedrai gli interventi programmati, i richiami biossido e le attività assegnate.
+        </p>
+        <p class="admin-empty">
+          Per ora la sezione è predisposta graficamente; la collegheremo al calendario interno nella prossima fase.
+        </p>
+      </div>
+    </section>
+
+    <section class="tech-page hidden" id="techProfiloPage">
+      <div class="tech-page-header">
+        <div>
+          <h2>Profilo</h2>
+          <p>Dati account e cambio password.</p>
+        </div>
+      </div>
+
+      <div class="tech-profile-grid">
+        <div class="dashboard-panel">
+          <h3>Dati profilo</h3>
+          <div class="stat-row"><span>Nome</span><strong id="profilo_nome">-</strong></div>
+          <div class="stat-row"><span>Email</span><strong id="profilo_email">-</strong></div>
+          <div class="stat-row"><span>Ruolo</span><strong id="profilo_ruolo">-</strong></div>
+        </div>
+
+        <div class="dashboard-panel">
+          <h3>Cambia password</h3>
+
+          <label>Nuova password</label>
+          <input type="password" id="profilo_password_nuova" placeholder="Minimo 6 caratteri" />
+
+          <label>Ripeti nuova password</label>
+          <input type="password" id="profilo_password_conferma" placeholder="Ripeti password" />
+
+          <button onclick="cambiaPasswordTecnico()">Aggiorna password</button>
+
+          <div id="profiloMsg" class="msg hidden"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
 </div>
 
 <div class="modal hidden" id="modalAnteprima">
@@ -1203,6 +1577,8 @@
   let archivioFiltrato = [];
   let paginaArchivio = 1;
   const rapportiniPerPagina = 20;
+  let mieiRapportini = [];
+  let mieOre = [];
 
   const firmeDisegnate = {
     firma_tecnico: false,
@@ -1244,13 +1620,15 @@
       document.getElementById("adminBox").classList.add("hidden");
       document.getElementById("appBox").classList.remove("hidden");
 
+      await caricaCommittenti();
+      impostaNomeTecnicoDaUtente();
+      await caricaMieiRapportini();
+      showTechPage("home");
+
       setTimeout(() => {
         ridimensionaCanvas("firma_tecnico");
         ridimensionaCanvas("firma_cliente");
-      }, 200);
-
-      await caricaCommittenti();
-      impostaNomeTecnicoDaUtente();
+      }, 300);
     }
   }
 
@@ -1301,6 +1679,258 @@
 
   return "-";
 }
+
+
+function showTechPage(page) {
+  const pages = {
+    home: "techHomePage",
+    nuovo: "techNuovoPage",
+    miei: "techMieiPage",
+    calendario: "techCalendarioPage",
+    profilo: "techProfiloPage"
+  };
+
+  Object.values(pages).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
+
+  Object.keys(pages).forEach(key => {
+    const btn = document.getElementById("tech_nav_" + key);
+    if (btn) btn.classList.remove("active");
+  });
+
+  const pageEl = document.getElementById(pages[page]);
+  if (pageEl) pageEl.classList.remove("hidden");
+
+  const btn = document.getElementById("tech_nav_" + page);
+  if (btn) btn.classList.add("active");
+
+  if (page === "home") {
+    aggiornaHomeTecnico();
+  }
+
+  if (page === "miei") {
+    renderMieiRapportini();
+  }
+
+  if (page === "profilo") {
+    aggiornaProfiloTecnico();
+  }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function iniziaNuovoRapportino(tipo) {
+  document.getElementById("techSceltaRapportino").classList.add("hidden");
+  document.getElementById("techFormRapportino").classList.remove("hidden");
+
+  document.getElementById("tipo_rapportino").value = tipo;
+  cambiaTipoRapportino();
+
+  const titolo = tipo === "biossido"
+    ? "Nuovo rapporto impianti biossido di cloro"
+    : "Nuovo rapporto sistemi di dosaggio";
+
+  document.getElementById("tech_form_titolo").textContent = titolo;
+
+  setTimeout(() => {
+    ridimensionaCanvas("firma_tecnico");
+    ridimensionaCanvas("firma_cliente");
+  }, 200);
+}
+
+function tornaSceltaRapportino() {
+  if (modalitaModifica) return;
+
+  document.getElementById("techFormRapportino").classList.add("hidden");
+  document.getElementById("techSceltaRapportino").classList.remove("hidden");
+}
+
+async function refreshTecnico() {
+  await caricaMieiRapportini();
+  aggiornaHomeTecnico();
+  alert("Dati aggiornati.");
+}
+
+async function caricaMieiRapportini() {
+  if (!utenteCorrente) return;
+
+  const { data, error } = await supabaseClient
+    .from("rapportini")
+    .select("id, data_intervento, numero_so, descrizione_cliente, indirizzo_cliente, committente_id, tipo_rapportino, tecnico_nome, km_percorsi, pdf_path, pdf_generato_at, created_at")
+    .eq("created_by", utenteCorrente.id)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) {
+    const box = document.getElementById("mieiRapportiniLista");
+    if (box) box.innerHTML = "<p>Errore caricamento rapportini: " + error.message + "</p>";
+    return;
+  }
+
+  mieiRapportini = data || [];
+
+  const ids = mieiRapportini.map(r => r.id);
+  mieOre = [];
+
+  if (ids.length > 0) {
+    const { data: oreData } = await supabaseClient
+      .from("rapportino_ore")
+      .select("rapportino_id, ora_inizio, ora_fine")
+      .in("rapportino_id", ids);
+
+    mieOre = oreData || [];
+  }
+
+  aggiornaHomeTecnico();
+  renderMieiRapportini();
+}
+
+function aggiornaHomeTecnico() {
+  const titolo = document.getElementById("tech_home_titolo");
+  if (titolo) {
+    titolo.textContent = `Ciao ${tecnicoNomeCorrente || "tecnico"}`;
+  }
+
+  const oggi = new Date();
+  const mese = oggi.getMonth();
+  const anno = oggi.getFullYear();
+
+  const rapportiniMese = (mieiRapportini || []).filter(r => {
+    if (!r.data_intervento) return false;
+    const d = new Date(r.data_intervento);
+    return d.getMonth() === mese && d.getFullYear() === anno;
+  });
+
+  const idsMese = rapportiniMese.map(r => r.id);
+
+  const oreMese = (mieOre || []).reduce((tot, o) => {
+    if (!idsMese.includes(o.rapportino_id)) return tot;
+    if (!o.ora_inizio || !o.ora_fine) return tot;
+
+    const diff = (new Date(o.ora_fine) - new Date(o.ora_inizio)) / 1000 / 60 / 60;
+    return diff > 0 ? tot + diff : tot;
+  }, 0);
+
+  const kmMese = rapportiniMese.reduce((tot, r) => {
+    return tot + Number(r.km_percorsi || 0);
+  }, 0);
+
+  const rEl = document.getElementById("tech_stat_rapportini_mese");
+  const oEl = document.getElementById("tech_stat_ore_mese");
+  const kEl = document.getElementById("tech_stat_km_mese");
+
+  if (rEl) rEl.textContent = rapportiniMese.length;
+  if (oEl) oEl.textContent = oreMese.toFixed(1);
+  if (kEl) kEl.textContent = Math.round(kmMese);
+}
+
+function renderMieiRapportini() {
+  const box = document.getElementById("mieiRapportiniLista");
+  if (!box) return;
+
+  const cercaEl = document.getElementById("miei_cerca");
+  const tipoEl = document.getElementById("miei_tipo");
+  const dataEl = document.getElementById("miei_data");
+
+  const cerca = cercaEl ? cercaEl.value.toLowerCase() : "";
+  const tipo = tipoEl ? tipoEl.value : "";
+  const data = dataEl ? dataEl.value : "";
+
+  const lista = (mieiRapportini || []).filter(r => {
+    const committente = nomeCommittente(r.committente_id).toLowerCase();
+    const testo = [
+      r.numero_so,
+      r.descrizione_cliente,
+      r.indirizzo_cliente,
+      committente
+    ].join(" ").toLowerCase();
+
+    const okCerca = !cerca || testo.includes(cerca);
+    const okTipo = !tipo || r.tipo_rapportino === tipo;
+    const okData = !data || r.data_intervento === data;
+
+    return okCerca && okTipo && okData;
+  });
+
+  box.innerHTML = "";
+
+  if (lista.length === 0) {
+    box.innerHTML = "<p>Nessun rapportino trovato.</p>";
+    return;
+  }
+
+  lista.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "admin-card";
+
+    const tipoLabel = r.tipo_rapportino === "biossido" ? "Biossido di cloro" : "Sistemi di dosaggio";
+    const committente = nomeCommittente(r.committente_id);
+
+    card.innerHTML = `
+      <div class="admin-card-title">${r.descrizione_cliente || "-"}</div>
+      <div class="admin-card-meta">
+        <strong>Data:</strong> ${formattaDataSolo(r.data_intervento)}<br>
+        <strong>Tipo:</strong> ${tipoLabel}<br>
+        <strong>Committente:</strong> ${committente}<br>
+        <strong>SO:</strong> ${r.numero_so || "-"}<br>
+        <strong>PDF:</strong> ${r.pdf_path ? "Disponibile" : "Non generato"}
+      </div>
+      <div class="tech-report-actions">
+        <button ${r.pdf_path ? "" : "disabled"} onclick="anteprimaPdf('${r.pdf_path || ""}')">Anteprima</button>
+        <button ${r.pdf_path ? "" : "disabled"} onclick="scaricaPdf('${r.pdf_path || ""}')">Scarica</button>
+      </div>
+    `;
+
+    box.appendChild(card);
+  });
+}
+
+function aggiornaProfiloTecnico() {
+  const nome = document.getElementById("profilo_nome");
+  const email = document.getElementById("profilo_email");
+  const ruolo = document.getElementById("profilo_ruolo");
+
+  if (nome) nome.textContent = tecnicoNomeCorrente || "-";
+  if (email) email.textContent = utenteCorrente?.email || "-";
+  if (ruolo) ruolo.textContent = ruoloCorrente || "-";
+}
+
+async function cambiaPasswordTecnico() {
+  const nuova = document.getElementById("profilo_password_nuova").value.trim();
+  const conferma = document.getElementById("profilo_password_conferma").value.trim();
+
+  if (!nuova || !conferma) {
+    mostraMessaggio("profiloMsg", "Inserisci e conferma la nuova password.", "danger");
+    return;
+  }
+
+  if (nuova.length < 6) {
+    mostraMessaggio("profiloMsg", "La password deve avere almeno 6 caratteri.", "danger");
+    return;
+  }
+
+  if (nuova !== conferma) {
+    mostraMessaggio("profiloMsg", "Le password non coincidono.", "danger");
+    return;
+  }
+
+  const { error } = await supabaseClient.auth.updateUser({
+    password: nuova
+  });
+
+  if (error) {
+    mostraMessaggio("profiloMsg", "Errore cambio password: " + error.message, "danger");
+    return;
+  }
+
+  document.getElementById("profilo_password_nuova").value = "";
+  document.getElementById("profilo_password_conferma").value = "";
+
+  mostraMessaggio("profiloMsg", "Password aggiornata correttamente.", "success");
+}
+
 
 async function login() {
     const email = document.getElementById("email").value;
@@ -1972,6 +2602,8 @@ async function modificaRapportino(id) {
 
   document.getElementById("adminBox").classList.add("hidden");
   document.getElementById("appBox").classList.remove("hidden");
+  showTechPage("nuovo");
+  iniziaNuovoRapportino(data.tipo_rapportino || "dosaggio");
 
   await caricaCommittenti();
 
