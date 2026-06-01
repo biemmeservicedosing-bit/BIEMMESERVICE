@@ -301,6 +301,149 @@
       grid-template-columns:1fr 90px 90px;
       gap:12px;
     }
+
+.admin-shell {
+  width:min(1180px,calc(100% - 28px));
+  margin:28px auto;
+  display:grid;
+  grid-template-columns:240px 1fr;
+  gap:22px;
+}
+
+.admin-sidebar {
+  background:linear-gradient(180deg,var(--dark),var(--dark2));
+  border-radius:28px;
+  padding:20px;
+  color:white;
+  box-shadow:var(--shadow);
+  align-self:start;
+  position:sticky;
+  top:120px;
+}
+
+.admin-brand {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-bottom:24px;
+}
+
+.admin-brand img {
+  width:46px;
+  height:46px;
+  object-fit:contain;
+  border-radius:12px;
+  background:white;
+}
+
+.admin-brand strong {
+  display:block;
+  font-size:18px;
+  line-height:1;
+}
+
+.admin-brand span {
+  display:block;
+  color:#bff4ff;
+  font-size:12px;
+  margin-top:4px;
+}
+
+.admin-nav-btn {
+  width:100%;
+  margin-top:8px;
+  padding:13px 14px;
+  border-radius:16px;
+  background:rgba(255,255,255,.08);
+  box-shadow:none;
+  text-align:left;
+  font-size:15px;
+}
+
+.admin-nav-btn:hover,
+.admin-nav-btn.active {
+  background:rgba(24,199,232,.22);
+}
+
+.admin-sidebar-logout {
+  margin-top:24px;
+  background:#667085;
+  box-shadow:none;
+}
+
+.admin-main {
+  min-width:0;
+}
+
+.admin-page {
+  background:rgba(255,255,255,.97);
+  padding:28px;
+  border-radius:28px;
+  box-shadow:var(--shadow);
+  border:1px solid rgba(255,255,255,.9);
+}
+
+.admin-page-header {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+  margin-bottom:22px;
+}
+
+.admin-page-header h2 {
+  margin-bottom:6px;
+}
+
+.admin-page-header p {
+  margin:0;
+  color:var(--muted);
+  font-weight:650;
+}
+
+.admin-small-btn {
+  width:auto;
+  min-width:130px;
+  margin-top:0;
+  padding:12px 14px;
+}
+
+.admin-two-columns {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:18px;
+}
+
+@media (max-width:900px) {
+  .admin-shell {
+    grid-template-columns:1fr;
+  }
+
+  .admin-sidebar {
+    position:static;
+  }
+
+  .admin-brand {
+    margin-bottom:14px;
+  }
+
+  .admin-nav-btn {
+    text-align:center;
+  }
+
+  .admin-two-columns {
+    grid-template-columns:1fr;
+  }
+
+  .admin-page-header {
+    flex-direction:column;
+  }
+
+  .admin-small-btn {
+    width:100%;
+  }
+}
+
 .dashboard-cards {
   display:grid;
   grid-template-columns:repeat(3, 1fr);
@@ -633,140 +776,227 @@
   <div id="loginMsg" class="msg hidden"></div>
 </div>
 
-<div class="container hidden" id="adminBox">
+<div class="admin-shell hidden" id="adminBox">
 
-  <div class="top-actions">
-    <h2>Dashboard admin</h2>
-    <button class="logout-btn" onclick="logout()">Esci</button>
-  </div>
-
-  <div class="dashboard-cards">
-    <div class="dashboard-card"><span>Rapportini</span><strong id="stat_rapportini">0</strong></div>
-    <div class="dashboard-card"><span>Ore</span><strong id="stat_ore">0</strong></div>
-    <div class="dashboard-card"><span>Km</span><strong id="stat_km">0</strong></div>
-    <div class="dashboard-card"><span>Tecnici</span><strong id="stat_tecnici">0</strong></div>
-    <div class="dashboard-card"><span>Dosaggio</span><strong id="stat_dosaggio">0</strong></div>
-    <div class="dashboard-card"><span>Biossido</span><strong id="stat_biossido">0</strong></div>
-  </div>
-
-  <div class="dashboard-extra">
-    <div class="dashboard-panel">
-      <h3>Top tecnici</h3>
-      <div id="top_tecnici"></div>
+  <aside class="admin-sidebar">
+    <div class="admin-brand">
+      <img src="logo.jpg" alt="BIEMME" />
+      <div>
+        <strong>BIEMME</strong>
+        <span>Service Admin</span>
+      </div>
     </div>
 
-    <div class="dashboard-panel">
-      <h3>Mese corrente</h3>
-      <div id="mese_corrente"></div>
-    </div>
-  </div>
+    <button class="admin-nav-btn active" id="nav_dashboard" onclick="showAdminPage('dashboard')">Dashboard</button>
+    <button class="admin-nav-btn" id="nav_rapportini" onclick="showAdminPage('rapportini')">Rapportini</button>
+    <button class="admin-nav-btn" id="nav_tecnici" onclick="showAdminPage('tecnici')">Tecnici</button>
+    <button class="admin-nav-btn" id="nav_committenti" onclick="showAdminPage('committenti')">Committenti</button>
+    <button class="admin-nav-btn" id="nav_calendario" onclick="showAdminPage('calendario')">Calendario</button>
 
-  <button onclick="apriArchivioAdmin()">Apri archivio rapportini</button>
+    <button class="admin-sidebar-logout" onclick="logout()">Esci</button>
+  </aside>
 
-  <details class="dashboard-panel admin-dropdown">
-    <summary>Gestione tecnici</summary>
+  <main class="admin-main">
 
-    <label>Nome tecnico</label>
-    <input type="text" id="admin_tecnico_nome" placeholder="Es. Andrea Desogus" />
+    <section class="admin-page" id="adminDashboardPage">
+      <div class="admin-page-header">
+        <div>
+          <h2>Dashboard admin</h2>
+          <p>Panoramica generale rapportini, tecnici e attività del mese.</p>
+        </div>
+        <button class="admin-small-btn" onclick="refreshAdmin()">Aggiorna</button>
+      </div>
 
-    <label>Email tecnico</label>
-    <input type="email" id="admin_tecnico_email" placeholder="nome@biemmeengineering.it" />
-<label>Password iniziale</label>
-<input type="password" id="admin_tecnico_password" placeholder="Minimo 6 caratteri" />
+      <div class="dashboard-cards">
+        <div class="dashboard-card"><span>Rapportini</span><strong id="stat_rapportini">0</strong></div>
+        <div class="dashboard-card"><span>Ore</span><strong id="stat_ore">0</strong></div>
+        <div class="dashboard-card"><span>Km</span><strong id="stat_km">0</strong></div>
+        <div class="dashboard-card"><span>Tecnici</span><strong id="stat_tecnici">0</strong></div>
+        <div class="dashboard-card"><span>Dosaggio</span><strong id="stat_dosaggio">0</strong></div>
+        <div class="dashboard-card"><span>Biossido</span><strong id="stat_biossido">0</strong></div>
+      </div>
 
-    <label>Ruolo</label>
-    <select id="admin_tecnico_ruolo">
-      <option value="tecnico">Tecnico</option>
-      <option value="admin">Admin</option>
-    </select>
+      <div class="dashboard-extra">
+        <div class="dashboard-panel">
+          <h3>Top tecnici</h3>
+          <div id="top_tecnici"></div>
+        </div>
 
-    <button onclick="salvaTecnicoAdmin()">Salva tecnico</button>
+        <div class="dashboard-panel">
+          <h3>Mese corrente</h3>
+          <div id="mese_corrente"></div>
+        </div>
+      </div>
+    </section>
 
-    <label>Cerca tecnico</label>
-    <input type="text" id="admin_tecnico_cerca" placeholder="Cerca per nome o email..." oninput="caricaTecniciAdmin()" />
+    <section class="admin-page hidden" id="adminRapportiniPage">
+      <div class="admin-page-header">
+        <div>
+          <h2>Archivio rapportini</h2>
+          <p>Cerca, visualizza, scarica, modifica o elimina i rapportini archiviati.</p>
+        </div>
+        <button class="admin-small-btn" onclick="refreshAdmin()">Aggiorna</button>
+      </div>
 
-    <div id="lista_tecnici_admin"></div>
-  </details>
+      <div class="admin-filters">
+        <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
+        <select id="admin_tipo" onchange="filtraArchivio()">
+          <option value="">Tutti i tipi</option>
+          <option value="dosaggio">Sistemi di dosaggio</option>
+          <option value="biossido">Biossido di cloro</option>
+        </select>
+        <input type="date" id="admin_data" onchange="filtraArchivio()" />
+      </div>
 
-  <details class="dashboard-panel admin-dropdown">
-    <summary>Gestione committenti</summary>
+      <div id="adminMsg" class="msg hidden"></div>
 
-    <label>Ragione sociale</label>
-    <input type="text" id="admin_comm_ragione" placeholder="Es. Diversey S.P.A" />
+      <div class="archive-toolbar">
+        <span id="admin_paginazione_info">Rapportini 0</span>
+        <div class="archive-buttons">
+          <button class="secondary" id="btnPaginaIndietro" onclick="paginaArchivioIndietro()">Indietro</button>
+          <button class="secondary" id="btnPaginaAvanti" onclick="paginaArchivioAvanti()">Avanti</button>
+        </div>
+      </div>
 
-    <label>Codice</label>
-    <input type="text" id="admin_comm_codice" />
+      <div id="adminLista" class="admin-list"></div>
 
-    <label>Indirizzo</label>
-    <input type="text" id="admin_comm_indirizzo" />
+      <div class="archive-toolbar archive-toolbar-bottom">
+        <span id="admin_paginazione_info_bottom">Rapportini 0</span>
+        <div class="archive-buttons">
+          <button class="secondary" id="btnPaginaIndietroBottom" onclick="paginaArchivioIndietro()">Indietro</button>
+          <button class="secondary" id="btnPaginaAvantiBottom" onclick="paginaArchivioAvanti()">Avanti</button>
+        </div>
+      </div>
+    </section>
 
-    <label>Città</label>
-    <input type="text" id="admin_comm_citta" />
+    <section class="admin-page hidden" id="adminTecniciPage">
+      <div class="admin-page-header">
+        <div>
+          <h2>Gestione tecnici</h2>
+          <p>Crea nuovi accessi, assegna ruolo e attiva/disattiva i tecnici.</p>
+        </div>
+      </div>
 
-    <label>CAP</label>
-    <input type="text" id="admin_comm_cap" />
+      <div class="admin-two-columns">
+        <div class="dashboard-panel">
+          <h3>Nuovo tecnico</h3>
 
-    <label>Provincia</label>
-    <input type="text" id="admin_comm_provincia" />
+          <label>Nome tecnico</label>
+          <input type="text" id="admin_tecnico_nome" placeholder="Es. Andrea Desogus" />
 
-    <label>Nazione</label>
-    <input type="text" id="admin_comm_nazione" value="ITALIA" />
+          <label>Email tecnico</label>
+          <input type="email" id="admin_tecnico_email" placeholder="nome@biemmeengineering.it" />
 
-    <label class="checkbox-label">
-      <input type="checkbox" id="admin_comm_calendario" />
-      Aggiorna Google Calendar per rapportini biossido
-    </label>
+          <label>Password iniziale</label>
+          <input type="password" id="admin_tecnico_password" placeholder="Minimo 6 caratteri" />
 
-    <label>Richiamo biossido dopo giorni</label>
-    <input type="number" id="admin_comm_giorni" placeholder="Es. 30" />
+          <label>Ruolo</label>
+          <select id="admin_tecnico_ruolo">
+            <option value="tecnico">Tecnico</option>
+            <option value="admin">Admin</option>
+          </select>
 
-    <button onclick="salvaCommittenteAdmin()">Salva committente</button>
+          <button onclick="salvaTecnicoAdmin()">Salva tecnico</button>
+        </div>
 
-    <label>Cerca committente</label>
-    <input type="text" id="admin_comm_cerca" placeholder="Scrivi almeno 2 lettere..." oninput="caricaCommittentiAdmin()" />
+        <div class="dashboard-panel">
+          <h3>Tecnici registrati</h3>
 
-    <div id="lista_committenti_admin"></div>
-  </details>
+          <label>Cerca tecnico</label>
+          <input type="text" id="admin_tecnico_cerca" placeholder="Cerca per nome o email..." oninput="caricaTecniciAdmin()" />
 
-</div>
+          <div id="lista_tecnici_admin"></div>
+        </div>
+      </div>
+    </section>
 
-<div class="container hidden" id="adminArchivioBox">
+    <section class="admin-page hidden" id="adminCommittentiPage">
+      <div class="admin-page-header">
+        <div>
+          <h2>Gestione committenti</h2>
+          <p>Aggiungi nuovi committenti e imposta le opzioni per il biossido.</p>
+        </div>
+      </div>
 
-  <div class="top-actions">
-  <h2>Archivio rapportini</h2>
-  <button class="logout-btn" onclick="refreshAdmin()">Aggiorna</button>
-  <button class="logout-btn" onclick="tornaDashboardAdmin()">Indietro</button>
-</div>
+      <div class="admin-two-columns">
+        <div class="dashboard-panel">
+          <h3>Nuovo committente</h3>
 
-  <div class="admin-filters">
-    <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
-    <select id="admin_tipo" onchange="filtraArchivio()">
-      <option value="">Tutti i tipi</option>
-      <option value="dosaggio">Sistemi di dosaggio</option>
-      <option value="biossido">Biossido di cloro</option>
-    </select>
-    <input type="date" id="admin_data" onchange="filtraArchivio()" />
-  </div>
+          <label>Ragione sociale</label>
+          <input type="text" id="admin_comm_ragione" placeholder="Es. Diversey S.P.A" />
 
-  <div id="adminMsg" class="msg hidden"></div>
+          <label>Codice</label>
+          <input type="text" id="admin_comm_codice" />
 
-  <div class="archive-toolbar">
-    <span id="admin_paginazione_info">Rapportini 0</span>
-    <div class="archive-buttons">
-      <button class="secondary" id="btnPaginaIndietro" onclick="paginaArchivioIndietro()">Indietro</button>
-      <button class="secondary" id="btnPaginaAvanti" onclick="paginaArchivioAvanti()">Avanti</button>
-    </div>
-  </div>
+          <label>Indirizzo</label>
+          <input type="text" id="admin_comm_indirizzo" />
 
-  <div id="adminLista" class="admin-list"></div>
+          <div class="row">
+            <div>
+              <label>Città</label>
+              <input type="text" id="admin_comm_citta" />
+            </div>
+            <div>
+              <label>CAP</label>
+              <input type="text" id="admin_comm_cap" />
+            </div>
+          </div>
 
-  <div class="archive-toolbar archive-toolbar-bottom">
-    <span id="admin_paginazione_info_bottom">Rapportini 0</span>
-    <div class="archive-buttons">
-      <button class="secondary" id="btnPaginaIndietroBottom" onclick="paginaArchivioIndietro()">Indietro</button>
-      <button class="secondary" id="btnPaginaAvantiBottom" onclick="paginaArchivioAvanti()">Avanti</button>
-    </div>
-  </div>
+          <div class="row">
+            <div>
+              <label>Provincia</label>
+              <input type="text" id="admin_comm_provincia" />
+            </div>
+            <div>
+              <label>Nazione</label>
+              <input type="text" id="admin_comm_nazione" value="ITALIA" />
+            </div>
+          </div>
+
+          <label class="checkbox-label">
+            <input type="checkbox" id="admin_comm_calendario" />
+            Aggiorna Google Calendar per rapportini biossido
+          </label>
+
+          <label>Richiamo biossido dopo giorni</label>
+          <input type="number" id="admin_comm_giorni" placeholder="Es. 30" />
+
+          <button onclick="salvaCommittenteAdmin()">Salva committente</button>
+        </div>
+
+        <div class="dashboard-panel">
+          <h3>Cerca committente</h3>
+
+          <label>Ricerca</label>
+          <input type="text" id="admin_comm_cerca" placeholder="Scrivi almeno 2 lettere..." oninput="caricaCommittentiAdmin()" />
+
+          <div id="lista_committenti_admin"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-page hidden" id="adminCalendarioPage">
+      <div class="admin-page-header">
+        <div>
+          <h2>Calendario</h2>
+          <p>Area pronta per richiami biossido, interventi programmati e condivisione con i tecnici.</p>
+        </div>
+      </div>
+
+      <div class="dashboard-panel">
+        <h3>Prossima implementazione</h3>
+        <p class="admin-empty">
+          Qui potremo gestire un calendario interno all'app: interventi programmati,
+          richiami biossido, modifiche manuali e condivisione con i tecnici.
+        </p>
+        <p class="admin-empty">
+          Tecnicamente lo faremo con una tabella dedicata in Supabase e, quando vorrai,
+          anche con sincronizzazione Google Calendar tramite Edge Function.
+        </p>
+      </div>
+    </section>
+
+  </main>
 
 </div>
 
@@ -1007,12 +1237,11 @@
 
     if (ruoloCorrente === "admin") {
       document.getElementById("adminBox").classList.remove("hidden");
-      document.getElementById("adminArchivioBox").classList.add("hidden");
       document.getElementById("appBox").classList.add("hidden");
       await caricaArchivioRapportini();
+      showAdminPage("dashboard");
     } else {
       document.getElementById("adminBox").classList.add("hidden");
-      document.getElementById("adminArchivioBox").classList.add("hidden");
       document.getElementById("appBox").classList.remove("hidden");
 
       setTimeout(() => {
@@ -1313,76 +1542,55 @@ async function caricaTecniciAdmin() {
 }
 
 async function salvaTecnicoAdmin() {
+  const nome = document.getElementById("admin_tecnico_nome").value.trim();
+  const email = document.getElementById("admin_tecnico_email").value.trim().toLowerCase();
+  const password = document.getElementById("admin_tecnico_password").value.trim();
+  const ruolo = document.getElementById("admin_tecnico_ruolo").value;
 
-  try {
-
-    const nome = document.getElementById("admin_tecnico_nome").value.trim();
-    const email = document.getElementById("admin_tecnico_email").value.trim().toLowerCase();
-    const password = document.getElementById("admin_tecnico_password").value.trim();
-    const ruolo = document.getElementById("admin_tecnico_ruolo").value;
-
-    if (!nome || !email || !password) {
-      alert("Inserisci nome, email e password.");
-      return;
-    }
-
-    const { data: sessionData } = await supabaseClient.auth.getSession();
-
-    const token = sessionData?.session?.access_token;
-
-    if (!token) {
-      alert("Token admin mancante");
-      return;
-    }
-
-    console.log("TOKEN OK");
-    console.log("EMAIL:", email);
-
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/crea-tecnico`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          nome,
-          email,
-          password,
-          ruolo
-        })
-      }
-    );
-
-    console.log("STATUS:", response.status);
-
-    const testo = await response.text();
-
-    console.log("RISPOSTA:", testo);
-
-    if (!response.ok) {
-      alert("Errore funzione:\n" + testo);
-      return;
-    }
-
-    alert("Tecnico creato correttamente");
-
-    document.getElementById("admin_tecnico_nome").value = "";
-    document.getElementById("admin_tecnico_email").value = "";
-    document.getElementById("admin_tecnico_password").value = "";
-
-    await caricaTecniciAdmin();
-
-  } catch(err) {
-
-    console.error(err);
-
-    alert("Errore JS:\n" + err.message);
-
+  if (!nome || !email || !password) {
+    alert("Inserisci nome, email e password iniziale.");
+    return;
   }
 
-}async function caricaCommittentiAdmin() {
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  const token = sessionData.session?.access_token;
+
+  if (!token) {
+    alert("Sessione admin non valida. Effettua di nuovo il login.");
+    return;
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/crea-tecnico`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
+      nome,
+      email,
+      password,
+      ruolo
+    })
+  });
+
+  const result = await response.json();
+
+  if (!response.ok || !result.ok) {
+    alert("Errore creazione tecnico: " + (result.error || "Errore sconosciuto"));
+    return;
+  }
+
+  document.getElementById("admin_tecnico_nome").value = "";
+  document.getElementById("admin_tecnico_email").value = "";
+  document.getElementById("admin_tecnico_password").value = "";
+  document.getElementById("admin_tecnico_ruolo").value = "tecnico";
+
+  await caricaTecniciAdmin();
+
+  alert("Tecnico creato correttamente. Ora può accedere con email e password iniziale.");
+}
+async function caricaCommittentiAdmin() {
   const box = document.getElementById("lista_committenti_admin");
   if (!box) return;
 
@@ -1503,31 +1711,19 @@ async function toggleCommittente(id, nuovoStato) {
   await caricaCommittentiAdmin();
 }
 async function refreshAdmin() {
-  const archivioAperto = !document
-    .getElementById("adminArchivioBox")
-    .classList
-    .contains("hidden");
-
   await caricaArchivioRapportini();
-
-  if (archivioAperto) {
-    document.getElementById("adminBox").classList.add("hidden");
-    document.getElementById("adminArchivioBox").classList.remove("hidden");
-    filtraArchivio();
-  }
-
-  alert("Archivio aggiornato.");
+  filtraArchivio();
+  alert("Dati aggiornati.");
 }
-  function apriArchivioAdmin() {
+
+function apriArchivioAdmin() {
     document.getElementById("adminBox").classList.add("hidden");
-    document.getElementById("adminArchivioBox").classList.remove("hidden");
     paginaArchivio = 1;
     filtraArchivio();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function tornaDashboardAdmin() {
-    document.getElementById("adminArchivioBox").classList.add("hidden");
     document.getElementById("adminBox").classList.remove("hidden");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -1728,7 +1924,6 @@ async function modificaRapportino(id) {
   pdfPathVecchio = data.pdf_path || null;
 
   document.getElementById("adminBox").classList.add("hidden");
-  document.getElementById("adminArchivioBox").classList.add("hidden");
   document.getElementById("appBox").classList.remove("hidden");
 
   await caricaCommittenti();
