@@ -337,12 +337,25 @@
     }
 
     .admin-actions {
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px;
-      margin-top:12px;
-    }
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
 
+.delete-btn {
+  background:#b42318;
+}
+
+.edit-btn {
+  background:#0e5a78;
+}
+
+@media (max-width:720px) {
+  .admin-actions {
+    grid-template-columns:1fr 1fr;
+  }
+}
     .admin-actions button {
       margin-top:0;
       padding:12px;
@@ -852,14 +865,91 @@ async function login() {
           <strong>PDF:</strong> ${r.pdf_path ? "Disponibile" : "Non generato"}
         </div>
         <div class="admin-actions">
-          <button ${r.pdf_path ? "" : "disabled"} onclick="anteprimaPdf('${r.pdf_path || ""}')">Anteprima</button>
-          <button ${r.pdf_path ? "" : "disabled"} onclick="scaricaPdf('${r.pdf_path || ""}')">Scarica</button>
-        </div>
-      `;
+  <button ${r.pdf_path ? "" : "disabled"} onclick="anteprimaPdf('${r.pdf_path || ""}')">Anteprima</button>
+  <button ${r.pdf_path ? "" : "disabled"} onclick="scaricaPdf('${r.pdf_path || ""}')">Scarica</button>
+  <button class="edit-btn" onclick="modificaRapportino('${r.id}')">Modifica</button>
+  <button class="delete-btn" onclick="eliminaRapportino('${r.id}', '${r.pdf_path || ""}')">Elimina</button>
+</div>      `;
 
       box.appendChild(card);
     });
   }
+async function eliminaRapportino(id, pdfPath) {
+  const conferma = confirm(
+    "Vuoi eliminare definitivamente questo rapportino, il PDF e le firme?"
+  );
+
+  if (!conferma) return;
+
+  if (pdfPath) {
+    const { error: pdfError } = await supabaseClient
+      .storage
+      .from("pdf")
+      .remove([pdfPath]);
+
+    if (pdfError) {
+      alert("Errore eliminazione PDF: " + pdfError.message);
+      return;
+    }
+  }
+
+  const { data: firmeDb } = await supabaseClient
+    .from("firme")
+    .select("file_url")
+    .eq("rapportino_id", id);
+
+  const pathsFirme = [];
+
+  (firmeDb || []).forEach(f => {
+    if (!f.file_url) return;
+
+    const marker = "/storage/v1/object/public/firme/";
+    const index = f.file_url.indexOf(marker);
+
+    if (index !== -1) {
+      pathsFirme.push(f.file_url.substring(index + marker.length));
+    }
+  });
+
+  if (pathsFirme.length > 0) {
+    await supabaseClient
+      .storage
+      .from("firme")
+      .remove(pathsFirme);
+  }
+
+  await supabaseClient
+    .from("firme")
+    .delete()
+    .eq("rapportino_id", id);
+
+  await supabaseClient
+    .from("rapportino_ore")
+    .delete()
+    .eq("rapportino_id", id);
+
+  await supabaseClient
+    .from("rapportini_biossido")
+    .delete()
+    .eq("rapportino_id", id);
+
+  const { error } = await supabaseClient
+    .from("rapportini")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    alert("Errore eliminazione rapportino: " + error.message);
+    return;
+  }
+
+  alert("Rapportino eliminato correttamente.");
+  await caricaArchivioRapportini();
+}
+
+function modificaRapportino(id) {
+  alert("Modifica rapportino: prossimo step. Ora il pulsante è pronto.");
+}
 
   async function creaSignedUrlPdf(path) {
     if (!path || path === "null" || path === "undefined") {
