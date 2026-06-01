@@ -733,9 +733,10 @@
 <div class="container hidden" id="adminArchivioBox">
 
   <div class="top-actions">
-    <h2>Archivio rapportini</h2>
-    <button class="logout-btn" onclick="tornaDashboardAdmin()">Indietro</button>
-  </div>
+  <h2>Archivio rapportini</h2>
+  <button class="logout-btn" onclick="refreshAdmin()">Aggiorna</button>
+  <button class="logout-btn" onclick="tornaDashboardAdmin()">Indietro</button>
+</div>
 
   <div class="admin-filters">
     <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
@@ -1479,6 +1480,22 @@ async function toggleCommittente(id, nuovoStato) {
   }
 
   await caricaCommittentiAdmin();
+}
+async function refreshAdmin() {
+  const archivioAperto = !document
+    .getElementById("adminArchivioBox")
+    .classList
+    .contains("hidden");
+
+  await caricaArchivioRapportini();
+
+  if (archivioAperto) {
+    document.getElementById("adminBox").classList.add("hidden");
+    document.getElementById("adminArchivioBox").classList.remove("hidden");
+    filtraArchivio();
+  }
+
+  alert("Archivio aggiornato.");
 }
   function apriArchivioAdmin() {
     document.getElementById("adminBox").classList.add("hidden");
