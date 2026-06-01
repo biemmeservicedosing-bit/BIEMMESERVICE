@@ -1382,6 +1382,11 @@ async function modificaRapportino(id) {
   }
 
   async function salvaRapportino() {
+    
+    if (modalitaModifica) {
+    await aggiornaRapportinoEsistente();
+    return;
+   }
     if (ruoloCorrente === "admin") {
       mostraMessaggio("appMsg", "L'admin non può compilare rapportini.", "danger");
       return;
@@ -1553,6 +1558,139 @@ async function modificaRapportino(id) {
       return;
     }
   }
+async function aggiornaRapportinoEsistente() {
+  const btn = document.getElementById("btnSalva");
+  btn.disabled = true;
+  btn.textContent = "Salvataggio modifiche...";
+
+  try {
+    const { data: userData } = await supabaseClient.auth.getUser();
+    const user = userData.user;
+
+    if (!user) {
+      mostraMessaggio("appMsg", "Utente non autenticato", "danger");
+      btn.disabled = false;
+      btn.textContent = "Salva modifiche e rigenera PDF";
+      return;
+    }
+
+    const datiRapportino = raccogliDatiRapportino(user.id);
+
+    const { error: updateError } = await supabaseClient
+      .from("rapportini")
+      .update({
+        tipo_rapportino: datiRapportino.tipo_rapportino,
+        data_intervento: datiRapportino.data_intervento,
+        numero_so: datiRapportino.numero_so,
+        committente_id: datiRapportino.committente_id,
+        descrizione_cliente: datiRapportino.descrizione_cliente,
+        indirizzo_cliente: datiRapportino.indirizzo_cliente,
+        relazione: datiRapportino.relazione,
+        materiali_note: datiRapportino.materiali_note,
+        km_percorsi: datiRapportino.km_percorsi,
+        spese_viaggio: datiRapportino.spese_viaggio,
+        parcheggio: datiRapportino.parcheggio,
+        pranzi: datiRapportino.pranzi,
+        cene: datiRapportino.cene,
+        pernottamento: datiRapportino.pernottamento,
+        tipo_addebito: datiRapportino.tipo_addebito,
+        updated_by: user.id
+      })
+      .eq("id", rapportinoInModificaId);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    await supabaseClient
+      .from("rapportino_ore")
+      .delete()
+      .eq("rapportino_id", rapportinoInModificaId);
+
+    if (oreInserite.length > 0) {
+      const righeOre = oreInserite.map(o => ({
+        rapportino_id: rapportinoInModificaId,
+        tipo: o.tipo,
+        ora_inizio: o.ora_inizio,
+        ora_fine: o.ora_fine
+      }));
+
+      const { error: oreError } = await supabaseClient
+        .from("rapportino_ore")
+        .insert(righeOre);
+
+      if (oreError) {
+        throw oreError;
+      }
+    }
+
+    await supabaseClient
+      .from("rapportini_biossido")
+      .delete()
+      .eq("rapportino_id", rapportinoInModificaId);
+
+    if (datiRapportino.tipo_rapportino === "biossido") {
+      const bio = raccogliDatiBiossido(rapportinoInModificaId);
+
+      const { error: bioError } = await supabaseClient
+        .from("rapportini_biossido")
+        .insert([bio]);
+
+      if (bioError) {
+        throw bioError;
+      }
+    }
+
+    if (pdfPathVecchio) {
+      await supabaseClient
+        .storage
+        .from("pdf")
+        .remove([pdfPathVecchio]);
+    }
+
+    const pdfBlob = await generaPdfBlob(rapportinoInModificaId, datiRapportino);
+    const nuovoPdfPath = creaPercorsoPdf(rapportinoInModificaId, datiRapportino);
+
+    const { error: uploadPdfError } = await supabaseClient
+      .storage
+      .from("pdf")
+      .upload(nuovoPdfPath, pdfBlob, {
+        contentType: "application/pdf",
+        upsert: true
+      });
+
+    if (uploadPdfError) {
+      throw uploadPdfError;
+    }
+
+    const { error: updatePdfError } = await supabaseClient
+      .from("rapportini")
+      .update({
+        pdf_path: nuovoPdfPath,
+        pdf_generato_at: new Date().toISOString()
+      })
+      .eq("id", rapportinoInModificaId);
+
+    if (updatePdfError) {
+      throw updatePdfError;
+    }
+
+    modalitaModifica = false;
+    rapportinoInModificaId = null;
+    pdfPathVecchio = null;
+
+    mostraMessaggio("appMsg", "Rapportino modificato e PDF rigenerato correttamente.", "success");
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 1200);
+
+  } catch (err) {
+    mostraMessaggio("appMsg", "Errore modifica rapportino: " + err.message, "danger");
+    btn.disabled = false;
+    btn.textContent = "Salva modifiche e rigenera PDF";
+  }
+}
 
   function raccogliDatiRapportino(userId) {
     return {
