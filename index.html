@@ -838,79 +838,78 @@ async function login() {
 
     renderArchivio(filtrati);
   }
+function renderArchivio(lista) {
+  const box = document.getElementById("adminLista");
+  box.innerHTML = "";
 
-  function renderArchivio(lista) {
-    const box = document.getElementById("adminLista");
-    box.innerHTML = "";
-
-    if (lista.length === 0) {
-      box.innerHTML = "<p>Nessun rapportino trovato.</p>";
-      return;
-    }
-
-    lista.forEach(r => {
-      const card = document.createElement("div");
-      card.className = "admin-card";
-
-      const tipo = r.tipo_rapportino === "biossido" ? "Biossido di cloro" : "Sistemi di dosaggio";
-      const committente = nomeCommittente(r.committente_id);
-
-      card.innerHTML = `
-        <div class="admin-card-title">${r.descrizione_cliente || "-"}</div>
-        <div class="admin-card-meta">
-          <strong>Data:</strong> ${formattaDataSolo(r.data_intervento)}<br>
-          <strong>Tipo:</strong> ${tipo}<br>
-          <strong>Committente:</strong> ${committente}<br>
-          <strong>SO:</strong> ${r.numero_so || "-"}<br>
-          <strong>PDF:</strong> ${r.pdf_path ? "Disponibile" : "Non generato"}
-        </div>
-        <div class="admin-actions">
-  <button ${r.pdf_path ? "" : "disabled"} onclick="anteprimaPdf('${r.pdf_path || ""}')">Anteprima</button>
-  <button ${r.pdf_path ? "" : "disabled"} onclick="scaricaPdf('${r.pdf_path || ""}')">Scarica</button>
-  <button class="edit-btn" onclick="modificaRapportino('${r.id}')">Modifica</button>
-  <button class="delete-btn" onclick="eliminaRapportino('${r.id}', '${r.pdf_path || ""}')">Elimina</button>
-</div>      `;
-
-      box.appendChild(card);
-    });
+  if (lista.length === 0) {
+    box.innerHTML = "<p>Nessun rapportino trovato.</p>";
+    return;
   }
+
+  lista.forEach(r => {
+    const card = document.createElement("div");
+    card.className = "admin-card";
+
+    const tipo = r.tipo_rapportino === "biossido" ? "Biossido di cloro" : "Sistemi di dosaggio";
+    const committente = nomeCommittente(r.committente_id);
+
+    card.innerHTML = `
+      <div class="admin-card-title">${r.descrizione_cliente || "-"}</div>
+      <div class="admin-card-meta">
+        <strong>Data:</strong> ${formattaDataSolo(r.data_intervento)}<br>
+        <strong>Tipo:</strong> ${tipo}<br>
+        <strong>Committente:</strong> ${committente}<br>
+        <strong>SO:</strong> ${r.numero_so || "-"}<br>
+        <strong>PDF:</strong> ${r.pdf_path ? "Disponibile" : "Non generato"}
+      </div>
+      <div class="admin-actions">
+        <button ${r.pdf_path ? "" : "disabled"} onclick="anteprimaPdf('${r.pdf_path || ""}')">Anteprima</button>
+        <button ${r.pdf_path ? "" : "disabled"} onclick="scaricaPdf('${r.pdf_path || ""}')">Scarica</button>
+        <button class="edit-btn" onclick="modificaRapportino('${r.id}')">Modifica</button>
+        <button class="delete-btn" onclick="eliminaRapportino('${r.id}', '${r.pdf_path || ""}')">Elimina</button>
+      </div>
+    `;
+
+    box.appendChild(card);
+  });
+}
+
 async function eliminaRapportino(id, pdfPath) {
-  const conferma = confirm(
-    "Vuoi eliminare definitivamente questo rapportino, il PDF e le firme?"
-  );
+  const conferma = confirm("Vuoi eliminare definitivamente questo rapportino, il PDF e le firme?");
 
   if (!conferma) return;
 
   try {
     if (pdfPath) {
-      await supabaseClient
-        .storage
-        .from("pdf")
-        .remove([pdfPath]);
+      await supabaseClient.storage.from("pdf").remove([pdfPath]);
     }
 
-    await supabaseClient
-      .storage
+    const { data: firmeDb } = await supabaseClient
       .from("firme")
-      .remove([
-        `${id}/tecnico.png`,
-        `${id}/cliente.png`
-      ]);
-
-    await supabaseClient
-      .from("firme")
-      .delete()
+      .select("file_url")
       .eq("rapportino_id", id);
 
-    await supabaseClient
-      .from("rapportino_ore")
-      .delete()
-      .eq("rapportino_id", id);
+    const pathsFirme = [];
 
-    await supabaseClient
-      .from("rapportini_biossido")
-      .delete()
-      .eq("rapportino_id", id);
+    (firmeDb || []).forEach(f => {
+      if (!f.file_url) return;
+
+      const marker = "/storage/v1/object/public/firme/";
+      const index = f.file_url.indexOf(marker);
+
+      if (index !== -1) {
+        pathsFirme.push(f.file_url.substring(index + marker.length));
+      }
+    });
+
+    if (pathsFirme.length > 0) {
+      await supabaseClient.storage.from("firme").remove(pathsFirme);
+    }
+
+    await supabaseClient.from("firme").delete().eq("rapportino_id", id);
+    await supabaseClient.from("rapportino_ore").delete().eq("rapportino_id", id);
+    await supabaseClient.from("rapportini_biossido").delete().eq("rapportino_id", id);
 
     const { error } = await supabaseClient
       .from("rapportini")
@@ -930,65 +929,12 @@ async function eliminaRapportino(id, pdfPath) {
     alert("Errore eliminazione: " + err.message);
   }
 }
-  const { data: firmeDb } = await supabaseClient
-    .from("firme")
-    .select("file_url")
-    .eq("rapportino_id", id);
-
-  const pathsFirme = [];
-
-  (firmeDb || []).forEach(f => {
-    if (!f.file_url) return;
-
-    const marker = "/storage/v1/object/public/firme/";
-    const index = f.file_url.indexOf(marker);
-
-    if (index !== -1) {
-      pathsFirme.push(f.file_url.substring(index + marker.length));
-    }
-  });
-
-  if (pathsFirme.length > 0) {
-    await supabaseClient
-      .storage
-      .from("firme")
-      .remove(pathsFirme);
-  }
-
-  await supabaseClient
-    .from("firme")
-    .delete()
-    .eq("rapportino_id", id);
-
-  await supabaseClient
-    .from("rapportino_ore")
-    .delete()
-    .eq("rapportino_id", id);
-
-  await supabaseClient
-    .from("rapportini_biossido")
-    .delete()
-    .eq("rapportino_id", id);
-
-  const { error } = await supabaseClient
-    .from("rapportini")
-    .delete()
-    .eq("id", id);
-
-  if (error) {
-    alert("Errore eliminazione rapportino: " + error.message);
-    return;
-  }
-
-  alert("Rapportino eliminato correttamente.");
-  await caricaArchivioRapportini();
-}
 
 function modificaRapportino(id) {
   alert("Modifica rapportino: prossimo step. Ora il pulsante è pronto.");
 }
 
-  async function creaSignedUrlPdf(path) {
+    async function creaSignedUrlPdf(path) {
     if (!path || path === "null" || path === "undefined") {
       alert("PDF non disponibile per questo rapportino.");
       return null;
