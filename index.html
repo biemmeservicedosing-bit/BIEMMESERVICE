@@ -519,6 +519,32 @@
       .logout-btn {
         max-width:none;
       }
+.admin-dropdown {
+  margin-bottom:18px;
+}
+
+.admin-dropdown summary {
+  cursor:pointer;
+  font-size:20px;
+  font-weight:850;
+  color:var(--dark);
+  list-style:none;
+}
+
+.admin-dropdown summary::-webkit-details-marker {
+  display:none;
+}
+
+.admin-dropdown summary::after {
+  content:"▼";
+  float:right;
+  font-size:14px;
+  margin-top:4px;
+}
+
+.admin-dropdown[open] summary::after {
+  content:"▲";
+}
     }
   </style>
 </head>
@@ -548,6 +574,7 @@
 </div>
 
 <div class="container hidden" id="adminBox">
+
   <div class="top-actions">
     <h2>Archivio rapportini</h2>
     <button class="logout-btn" onclick="logout()">Esci</button>
@@ -597,70 +624,81 @@
     </div>
   </div>
 
-  <div class="dashboard-panel ultimi-panel">
-    <h3>Ultimi rapportini</h3>
-    <div id="ultimi_rapportini"></div>
-  </div>
+  <details class="dashboard-panel admin-dropdown" open>
+    <summary>Rapportini</summary>
 
-  <div class="dashboard-extra">
-    <div class="dashboard-panel">
-      <h3>Gestione tecnici</h3>
-
-      <label>Nome tecnico</label>
-      <input type="text" id="admin_tecnico_nome" placeholder="Es. Andrea Desogus" />
-
-      <label>Email tecnico</label>
-      <input type="email" id="admin_tecnico_email" placeholder="nome@biemmeengineering.it" />
-
-      <label>Ruolo</label>
-      <select id="admin_tecnico_ruolo">
-        <option value="tecnico">Tecnico</option>
-        <option value="admin">Admin</option>
+    <div class="admin-filters">
+      <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
+      <select id="admin_tipo" onchange="filtraArchivio()">
+        <option value="">Tutti i tipi</option>
+        <option value="dosaggio">Sistemi di dosaggio</option>
+        <option value="biossido">Biossido di cloro</option>
       </select>
-
-      <button onclick="salvaTecnicoAdmin()">Salva tecnico</button>
-
-      <div id="lista_tecnici_admin"></div>
+      <input type="date" id="admin_data" onchange="filtraArchivio()" />
     </div>
 
-    <div class="dashboard-panel">
-      <h3>Gestione committenti</h3>
+    <div id="adminMsg" class="msg hidden"></div>
+    <div id="adminLista" class="admin-list"></div>
+  </details>
 
-      <label>Ragione sociale</label>
-      <input type="text" id="admin_comm_ragione" placeholder="Es. Diversey S.P.A" />
+  <details class="dashboard-panel admin-dropdown">
+    <summary>Gestione tecnici</summary>
 
-      <label>Codice</label>
-      <input type="text" id="admin_comm_codice" />
+    <label>Nome tecnico</label>
+    <input type="text" id="admin_tecnico_nome" placeholder="Es. Andrea Desogus" />
 
-      <label>Indirizzo</label>
-      <input type="text" id="admin_comm_indirizzo" />
+    <label>Email tecnico</label>
+    <input type="email" id="admin_tecnico_email" placeholder="nome@biemmeengineering.it" />
 
-      <label>Città</label>
-      <input type="text" id="admin_comm_citta" />
+    <label>Ruolo</label>
+    <select id="admin_tecnico_ruolo">
+      <option value="tecnico">Tecnico</option>
+      <option value="admin">Admin</option>
+    </select>
 
-      <label>CAP</label>
-      <input type="text" id="admin_comm_cap" />
+    <button onclick="salvaTecnicoAdmin()">Salva tecnico</button>
 
-      <label>Provincia</label>
-      <input type="text" id="admin_comm_provincia" />
+    <div id="lista_tecnici_admin"></div>
+  </details>
 
-      <label>Nazione</label>
-      <input type="text" id="admin_comm_nazione" value="ITALIA" />
+  <details class="dashboard-panel admin-dropdown">
+    <summary>Gestione committenti</summary>
 
-      <label>
-        <input type="checkbox" id="admin_comm_calendario" style="width:auto;" />
-        Aggiorna Google Calendar per rapportini biossido
-      </label>
+    <label>Ragione sociale</label>
+    <input type="text" id="admin_comm_ragione" placeholder="Es. Diversey S.P.A" />
 
-      <label>Richiamo biossido dopo giorni</label>
-      <input type="number" id="admin_comm_giorni" placeholder="Es. 30" />
+    <label>Codice</label>
+    <input type="text" id="admin_comm_codice" />
 
-      <button onclick="salvaCommittenteAdmin()">Salva committente</button>
+    <label>Indirizzo</label>
+    <input type="text" id="admin_comm_indirizzo" />
 
-      <div id="lista_committenti_admin"></div>
-    </div>
-  </div>
+    <label>Città</label>
+    <input type="text" id="admin_comm_citta" />
 
+    <label>CAP</label>
+    <input type="text" id="admin_comm_cap" />
+
+    <label>Provincia</label>
+    <input type="text" id="admin_comm_provincia" />
+
+    <label>Nazione</label>
+    <input type="text" id="admin_comm_nazione" value="ITALIA" />
+
+    <label>
+      <input type="checkbox" id="admin_comm_calendario" style="width:auto;" />
+      Aggiorna Google Calendar per rapportini biossido
+    </label>
+
+    <label>Richiamo biossido dopo giorni</label>
+    <input type="number" id="admin_comm_giorni" placeholder="Es. 30" />
+
+    <button onclick="salvaCommittenteAdmin()">Salva committente</button>
+
+    <div id="lista_committenti_admin"></div>
+  </details>
+
+</div>
   <div class="admin-filters">
     <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
     <select id="admin_tipo" onchange="filtraArchivio()">
