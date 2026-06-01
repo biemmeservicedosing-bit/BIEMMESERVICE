@@ -331,6 +331,53 @@
   font-size:34px;
   line-height:1;
 }
+.dashboard-extra {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:18px;
+}
+
+.dashboard-panel {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:22px;
+  padding:20px;
+  box-shadow:0 8px 22px rgba(6,31,44,.08);
+}
+
+.dashboard-panel h3 {
+  margin:0 0 14px;
+  font-size:20px;
+}
+
+.stat-row {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:9px 0;
+  border-bottom:1px solid #edf2f5;
+  font-weight:700;
+}
+
+.stat-row:last-child {
+  border-bottom:none;
+}
+
+.stat-row span {
+  color:var(--muted);
+  font-weight:650;
+}
+
+.ultimi-panel {
+  margin-bottom:20px;
+}
+
+@media (max-width:720px) {
+  .dashboard-extra {
+    grid-template-columns:1fr;
+  }
+}
 
     .admin-filters {
       display:grid;
@@ -490,6 +537,22 @@
     <h2>Archivio rapportini</h2>
     <button class="logout-btn" onclick="logout()">Esci</button>
   </div>
+<div class="dashboard-extra">
+  <div class="dashboard-panel">
+    <h3>Top tecnici</h3>
+    <div id="top_tecnici"></div>
+  </div>
+
+  <div class="dashboard-panel">
+    <h3>Mese corrente</h3>
+    <div id="mese_corrente"></div>
+  </div>
+</div>
+
+<div class="dashboard-panel ultimi-panel">
+  <h3>Ultimi rapportini</h3>
+  <div id="ultimi_rapportini"></div>
+</div>
 <div class="dashboard-cards">
 
   <div class="dashboard-card">
@@ -893,72 +956,154 @@ async function login() {
     renderArchivio(archivioRapportini);
   }
 async function caricaStatisticheAdmin() {
-
   const rapportini = archivioRapportini || [];
   const idsRapportini = rapportini.map(r => r.id);
 
   let ore = [];
 
-if (idsRapportini.length > 0) {
-  const { data } = await supabaseClient
-    .from("rapportino_ore")
-    .select("rapportino_id, ora_inizio, ora_fine")
-    .in("rapportino_id", idsRapportini);
+  if (idsRapportini.length > 0) {
+    const { data } = await supabaseClient
+      .from("rapportino_ore")
+      .select("rapportino_id, ora_inizio, ora_fine")
+      .in("rapportino_id", idsRapportini);
 
-  ore = data || [];
-}
+    ore = data || [];
+  }
 
-  const totaleRapportini = (rapportini || []).length;
+  const totaleRapportini = rapportini.length;
 
-  const totaleKm = (rapportini || []).reduce((tot, r) => {
+  const totaleKm = rapportini.reduce((tot, r) => {
     return tot + Number(r.km_percorsi || 0);
   }, 0);
 
-  const totaleDosaggio = (rapportini || []).filter(
-    r => r.tipo_rapportino === "dosaggio"
-  ).length;
-
-  const totaleBiossido = (rapportini || []).filter(
-    r => r.tipo_rapportino === "biossido"
-  ).length;
+  const totaleDosaggio = rapportini.filter(r => r.tipo_rapportino === "dosaggio").length;
+  const totaleBiossido = rapportini.filter(r => r.tipo_rapportino === "biossido").length;
 
   const tecniciUnici = new Set(
-    (rapportini || [])
+    rapportini
       .map(r => r.tecnico_id)
       .filter(Boolean)
   );
 
   let totaleOre = 0;
 
-  (ore || []).forEach(o => {
-
+  ore.forEach(o => {
     if (!o.ora_inizio || !o.ora_fine) return;
 
     const inizio = new Date(o.ora_inizio);
     const fine = new Date(o.ora_fine);
+    const diff = (fine - inizio) / 1000 / 60 / 60;
 
-    totaleOre += (fine - inizio) / 1000 / 60 / 60;
+    if (diff > 0) totaleOre += diff;
   });
 
-  document.getElementById("stat_rapportini").textContent =
-    totaleRapportini;
+  document.getElementById("stat_rapportini").textContent = totaleRapportini;
+  document.getElementById("stat_ore").textContent = totaleOre.toFixed(1);
+  document.getElementById("stat_km").textContent = Math.round(totaleKm);
+  document.getElementById("stat_tecnici").textContent = tecniciUnici.size;
+  document.getElementById("stat_dosaggio").textContent = totaleDosaggio;
+  document.getElementById("stat_biossido").textContent = totaleBiossido;
 
-  document.getElementById("stat_ore").textContent =
-    totaleOre.toFixed(1);
+  renderTopTecnici(rapportini);
+  renderMeseCorrente(rapportini, ore);
+  renderUltimiRapportini(rapportini);
+}
+function renderTopTecnici(rapportini) {
+  const box = document.getElementById("top_tecnici");
+  box.innerHTML = "";
 
-  document.getElementById("stat_km").textContent =
-    Math.round(totaleKm);
+  const conteggio = {};
 
-  document.getElementById("stat_tecnici").textContent =
-    tecniciUnici.size;
+  rapportini.forEach(r => {
+    const tecnico = r.tecnico_id || "Non indicato";
+    conteggio[tecnico] = (conteggio[tecnico] || 0) + 1;
+  });
 
-  document.getElementById("stat_dosaggio").textContent =
-    totaleDosaggio;
+  const righe = Object.entries(conteggio)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
 
-  document.getElementById("stat_biossido").textContent =
-    totaleBiossido;
+  if (righe.length === 0) {
+    box.innerHTML = "<p>Nessun dato disponibile.</p>";
+    return;
+  }
+
+  righe.forEach(([tecnico, totale]) => {
+    const div = document.createElement("div");
+    div.className = "stat-row";
+    div.innerHTML = `<span>${tecnico}</span><strong>${totale}</strong>`;
+    box.appendChild(div);
+  });
 }
 
+function renderMeseCorrente(rapportini, ore) {
+  const box = document.getElementById("mese_corrente");
+  box.innerHTML = "";
+
+  const oggi = new Date();
+  const mese = oggi.getMonth();
+  const anno = oggi.getFullYear();
+
+  const rapportiniMese = rapportini.filter(r => {
+    if (!r.data_intervento) return false;
+    const d = new Date(r.data_intervento);
+    return d.getMonth() === mese && d.getFullYear() === anno;
+  });
+
+  const idsMese = rapportiniMese.map(r => r.id);
+
+  const oreMese = ore.reduce((tot, o) => {
+    if (!idsMese.includes(o.rapportino_id)) return tot;
+    if (!o.ora_inizio || !o.ora_fine) return tot;
+
+    const diff = (new Date(o.ora_fine) - new Date(o.ora_inizio)) / 1000 / 60 / 60;
+    return diff > 0 ? tot + diff : tot;
+  }, 0);
+
+  const kmMese = rapportiniMese.reduce((tot, r) => {
+    return tot + Number(r.km_percorsi || 0);
+  }, 0);
+
+  const dati = [
+    ["Rapportini", rapportiniMese.length],
+    ["Ore", oreMese.toFixed(1)],
+    ["Km", Math.round(kmMese)],
+    ["Dosaggio", rapportiniMese.filter(r => r.tipo_rapportino === "dosaggio").length],
+    ["Biossido", rapportiniMese.filter(r => r.tipo_rapportino === "biossido").length]
+  ];
+
+  dati.forEach(([label, value]) => {
+    const div = document.createElement("div");
+    div.className = "stat-row";
+    div.innerHTML = `<span>${label}</span><strong>${value}</strong>`;
+    box.appendChild(div);
+  });
+}
+
+function renderUltimiRapportini(rapportini) {
+  const box = document.getElementById("ultimi_rapportini");
+  box.innerHTML = "";
+
+  const ultimi = [...rapportini]
+    .sort((a, b) => new Date(b.data_intervento || b.created_at) - new Date(a.data_intervento || a.created_at))
+    .slice(0, 10);
+
+  if (ultimi.length === 0) {
+    box.innerHTML = "<p>Nessun rapportino disponibile.</p>";
+    return;
+  }
+
+  ultimi.forEach(r => {
+    const tipo = r.tipo_rapportino === "biossido" ? "Biossido" : "Dosaggio";
+    const div = document.createElement("div");
+    div.className = "stat-row";
+    div.innerHTML = `
+      <span>${formattaDataSolo(r.data_intervento)} - ${r.descrizione_cliente || "-"}</span>
+      <strong>${tipo}</strong>
+    `;
+    box.appendChild(div);
+  });
+}
 
   function filtraArchivio() {
     const cerca = document.getElementById("admin_cerca").value.toLowerCase();
