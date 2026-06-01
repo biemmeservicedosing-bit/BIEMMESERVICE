@@ -380,6 +380,45 @@
 }
 
 
+
+
+.admin-dropdown {
+  margin-bottom:18px;
+}
+
+.admin-dropdown summary {
+  cursor:pointer;
+  font-size:20px;
+  font-weight:850;
+  color:var(--dark);
+  list-style:none;
+}
+
+.admin-dropdown summary::-webkit-details-marker {
+  display:none;
+}
+
+.admin-dropdown summary::after {
+  content:"▼";
+  float:right;
+  font-size:14px;
+  margin-top:4px;
+}
+
+.admin-dropdown[open] summary::after {
+  content:"▲";
+}
+
+.checkbox-label {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.checkbox-label input {
+  width:auto;
+}
+
 .admin-mini-btn {
   max-width:120px;
   margin-top:0;
@@ -390,8 +429,12 @@
 #lista_tecnici_admin,
 #lista_committenti_admin {
   margin-top:16px;
-  max-height:320px;
-  overflow:auto;
+}
+
+.admin-empty {
+  color:var(--muted);
+  font-weight:650;
+  margin:12px 0 0;
 }
 
     .admin-filters {
@@ -519,32 +562,6 @@
       .logout-btn {
         max-width:none;
       }
-.admin-dropdown {
-  margin-bottom:18px;
-}
-
-.admin-dropdown summary {
-  cursor:pointer;
-  font-size:20px;
-  font-weight:850;
-  color:var(--dark);
-  list-style:none;
-}
-
-.admin-dropdown summary::-webkit-details-marker {
-  display:none;
-}
-
-.admin-dropdown summary::after {
-  content:"▼";
-  float:right;
-  font-size:14px;
-  margin-top:4px;
-}
-
-.admin-dropdown[open] summary::after {
-  content:"▲";
-}
     }
   </style>
 </head>
@@ -658,6 +675,9 @@
 
     <button onclick="salvaTecnicoAdmin()">Salva tecnico</button>
 
+    <label>Cerca tecnico</label>
+    <input type="text" id="admin_tecnico_cerca" placeholder="Cerca per nome o email..." oninput="caricaTecniciAdmin()" />
+
     <div id="lista_tecnici_admin"></div>
   </details>
 
@@ -685,8 +705,8 @@
     <label>Nazione</label>
     <input type="text" id="admin_comm_nazione" value="ITALIA" />
 
-    <label>
-      <input type="checkbox" id="admin_comm_calendario" style="width:auto;" />
+    <label class="checkbox-label">
+      <input type="checkbox" id="admin_comm_calendario" />
       Aggiorna Google Calendar per rapportini biossido
     </label>
 
@@ -695,22 +715,12 @@
 
     <button onclick="salvaCommittenteAdmin()">Salva committente</button>
 
+    <label>Cerca committente</label>
+    <input type="text" id="admin_comm_cerca" placeholder="Scrivi almeno 2 lettere..." oninput="caricaCommittentiAdmin()" />
+
     <div id="lista_committenti_admin"></div>
   </details>
 
-</div>
-  <div class="admin-filters">
-    <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
-    <select id="admin_tipo" onchange="filtraArchivio()">
-      <option value="">Tutti i tipi</option>
-      <option value="dosaggio">Sistemi di dosaggio</option>
-      <option value="biossido">Biossido di cloro</option>
-    </select>
-    <input type="date" id="admin_data" onchange="filtraArchivio()" />
-  </div>
-
-  <div id="adminMsg" class="msg hidden"></div>
-  <div id="adminLista" class="admin-list"></div>
 </div>
 
 <div class="container hidden" id="appBox">
@@ -1120,7 +1130,6 @@ async function caricaStatisticheAdmin() {
 
   renderTopTecnici(rapportini);
   renderMeseCorrente(rapportini, ore);
-  renderUltimiRapportini(rapportini);
 }
 function renderTopTecnici(rapportini) {
   const box = document.getElementById("top_tecnici");
@@ -1193,36 +1202,6 @@ function renderMeseCorrente(rapportini, ore) {
   });
 }
 
-function renderUltimiRapportini(rapportini) {
-  const box = document.getElementById("ultimi_rapportini");
-  box.innerHTML = "";
-
-  const ultimi = [...rapportini]
-    .sort((a, b) => new Date(b.data_intervento || b.created_at) - new Date(a.data_intervento || a.created_at))
-    .slice(0, 10);
-
-  if (ultimi.length === 0) {
-    box.innerHTML = "<p>Nessun rapportino disponibile.</p>";
-    return;
-  }
-
-  ultimi.forEach(r => {
-    const tipo = r.tipo_rapportino === "biossido" ? "Biossido" : "Dosaggio";
-    const tecnico = r.tecnico_nome || "Non indicato";
-
-    const div = document.createElement("div");
-    div.className = "stat-row";
-    div.innerHTML = `
-      <span>
-        ${formattaDataSolo(r.data_intervento)}<br>
-        <strong>${r.descrizione_cliente || "-"}</strong><br>
-        ${tecnico}
-      </span>
-      <strong>${tipo}</strong>
-    `;
-    box.appendChild(div);
-  });
-}
 async function caricaGestioneAdmin() {
   await caricaTecniciAdmin();
   await caricaCommittentiAdmin();
@@ -1232,19 +1211,36 @@ async function caricaTecniciAdmin() {
   const box = document.getElementById("lista_tecnici_admin");
   if (!box) return;
 
+  const filtroEl = document.getElementById("admin_tecnico_cerca");
+  const filtro = filtroEl ? filtroEl.value.trim().toLowerCase() : "";
+
   const { data, error } = await supabaseClient
     .from("utenti")
     .select("email, nome, ruolo, attivo")
     .order("nome", { ascending: true });
 
   if (error) {
-    box.innerHTML = "<p>Errore caricamento tecnici.</p>";
+    box.innerHTML = "<p class='admin-empty'>Errore caricamento tecnici.</p>";
     return;
   }
 
+  const tecnici = (data || []).filter(u => {
+    if (!filtro) return true;
+    return [
+      u.nome,
+      u.email,
+      u.ruolo
+    ].join(" ").toLowerCase().includes(filtro);
+  });
+
   box.innerHTML = "";
 
-  (data || []).forEach(u => {
+  if (tecnici.length === 0) {
+    box.innerHTML = "<p class='admin-empty'>Nessun tecnico trovato.</p>";
+    return;
+  }
+
+  tecnici.forEach(u => {
     const div = document.createElement("div");
     div.className = "stat-row";
     div.innerHTML = `
@@ -1313,19 +1309,44 @@ async function caricaCommittentiAdmin() {
   const box = document.getElementById("lista_committenti_admin");
   if (!box) return;
 
+  const filtroEl = document.getElementById("admin_comm_cerca");
+  const filtro = filtroEl ? filtroEl.value.trim().toLowerCase() : "";
+
+  if (filtro.length < 2) {
+    box.innerHTML = "<p class='admin-empty'>Scrivi almeno 2 lettere per cercare un committente.</p>";
+    return;
+  }
+
   const { data, error } = await supabaseClient
     .from("committenti")
     .select("id, ragione_sociale, codice, indirizzo, citta, cap, provincia, nazione, attivo, calendario_biossido, giorni_richiamo_biossido")
     .order("ragione_sociale", { ascending: true });
 
   if (error) {
-    box.innerHTML = "<p>Errore caricamento committenti.</p>";
+    box.innerHTML = "<p class='admin-empty'>Errore caricamento committenti.</p>";
     return;
   }
 
+  const committenti = (data || []).filter(c => {
+    return [
+      c.ragione_sociale,
+      c.codice,
+      c.indirizzo,
+      c.citta,
+      c.cap,
+      c.provincia,
+      c.nazione
+    ].join(" ").toLowerCase().includes(filtro);
+  }).slice(0, 20);
+
   box.innerHTML = "";
 
-  (data || []).slice(0, 10).forEach(c => {
+  if (committenti.length === 0) {
+    box.innerHTML = "<p class='admin-empty'>Nessun committente trovato.</p>";
+    return;
+  }
+
+  committenti.forEach(c => {
     const div = document.createElement("div");
     div.className = "stat-row";
     div.innerHTML = `
