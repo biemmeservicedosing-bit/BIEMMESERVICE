@@ -1711,27 +1711,74 @@ async function toggleCommittente(id, nuovoStato) {
   await caricaCommittentiAdmin();
 }
 async function refreshAdmin() {
+  const paginaAperta = document.querySelector(".admin-nav-btn.active")?.id?.replace("nav_", "") || "dashboard";
+
   await caricaArchivioRapportini();
-  filtraArchivio();
+
+  showAdminPage(paginaAperta);
+
   alert("Dati aggiornati.");
 }
 
-function apriArchivioAdmin() {
-    document.getElementById("adminBox").classList.add("hidden");
-    paginaArchivio = 1;
+function showAdminPage(page) {
+  const pages = {
+    dashboard: "adminDashboardPage",
+    rapportini: "adminRapportiniPage",
+    tecnici: "adminTecniciPage",
+    committenti: "adminCommittentiPage",
+    calendario: "adminCalendarioPage"
+  };
+
+  Object.values(pages).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
+
+  Object.keys(pages).forEach(key => {
+    const btn = document.getElementById("nav_" + key);
+    if (btn) btn.classList.remove("active");
+  });
+
+  const pageEl = document.getElementById(pages[page]);
+  if (pageEl) pageEl.classList.remove("hidden");
+
+  const btn = document.getElementById("nav_" + page);
+  if (btn) btn.classList.add("active");
+
+  if (page === "rapportini") {
     filtraArchivio();
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function tornaDashboardAdmin() {
-    document.getElementById("adminBox").classList.remove("hidden");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  if (page === "tecnici") {
+    caricaTecniciAdmin();
   }
+
+  if (page === "committenti") {
+    caricaCommittentiAdmin();
+  }
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function apriArchivioAdmin() {
+  showAdminPage("rapportini");
+}
+
+function tornaDashboardAdmin() {
+  showAdminPage("dashboard");
+}
+
 
   function filtraArchivio() {
-    const cerca = document.getElementById("admin_cerca").value.toLowerCase();
-    const tipo = document.getElementById("admin_tipo").value;
-    const data = document.getElementById("admin_data").value;
+    const cercaEl = document.getElementById("admin_cerca");
+    const tipoEl = document.getElementById("admin_tipo");
+    const dataEl = document.getElementById("admin_data");
+
+    if (!cercaEl || !tipoEl || !dataEl) return;
+
+    const cerca = cercaEl.value.toLowerCase();
+    const tipo = tipoEl.value;
+    const data = dataEl.value;
 
     archivioFiltrato = archivioRapportini.filter(r => {
       const committente = nomeCommittente(r.committente_id).toLowerCase();
