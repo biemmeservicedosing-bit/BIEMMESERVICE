@@ -586,7 +586,187 @@
     <h3>Ultimi rapportini</h3>
     <div id="ultimi_rapportini"></div>
   </div>
+async function caricaGestioneAdmin() {
+  await caricaTecniciAdmin();
+  await caricaCommittentiAdmin();
+}
 
+async function caricaTecniciAdmin() {
+  const box = document.getElementById("lista_tecnici_admin");
+  if (!box) return;
+
+  const { data, error } = await supabaseClient
+    .from("utenti")
+    .select("email, nome, ruolo, attivo")
+    .order("nome", { ascending: true });
+
+  if (error) {
+    box.innerHTML = "<p>Errore caricamento tecnici.</p>";
+    return;
+  }
+
+  box.innerHTML = "";
+
+  (data || []).forEach(u => {
+    const div = document.createElement("div");
+    div.className = "stat-row";
+    div.innerHTML = `
+      <span>
+        <strong>${u.nome || "-"}</strong><br>
+        ${u.email}<br>
+        ${u.ruolo || "tecnico"} - ${u.attivo ? "attivo" : "disattivato"}
+      </span>
+      <button style="max-width:120px;margin-top:0;" onclick="toggleTecnico('${u.email}', ${u.attivo ? "false" : "true"})">
+        ${u.attivo ? "Disattiva" : "Attiva"}
+      </button>
+    `;
+    box.appendChild(div);
+  });
+}
+
+async function salvaTecnicoAdmin() {
+  const nome = document.getElementById("admin_tecnico_nome").value.trim();
+  const email = document.getElementById("admin_tecnico_email").value.trim().toLowerCase();
+  const ruolo = document.getElementById("admin_tecnico_ruolo").value;
+
+  if (!nome || !email) {
+    alert("Inserisci nome ed email tecnico.");
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from("utenti")
+    .upsert({
+      nome,
+      email,
+      ruolo,
+      attivo: true
+    }, {
+      onConflict: "email"
+    });
+
+  if (error) {
+    alert("Errore salvataggio tecnico: " + error.message);
+    return;
+  }
+
+  document.getElementById("admin_tecnico_nome").value = "";
+  document.getElementById("admin_tecnico_email").value = "";
+  document.getElementById("admin_tecnico_ruolo").value = "tecnico";
+
+  await caricaTecniciAdmin();
+  alert("Tecnico salvato correttamente.");
+}
+
+async function toggleTecnico(email, nuovoStato) {
+  const { error } = await supabaseClient
+    .from("utenti")
+    .update({ attivo: nuovoStato })
+    .eq("email", email);
+
+  if (error) {
+    alert("Errore aggiornamento tecnico: " + error.message);
+    return;
+  }
+
+  await caricaTecniciAdmin();
+}
+
+async function caricaCommittentiAdmin() {
+  const box = document.getElementById("lista_committenti_admin");
+  if (!box) return;
+
+  const { data, error } = await supabaseClient
+    .from("committenti")
+    .select("id, ragione_sociale, codice, indirizzo, citta, cap, provincia, nazione, attivo, calendario_biossido, giorni_richiamo_biossido")
+    .order("ragione_sociale", { ascending: true });
+
+  if (error) {
+    box.innerHTML = "<p>Errore caricamento committenti.</p>";
+    return;
+  }
+
+  box.innerHTML = "";
+
+  (data || []).slice(0, 10).forEach(c => {
+    const div = document.createElement("div");
+    div.className = "stat-row";
+    div.innerHTML = `
+      <span>
+        <strong>${c.ragione_sociale || "-"}</strong><br>
+        ${c.indirizzo || ""} ${c.citta || ""}<br>
+        Calendar biossido: ${c.calendario_biossido ? "sì" : "no"}
+      </span>
+      <button style="max-width:120px;margin-top:0;" onclick="toggleCommittente('${c.id}', ${c.attivo ? "false" : "true"})">
+        ${c.attivo ? "Disattiva" : "Attiva"}
+      </button>
+    `;
+    box.appendChild(div);
+  });
+}
+
+async function salvaCommittenteAdmin() {
+  const ragione = document.getElementById("admin_comm_ragione").value.trim();
+
+  if (!ragione) {
+    alert("Inserisci la ragione sociale.");
+    return;
+  }
+
+  const dati = {
+    ragione_sociale: ragione,
+    codice: document.getElementById("admin_comm_codice").value.trim() || null,
+    indirizzo: document.getElementById("admin_comm_indirizzo").value.trim() || null,
+    citta: document.getElementById("admin_comm_citta").value.trim() || null,
+    cap: document.getElementById("admin_comm_cap").value.trim() || null,
+    provincia: document.getElementById("admin_comm_provincia").value.trim() || null,
+    nazione: document.getElementById("admin_comm_nazione").value.trim() || "ITALIA",
+    calendario_biossido: document.getElementById("admin_comm_calendario").checked,
+    giorni_richiamo_biossido: document.getElementById("admin_comm_giorni").value || null,
+    attivo: true
+  };
+
+  const { error } = await supabaseClient
+    .from("committenti")
+    .insert([dati]);
+
+  if (error) {
+    alert("Errore salvataggio committente: " + error.message);
+    return;
+  }
+
+  [
+    "admin_comm_ragione",
+    "admin_comm_codice",
+    "admin_comm_indirizzo",
+    "admin_comm_citta",
+    "admin_comm_cap",
+    "admin_comm_provincia",
+    "admin_comm_giorni"
+  ].forEach(id => document.getElementById(id).value = "");
+
+  document.getElementById("admin_comm_nazione").value = "ITALIA";
+  document.getElementById("admin_comm_calendario").checked = false;
+
+  await caricaCommittentiAdmin();
+  await caricaCommittenti();
+
+  alert("Committente salvato correttamente.");
+}
+
+async function toggleCommittente(id, nuovoStato) {
+  const { error } = await supabaseClient
+    .from("committenti")
+    .update({ attivo: nuovoStato })
+    .eq("id", id);
+
+  if (error) {
+    alert("Errore aggiornamento committente: " + error.message);
+    return;
+  }
+
+  await caricaCommittentiAdmin();
+}
   <div class="admin-filters">
     <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
     <select id="admin_tipo" onchange="filtraArchivio()">
@@ -952,7 +1132,7 @@ async function login() {
     }
 
     archivioRapportini = rapportiniConPdf;
-    await caricaGestioneAdmin()
+    await caricaGestioneAdmin();
     await caricaStatisticheAdmin();
     renderArchivio(archivioRapportini);
       
