@@ -661,6 +661,9 @@
   let ruoloCorrente = "tecnico";
   let tecnicoNomeCorrente = "";
   let oreInserite = [];
+  let modalitaModifica = false;
+  let rapportinoInModificaId = null;
+  let pdfPathVecchio = null; 
 
   const firmeDisegnate = {
     firma_tecnico: false,
@@ -930,10 +933,79 @@ async function eliminaRapportino(id, pdfPath) {
   }
 }
 
-function modificaRapportino(id) {
-  alert("Modifica rapportino: prossimo step. Ora il pulsante è pronto.");
-}
+async function modificaRapportino(id) {
+  const { data, error } = await supabaseClient
+    .from("rapportini")
+    .select("*")
+    .eq("id", id)
+    .single();
 
+  if (error) {
+    alert("Errore apertura rapportino: " + error.message);
+    return;
+  }
+
+  modalitaModifica = true;
+  rapportinoInModificaId = id;
+  pdfPathVecchio = data.pdf_path || null;
+
+  document.getElementById("adminBox").classList.add("hidden");
+  document.getElementById("appBox").classList.remove("hidden");
+
+  await caricaCommittenti();
+
+  document.getElementById("tipo_rapportino").value = data.tipo_rapportino || "dosaggio";
+  cambiaTipoRapportino();
+
+  document.getElementById("data_intervento").value = data.data_intervento || "";
+  document.getElementById("numero_so").value = data.numero_so || "";
+  document.getElementById("committente_id").value = data.committente_id || "";
+
+  const committente = listaCommittenti.find(c => c.id === data.committente_id);
+  document.getElementById("committente_search").value = committente ? committente.ragione_sociale : "";
+
+  document.getElementById("descrizione_cliente").value = data.descrizione_cliente || "";
+  document.getElementById("indirizzo_cliente").value = data.indirizzo_cliente || "";
+  document.getElementById("relazione").value = data.relazione || "";
+  document.getElementById("materiali_note").value = data.materiali_note || "";
+  document.getElementById("km_percorsi").value = data.km_percorsi || "";
+  document.getElementById("spese_viaggio").value = data.spese_viaggio || "";
+  document.getElementById("parcheggio").value = data.parcheggio || "";
+  document.getElementById("pranzi").value = data.pranzi || "";
+  document.getElementById("cene").value = data.cene || "";
+  document.getElementById("pernottamento").value = data.pernottamento || "";
+  document.getElementById("tipo_addebito").value = data.tipo_addebito || "";
+
+  oreInserite = [];
+
+  const { data: oreDb } = await supabaseClient
+    .from("rapportino_ore")
+    .select("tipo, ora_inizio, ora_fine")
+    .eq("rapportino_id", id);
+
+  oreInserite = oreDb || [];
+  aggiornaRiepilogoOre();
+
+  if (data.tipo_rapportino === "biossido") {
+    const { data: bio } = await supabaseClient
+      .from("rapportini_biossido")
+      .select("*")
+      .eq("rapportino_id", id)
+      .maybeSingle();
+
+    if (bio) {
+      document.getElementById("bio_tipologia_intervento").value = bio.tipologia_intervento || "";
+      document.getElementById("bio_tipologia_prodotto").value = bio.tipologia_prodotto || "";
+      document.getElementById("bio_matricola").value = bio.matricola || "";
+      document.getElementById("bio_codice").value = bio.codice || "";
+      document.getElementById("bio_modalita_dosaggio").value = bio.modalita_dosaggio || "";
+      document.getElementById("bio_concentrazione_impostata").value = bio.concentrazione_impostata || "";
+    }
+  }
+
+  document.getElementById("btnSalva").textContent = "Salva modifiche e rigenera PDF";
+  mostraMessaggio("appMsg", "Modifica rapportino aperta. Le firme vanno rifatte se vuoi aggiornarle.", "success");
+}
     async function creaSignedUrlPdf(path) {
     if (!path || path === "null" || path === "undefined") {
       alert("PDF non disponibile per questo rapportino.");
@@ -1313,6 +1385,7 @@ function modificaRapportino(id) {
     if (ruoloCorrente === "admin") {
       mostraMessaggio("appMsg", "L'admin non può compilare rapportini.", "danger");
       return;
+}
     }
 
     const btn = document.getElementById("btnSalva");
