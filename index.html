@@ -379,6 +379,21 @@
   }
 }
 
+
+.admin-mini-btn {
+  max-width:120px;
+  margin-top:0;
+  padding:9px 10px;
+  font-size:12px;
+}
+
+#lista_tecnici_admin,
+#lista_committenti_admin {
+  margin-top:16px;
+  max-height:320px;
+  overflow:auto;
+}
+
     .admin-filters {
       display:grid;
       grid-template-columns:1fr 1fr 1fr;
@@ -586,187 +601,66 @@
     <h3>Ultimi rapportini</h3>
     <div id="ultimi_rapportini"></div>
   </div>
-async function caricaGestioneAdmin() {
-  await caricaTecniciAdmin();
-  await caricaCommittentiAdmin();
-}
 
-async function caricaTecniciAdmin() {
-  const box = document.getElementById("lista_tecnici_admin");
-  if (!box) return;
+  <div class="dashboard-extra">
+    <div class="dashboard-panel">
+      <h3>Gestione tecnici</h3>
 
-  const { data, error } = await supabaseClient
-    .from("utenti")
-    .select("email, nome, ruolo, attivo")
-    .order("nome", { ascending: true });
+      <label>Nome tecnico</label>
+      <input type="text" id="admin_tecnico_nome" placeholder="Es. Andrea Desogus" />
 
-  if (error) {
-    box.innerHTML = "<p>Errore caricamento tecnici.</p>";
-    return;
-  }
+      <label>Email tecnico</label>
+      <input type="email" id="admin_tecnico_email" placeholder="nome@biemmeengineering.it" />
 
-  box.innerHTML = "";
+      <label>Ruolo</label>
+      <select id="admin_tecnico_ruolo">
+        <option value="tecnico">Tecnico</option>
+        <option value="admin">Admin</option>
+      </select>
 
-  (data || []).forEach(u => {
-    const div = document.createElement("div");
-    div.className = "stat-row";
-    div.innerHTML = `
-      <span>
-        <strong>${u.nome || "-"}</strong><br>
-        ${u.email}<br>
-        ${u.ruolo || "tecnico"} - ${u.attivo ? "attivo" : "disattivato"}
-      </span>
-      <button style="max-width:120px;margin-top:0;" onclick="toggleTecnico('${u.email}', ${u.attivo ? "false" : "true"})">
-        ${u.attivo ? "Disattiva" : "Attiva"}
-      </button>
-    `;
-    box.appendChild(div);
-  });
-}
+      <button onclick="salvaTecnicoAdmin()">Salva tecnico</button>
 
-async function salvaTecnicoAdmin() {
-  const nome = document.getElementById("admin_tecnico_nome").value.trim();
-  const email = document.getElementById("admin_tecnico_email").value.trim().toLowerCase();
-  const ruolo = document.getElementById("admin_tecnico_ruolo").value;
+      <div id="lista_tecnici_admin"></div>
+    </div>
 
-  if (!nome || !email) {
-    alert("Inserisci nome ed email tecnico.");
-    return;
-  }
+    <div class="dashboard-panel">
+      <h3>Gestione committenti</h3>
 
-  const { error } = await supabaseClient
-    .from("utenti")
-    .upsert({
-      nome,
-      email,
-      ruolo,
-      attivo: true
-    }, {
-      onConflict: "email"
-    });
+      <label>Ragione sociale</label>
+      <input type="text" id="admin_comm_ragione" placeholder="Es. Diversey S.P.A" />
 
-  if (error) {
-    alert("Errore salvataggio tecnico: " + error.message);
-    return;
-  }
+      <label>Codice</label>
+      <input type="text" id="admin_comm_codice" />
 
-  document.getElementById("admin_tecnico_nome").value = "";
-  document.getElementById("admin_tecnico_email").value = "";
-  document.getElementById("admin_tecnico_ruolo").value = "tecnico";
+      <label>Indirizzo</label>
+      <input type="text" id="admin_comm_indirizzo" />
 
-  await caricaTecniciAdmin();
-  alert("Tecnico salvato correttamente.");
-}
+      <label>Città</label>
+      <input type="text" id="admin_comm_citta" />
 
-async function toggleTecnico(email, nuovoStato) {
-  const { error } = await supabaseClient
-    .from("utenti")
-    .update({ attivo: nuovoStato })
-    .eq("email", email);
+      <label>CAP</label>
+      <input type="text" id="admin_comm_cap" />
 
-  if (error) {
-    alert("Errore aggiornamento tecnico: " + error.message);
-    return;
-  }
+      <label>Provincia</label>
+      <input type="text" id="admin_comm_provincia" />
 
-  await caricaTecniciAdmin();
-}
+      <label>Nazione</label>
+      <input type="text" id="admin_comm_nazione" value="ITALIA" />
 
-async function caricaCommittentiAdmin() {
-  const box = document.getElementById("lista_committenti_admin");
-  if (!box) return;
+      <label>
+        <input type="checkbox" id="admin_comm_calendario" style="width:auto;" />
+        Aggiorna Google Calendar per rapportini biossido
+      </label>
 
-  const { data, error } = await supabaseClient
-    .from("committenti")
-    .select("id, ragione_sociale, codice, indirizzo, citta, cap, provincia, nazione, attivo, calendario_biossido, giorni_richiamo_biossido")
-    .order("ragione_sociale", { ascending: true });
+      <label>Richiamo biossido dopo giorni</label>
+      <input type="number" id="admin_comm_giorni" placeholder="Es. 30" />
 
-  if (error) {
-    box.innerHTML = "<p>Errore caricamento committenti.</p>";
-    return;
-  }
+      <button onclick="salvaCommittenteAdmin()">Salva committente</button>
 
-  box.innerHTML = "";
+      <div id="lista_committenti_admin"></div>
+    </div>
+  </div>
 
-  (data || []).slice(0, 10).forEach(c => {
-    const div = document.createElement("div");
-    div.className = "stat-row";
-    div.innerHTML = `
-      <span>
-        <strong>${c.ragione_sociale || "-"}</strong><br>
-        ${c.indirizzo || ""} ${c.citta || ""}<br>
-        Calendar biossido: ${c.calendario_biossido ? "sì" : "no"}
-      </span>
-      <button style="max-width:120px;margin-top:0;" onclick="toggleCommittente('${c.id}', ${c.attivo ? "false" : "true"})">
-        ${c.attivo ? "Disattiva" : "Attiva"}
-      </button>
-    `;
-    box.appendChild(div);
-  });
-}
-
-async function salvaCommittenteAdmin() {
-  const ragione = document.getElementById("admin_comm_ragione").value.trim();
-
-  if (!ragione) {
-    alert("Inserisci la ragione sociale.");
-    return;
-  }
-
-  const dati = {
-    ragione_sociale: ragione,
-    codice: document.getElementById("admin_comm_codice").value.trim() || null,
-    indirizzo: document.getElementById("admin_comm_indirizzo").value.trim() || null,
-    citta: document.getElementById("admin_comm_citta").value.trim() || null,
-    cap: document.getElementById("admin_comm_cap").value.trim() || null,
-    provincia: document.getElementById("admin_comm_provincia").value.trim() || null,
-    nazione: document.getElementById("admin_comm_nazione").value.trim() || "ITALIA",
-    calendario_biossido: document.getElementById("admin_comm_calendario").checked,
-    giorni_richiamo_biossido: document.getElementById("admin_comm_giorni").value || null,
-    attivo: true
-  };
-
-  const { error } = await supabaseClient
-    .from("committenti")
-    .insert([dati]);
-
-  if (error) {
-    alert("Errore salvataggio committente: " + error.message);
-    return;
-  }
-
-  [
-    "admin_comm_ragione",
-    "admin_comm_codice",
-    "admin_comm_indirizzo",
-    "admin_comm_citta",
-    "admin_comm_cap",
-    "admin_comm_provincia",
-    "admin_comm_giorni"
-  ].forEach(id => document.getElementById(id).value = "");
-
-  document.getElementById("admin_comm_nazione").value = "ITALIA";
-  document.getElementById("admin_comm_calendario").checked = false;
-
-  await caricaCommittentiAdmin();
-  await caricaCommittenti();
-
-  alert("Committente salvato correttamente.");
-}
-
-async function toggleCommittente(id, nuovoStato) {
-  const { error } = await supabaseClient
-    .from("committenti")
-    .update({ attivo: nuovoStato })
-    .eq("id", id);
-
-  if (error) {
-    alert("Errore aggiornamento committente: " + error.message);
-    return;
-  }
-
-  await caricaCommittentiAdmin();
-}
   <div class="admin-filters">
     <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
     <select id="admin_tipo" onchange="filtraArchivio()">
@@ -1321,7 +1215,7 @@ async function caricaTecniciAdmin() {
         ${u.email}<br>
         ${u.ruolo || "tecnico"} - ${u.attivo ? "attivo" : "disattivato"}
       </span>
-      <button style="max-width:120px;margin-top:0;" onclick="toggleTecnico('${u.email}', ${u.attivo ? "false" : "true"})">
+      <button class="admin-mini-btn" onclick="toggleTecnico('${u.email}', ${u.attivo ? "false" : "true"})">
         ${u.attivo ? "Disattiva" : "Attiva"}
       </button>
     `;
@@ -1402,7 +1296,7 @@ async function caricaCommittentiAdmin() {
         ${c.indirizzo || ""} ${c.citta || ""}<br>
         Calendar biossido: ${c.calendario_biossido ? "sì" : "no"}
       </span>
-      <button style="max-width:120px;margin-top:0;" onclick="toggleCommittente('${c.id}', ${c.attivo ? "false" : "true"})">
+      <button class="admin-mini-btn" onclick="toggleCommittente('${c.id}', ${c.attivo ? "false" : "true"})">
         ${c.attivo ? "Disattiva" : "Attiva"}
       </button>
     `;
