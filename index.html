@@ -497,6 +497,49 @@
       font-size:14px;
     }
 
+
+.archive-toolbar {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  margin:14px 0 18px;
+  color:var(--muted);
+  font-weight:750;
+}
+
+.archive-toolbar-bottom {
+  margin-top:18px;
+}
+
+.archive-buttons {
+  display:flex;
+  gap:10px;
+}
+
+.archive-buttons button {
+  margin-top:0;
+  width:auto;
+  min-width:110px;
+  padding:11px 14px;
+}
+
+@media (max-width:720px) {
+  .archive-toolbar {
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .archive-buttons {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+
+  .archive-buttons button {
+    width:100%;
+  }
+}
+
     iframe {
       width:100%;
       height:75vh;
@@ -593,40 +636,17 @@
 <div class="container hidden" id="adminBox">
 
   <div class="top-actions">
-    <h2>Archivio rapportini</h2>
+    <h2>Dashboard admin</h2>
     <button class="logout-btn" onclick="logout()">Esci</button>
   </div>
 
   <div class="dashboard-cards">
-    <div class="dashboard-card">
-      <span>Rapportini</span>
-      <strong id="stat_rapportini">0</strong>
-    </div>
-
-    <div class="dashboard-card">
-      <span>Ore</span>
-      <strong id="stat_ore">0</strong>
-    </div>
-
-    <div class="dashboard-card">
-      <span>Km</span>
-      <strong id="stat_km">0</strong>
-    </div>
-
-    <div class="dashboard-card">
-      <span>Tecnici</span>
-      <strong id="stat_tecnici">0</strong>
-    </div>
-
-    <div class="dashboard-card">
-      <span>Dosaggio</span>
-      <strong id="stat_dosaggio">0</strong>
-    </div>
-
-    <div class="dashboard-card">
-      <span>Biossido</span>
-      <strong id="stat_biossido">0</strong>
-    </div>
+    <div class="dashboard-card"><span>Rapportini</span><strong id="stat_rapportini">0</strong></div>
+    <div class="dashboard-card"><span>Ore</span><strong id="stat_ore">0</strong></div>
+    <div class="dashboard-card"><span>Km</span><strong id="stat_km">0</strong></div>
+    <div class="dashboard-card"><span>Tecnici</span><strong id="stat_tecnici">0</strong></div>
+    <div class="dashboard-card"><span>Dosaggio</span><strong id="stat_dosaggio">0</strong></div>
+    <div class="dashboard-card"><span>Biossido</span><strong id="stat_biossido">0</strong></div>
   </div>
 
   <div class="dashboard-extra">
@@ -641,22 +661,7 @@
     </div>
   </div>
 
-  <details class="dashboard-panel admin-dropdown" open>
-    <summary>Rapportini</summary>
-
-    <div class="admin-filters">
-      <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
-      <select id="admin_tipo" onchange="filtraArchivio()">
-        <option value="">Tutti i tipi</option>
-        <option value="dosaggio">Sistemi di dosaggio</option>
-        <option value="biossido">Biossido di cloro</option>
-      </select>
-      <input type="date" id="admin_data" onchange="filtraArchivio()" />
-    </div>
-
-    <div id="adminMsg" class="msg hidden"></div>
-    <div id="adminLista" class="admin-list"></div>
-  </details>
+  <button onclick="apriArchivioAdmin()">Apri archivio rapportini</button>
 
   <details class="dashboard-panel admin-dropdown">
     <summary>Gestione tecnici</summary>
@@ -720,6 +725,45 @@
 
     <div id="lista_committenti_admin"></div>
   </details>
+
+</div>
+
+<div class="container hidden" id="adminArchivioBox">
+
+  <div class="top-actions">
+    <h2>Archivio rapportini</h2>
+    <button class="logout-btn" onclick="tornaDashboardAdmin()">Indietro</button>
+  </div>
+
+  <div class="admin-filters">
+    <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
+    <select id="admin_tipo" onchange="filtraArchivio()">
+      <option value="">Tutti i tipi</option>
+      <option value="dosaggio">Sistemi di dosaggio</option>
+      <option value="biossido">Biossido di cloro</option>
+    </select>
+    <input type="date" id="admin_data" onchange="filtraArchivio()" />
+  </div>
+
+  <div id="adminMsg" class="msg hidden"></div>
+
+  <div class="archive-toolbar">
+    <span id="admin_paginazione_info">Rapportini 0</span>
+    <div class="archive-buttons">
+      <button class="secondary" id="btnPaginaIndietro" onclick="paginaArchivioIndietro()">Indietro</button>
+      <button class="secondary" id="btnPaginaAvanti" onclick="paginaArchivioAvanti()">Avanti</button>
+    </div>
+  </div>
+
+  <div id="adminLista" class="admin-list"></div>
+
+  <div class="archive-toolbar archive-toolbar-bottom">
+    <span id="admin_paginazione_info_bottom">Rapportini 0</span>
+    <div class="archive-buttons">
+      <button class="secondary" id="btnPaginaIndietroBottom" onclick="paginaArchivioIndietro()">Indietro</button>
+      <button class="secondary" id="btnPaginaAvantiBottom" onclick="paginaArchivioAvanti()">Avanti</button>
+    </div>
+  </div>
 
 </div>
 
@@ -923,6 +967,9 @@
   let modalitaModifica = false;
   let rapportinoInModificaId = null;
   let pdfPathVecchio = null; 
+  let archivioFiltrato = [];
+  let paginaArchivio = 1;
+  const rapportiniPerPagina = 20;
 
   const firmeDisegnate = {
     firma_tecnico: false,
@@ -957,10 +1004,12 @@
 
     if (ruoloCorrente === "admin") {
       document.getElementById("adminBox").classList.remove("hidden");
+      document.getElementById("adminArchivioBox").classList.add("hidden");
       document.getElementById("appBox").classList.add("hidden");
       await caricaArchivioRapportini();
     } else {
       document.getElementById("adminBox").classList.add("hidden");
+      document.getElementById("adminArchivioBox").classList.add("hidden");
       document.getElementById("appBox").classList.remove("hidden");
 
       setTimeout(() => {
@@ -1074,9 +1123,12 @@ async function login() {
     }
 
     archivioRapportini = rapportiniConPdf;
+    archivioFiltrato = [...archivioRapportini];
+    paginaArchivio = 1;
+
     await caricaGestioneAdmin();
     await caricaStatisticheAdmin();
-    renderArchivio(archivioRapportini);
+    renderArchivio();
       
   }
 async function caricaStatisticheAdmin() {
@@ -1425,12 +1477,26 @@ async function toggleCommittente(id, nuovoStato) {
 
   await caricaCommittentiAdmin();
 }
+  function apriArchivioAdmin() {
+    document.getElementById("adminBox").classList.add("hidden");
+    document.getElementById("adminArchivioBox").classList.remove("hidden");
+    paginaArchivio = 1;
+    filtraArchivio();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function tornaDashboardAdmin() {
+    document.getElementById("adminArchivioBox").classList.add("hidden");
+    document.getElementById("adminBox").classList.remove("hidden");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function filtraArchivio() {
     const cerca = document.getElementById("admin_cerca").value.toLowerCase();
     const tipo = document.getElementById("admin_tipo").value;
     const data = document.getElementById("admin_data").value;
 
-    const filtrati = archivioRapportini.filter(r => {
+    archivioFiltrato = archivioRapportini.filter(r => {
       const committente = nomeCommittente(r.committente_id).toLowerCase();
       const testo = [
         r.numero_so,
@@ -1446,18 +1512,35 @@ async function toggleCommittente(id, nuovoStato) {
       return okCerca && okTipo && okData;
     });
 
-    renderArchivio(filtrati);
+    paginaArchivio = 1;
+    renderArchivio();
   }
-function renderArchivio(lista) {
+
+function renderArchivio() {
   const box = document.getElementById("adminLista");
+  if (!box) return;
+
   box.innerHTML = "";
 
-  if (lista.length === 0) {
+  const lista = archivioFiltrato || [];
+  const totale = lista.length;
+  const totalePagine = Math.max(1, Math.ceil(totale / rapportiniPerPagina));
+
+  if (paginaArchivio > totalePagine) paginaArchivio = totalePagine;
+  if (paginaArchivio < 1) paginaArchivio = 1;
+
+  aggiornaInfoPaginazione(totale, totalePagine);
+
+  if (totale === 0) {
     box.innerHTML = "<p>Nessun rapportino trovato.</p>";
     return;
   }
 
-  lista.forEach(r => {
+  const inizio = (paginaArchivio - 1) * rapportiniPerPagina;
+  const fine = inizio + rapportiniPerPagina;
+  const pagina = lista.slice(inizio, fine);
+
+  pagina.forEach(r => {
     const card = document.createElement("div");
     card.className = "admin-card";
 
@@ -1483,6 +1566,51 @@ function renderArchivio(lista) {
 
     box.appendChild(card);
   });
+}
+
+function aggiornaInfoPaginazione(totale, totalePagine) {
+  const inizio = totale === 0 ? 0 : ((paginaArchivio - 1) * rapportiniPerPagina) + 1;
+  const fine = Math.min(paginaArchivio * rapportiniPerPagina, totale);
+  const testo = totale === 0
+    ? "Rapportini 0"
+    : `Rapportini ${inizio}-${fine} di ${totale} · Pagina ${paginaArchivio}/${totalePagine}`;
+
+  ["admin_paginazione_info", "admin_paginazione_info_bottom"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = testo;
+  });
+
+  const disabilitaIndietro = paginaArchivio <= 1;
+  const disabilitaAvanti = paginaArchivio >= totalePagine;
+
+  ["btnPaginaIndietro", "btnPaginaIndietroBottom"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabilitaIndietro;
+  });
+
+  ["btnPaginaAvanti", "btnPaginaAvantiBottom"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = disabilitaAvanti;
+  });
+}
+
+function paginaArchivioAvanti() {
+  const totale = (archivioFiltrato || []).length;
+  const totalePagine = Math.max(1, Math.ceil(totale / rapportiniPerPagina));
+
+  if (paginaArchivio < totalePagine) {
+    paginaArchivio++;
+    renderArchivio();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+function paginaArchivioIndietro() {
+  if (paginaArchivio > 1) {
+    paginaArchivio--;
+    renderArchivio();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 }
 
 async function eliminaRapportino(id, pdfPath) {
@@ -1532,7 +1660,9 @@ async function eliminaRapportino(id, pdfPath) {
     }
 
     archivioRapportini = archivioRapportini.filter(r => r.id !== id);
-    renderArchivio(archivioRapportini);
+    archivioFiltrato = archivioFiltrato.filter(r => r.id !== id);
+    renderArchivio();
+    await caricaStatisticheAdmin();
 
     alert("Rapportino eliminato correttamente.");
   } catch (err) {
@@ -1557,6 +1687,7 @@ async function modificaRapportino(id) {
   pdfPathVecchio = data.pdf_path || null;
 
   document.getElementById("adminBox").classList.add("hidden");
+  document.getElementById("adminArchivioBox").classList.add("hidden");
   document.getElementById("appBox").classList.remove("hidden");
 
   await caricaCommittenti();
