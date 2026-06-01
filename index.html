@@ -881,18 +881,55 @@ async function eliminaRapportino(id, pdfPath) {
 
   if (!conferma) return;
 
-  if (pdfPath) {
-    const { error: pdfError } = await supabaseClient
-      .storage
-      .from("pdf")
-      .remove([pdfPath]);
+  try {
+    if (pdfPath) {
+      await supabaseClient
+        .storage
+        .from("pdf")
+        .remove([pdfPath]);
+    }
 
-    if (pdfError) {
-      alert("Errore eliminazione PDF: " + pdfError.message);
+    await supabaseClient
+      .storage
+      .from("firme")
+      .remove([
+        `${id}/tecnico.png`,
+        `${id}/cliente.png`
+      ]);
+
+    await supabaseClient
+      .from("firme")
+      .delete()
+      .eq("rapportino_id", id);
+
+    await supabaseClient
+      .from("rapportino_ore")
+      .delete()
+      .eq("rapportino_id", id);
+
+    await supabaseClient
+      .from("rapportini_biossido")
+      .delete()
+      .eq("rapportino_id", id);
+
+    const { error } = await supabaseClient
+      .from("rapportini")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      alert("Errore eliminazione rapportino: " + error.message);
       return;
     }
-  }
 
+    archivioRapportini = archivioRapportini.filter(r => r.id !== id);
+    renderArchivio(archivioRapportini);
+
+    alert("Rapportino eliminato correttamente.");
+  } catch (err) {
+    alert("Errore eliminazione: " + err.message);
+  }
+}
   const { data: firmeDb } = await supabaseClient
     .from("firme")
     .select("file_url")
