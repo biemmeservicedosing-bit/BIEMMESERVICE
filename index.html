@@ -671,6 +671,8 @@
 
     <label>Email tecnico</label>
     <input type="email" id="admin_tecnico_email" placeholder="nome@biemmeengineering.it" />
+<label>Password iniziale</label>
+<input type="password" id="admin_tecnico_password" placeholder="Minimo 6 caratteri" />
 
     <label>Ruolo</label>
     <select id="admin_tecnico_ruolo">
@@ -1312,51 +1314,52 @@ async function caricaTecniciAdmin() {
 async function salvaTecnicoAdmin() {
   const nome = document.getElementById("admin_tecnico_nome").value.trim();
   const email = document.getElementById("admin_tecnico_email").value.trim().toLowerCase();
+  const password = document.getElementById("admin_tecnico_password").value.trim();
   const ruolo = document.getElementById("admin_tecnico_ruolo").value;
 
-  if (!nome || !email) {
-    alert("Inserisci nome ed email tecnico.");
+  if (!nome || !email || !password) {
+    alert("Inserisci nome, email e password iniziale.");
     return;
   }
 
-  const { error } = await supabaseClient
-    .from("utenti")
-    .upsert({
+  const { data: sessionData } = await supabaseClient.auth.getSession();
+  const token = sessionData.session?.access_token;
+
+  if (!token) {
+    alert("Sessione admin non valida. Effettua di nuovo il login.");
+    return;
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/crea-tecnico`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({
       nome,
       email,
-      ruolo,
-      attivo: true
-    }, {
-      onConflict: "email"
-    });
+      password,
+      ruolo
+    })
+  });
 
-  if (error) {
-    alert("Errore salvataggio tecnico: " + error.message);
+  const result = await response.json();
+
+  if (!response.ok || !result.ok) {
+    alert("Errore creazione tecnico: " + (result.error || "Errore sconosciuto"));
     return;
   }
 
   document.getElementById("admin_tecnico_nome").value = "";
   document.getElementById("admin_tecnico_email").value = "";
+  document.getElementById("admin_tecnico_password").value = "";
   document.getElementById("admin_tecnico_ruolo").value = "tecnico";
 
   await caricaTecniciAdmin();
-  alert("Tecnico salvato correttamente.");
+
+  alert("Tecnico creato correttamente. Ora può accedere con email e password iniziale.");
 }
-
-async function toggleTecnico(email, nuovoStato) {
-  const { error } = await supabaseClient
-    .from("utenti")
-    .update({ attivo: nuovoStato })
-    .eq("email", email);
-
-  if (error) {
-    alert("Errore aggiornamento tecnico: " + error.message);
-    return;
-  }
-
-  await caricaTecniciAdmin();
-}
-
 async function caricaCommittentiAdmin() {
   const box = document.getElementById("lista_committenti_admin");
   if (!box) return;
