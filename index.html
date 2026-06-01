@@ -553,6 +553,26 @@
   <h3>Ultimi rapportini</h3>
   <div id="ultimi_rapportini"></div>
 </div>
+
+</div>
+
+  <div class="admin-filters">
+    <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
+    <select id="admin_tipo" onchange="filtraArchivio()">
+      <option value="">Tutti i tipi</option>
+      <option value="dosaggio">Sistemi di dosaggio</option>
+      <option value="biossido">Biossido di cloro</option>
+    </select>
+    <input type="date" id="admin_data" onchange="filtraArchivio()" />
+  </div>
+
+  <div id="adminMsg" class="msg hidden"></div>
+  <div id="adminLista" class="admin-list"></div>
+</div>
+
+<div class="container hidden" id="appBox">
+  <div class="top-actions">
+
 <div class="dashboard-cards">
 
   <div class="dashboard-card">
@@ -585,24 +605,6 @@
     <strong id="stat_biossido">0</strong>
   </div>
 
-</div>
-
-  <div class="admin-filters">
-    <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
-    <select id="admin_tipo" onchange="filtraArchivio()">
-      <option value="">Tutti i tipi</option>
-      <option value="dosaggio">Sistemi di dosaggio</option>
-      <option value="biossido">Biossido di cloro</option>
-    </select>
-    <input type="date" id="admin_data" onchange="filtraArchivio()" />
-  </div>
-
-  <div id="adminMsg" class="msg hidden"></div>
-  <div id="adminLista" class="admin-list"></div>
-</div>
-
-<div class="container hidden" id="appBox">
-  <div class="top-actions">
     <h2>Nuovo rapportino</h2>
     <button class="logout-btn" onclick="logout()">Esci</button>
   </div>
@@ -926,7 +928,7 @@ async function login() {
 
     const { data, error } = await supabaseClient
       .from("rapportini")
-      .select("id, data_intervento, numero_so, descrizione_cliente, indirizzo_cliente, committente_id, tipo_rapportino, pdf_path, pdf_generato_at, created_at")
+      .select("id, data_intervento, numero_so, descrizione_cliente, indirizzo_cliente, committente_id, tipo_rapportino, tecnico_nome, km_percorsi, pdf_path, pdf_generato_at, created_at")
       .order("created_at", { ascending: false })
       .limit(100);
 
@@ -1015,7 +1017,7 @@ function renderTopTecnici(rapportini) {
   const conteggio = {};
 
   rapportini.forEach(r => {
-    const tecnico = r.tecnico_id || "Non indicato";
+    const tecnico = r.tecnico_nome || "Non indicato";
     conteggio[tecnico] = (conteggio[tecnico] || 0) + 1;
   });
 
@@ -1035,7 +1037,6 @@ function renderTopTecnici(rapportini) {
     box.appendChild(div);
   });
 }
-
 function renderMeseCorrente(rapportini, ore) {
   const box = document.getElementById("mese_corrente");
   box.innerHTML = "";
@@ -1095,16 +1096,21 @@ function renderUltimiRapportini(rapportini) {
 
   ultimi.forEach(r => {
     const tipo = r.tipo_rapportino === "biossido" ? "Biossido" : "Dosaggio";
+    const tecnico = r.tecnico_nome || "Non indicato";
+
     const div = document.createElement("div");
     div.className = "stat-row";
     div.innerHTML = `
-      <span>${formattaDataSolo(r.data_intervento)} - ${r.descrizione_cliente || "-"}</span>
+      <span>
+        ${formattaDataSolo(r.data_intervento)}<br>
+        <strong>${r.descrizione_cliente || "-"}</strong><br>
+        ${tecnico}
+      </span>
       <strong>${tipo}</strong>
     `;
     box.appendChild(div);
   });
 }
-
   function filtraArchivio() {
     const cerca = document.getElementById("admin_cerca").value.toLowerCase();
     const tipo = document.getElementById("admin_tipo").value;
@@ -1984,6 +1990,7 @@ async function aggiornaRapportinoEsistente() {
       tipo_rapportino: document.getElementById("tipo_rapportino").value,
       data_intervento: document.getElementById("data_intervento").value,
       numero_so: document.getElementById("numero_so").value || null,
+      tecnico_nome: nomeTecnicoCorrente(),
       committente_id: document.getElementById("committente_id").value || null,
       descrizione_cliente: document.getElementById("descrizione_cliente").value,
       indirizzo_cliente: document.getElementById("indirizzo_cliente").value,
