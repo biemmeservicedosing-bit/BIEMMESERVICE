@@ -1646,7 +1646,7 @@
     return data.ruolo;
   }
 
-  async function caricaProfiloUtente() {
+ async function caricaProfiloUtente() {
   tecnicoNomeCorrente = "";
 
   if (!utenteCorrente) return;
@@ -1659,6 +1659,20 @@
 
   if (data && data.nome) {
     tecnicoNomeCorrente = data.nome;
+    return;
+  }
+
+  if (utenteCorrente.user_metadata && utenteCorrente.user_metadata.nome) {
+    tecnicoNomeCorrente = utenteCorrente.user_metadata.nome;
+    return;
+  }
+
+  if (utenteCorrente.email) {
+    const primaParte = utenteCorrente.email.split("@")[0];
+    tecnicoNomeCorrente = primaParte
+      .split(".")
+      .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(" ");
   }
 }
 
