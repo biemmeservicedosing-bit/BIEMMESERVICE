@@ -713,22 +713,20 @@
   }
 
   async function caricaProfiloUtente() {
-    tecnicoNomeCorrente = "";
+  tecnicoNomeCorrente = "";
 
-    if (!utenteCorrente) return;
+  if (!utenteCorrente) return;
 
-    const { data } = await supabaseClient
-      .from("utenti")
-      .select("nome, email")
-      .eq("email", utenteCorrente.email)
-      .maybeSingle();
+  const { data } = await supabaseClient
+    .from("utenti")
+    .select("nome")
+    .eq("email", utenteCorrente.email)
+    .maybeSingle();
 
-    if (data && data.nome) {
-      tecnicoNomeCorrente = data.nome;
-    } else {
-      tecnicoNomeCorrente = utenteCorrente.email || "";
-    }
+  if (data && data.nome) {
+    tecnicoNomeCorrente = data.nome;
   }
+}
 
   function impostaNomeTecnicoDaUtente() {
     const campoTecnico = document.getElementById("nome_tecnico");
@@ -738,11 +736,11 @@
   }
 
   function nomeTecnicoCorrente() {
-    const campo = document.getElementById("nome_tecnico");
-    const valoreCampo = campo ? campo.value.trim() : "";
+  const campo = document.getElementById("nome_tecnico");
+  const valoreCampo = campo ? campo.value.trim() : "";
 
-    return valoreCampo || tecnicoNomeCorrente || utenteCorrente?.email || "-";
-  }
+  return valoreCampo || tecnicoNomeCorrente || "-";
+}
 
   async function login() {
     const email = document.getElementById("email").value;
