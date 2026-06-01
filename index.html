@@ -1313,55 +1313,76 @@ async function caricaTecniciAdmin() {
 }
 
 async function salvaTecnicoAdmin() {
-  const nome = document.getElementById("admin_tecnico_nome").value.trim();
-  const email = document.getElementById("admin_tecnico_email").value.trim().toLowerCase();
-  const password = document.getElementById("admin_tecnico_password").value.trim();
-  const ruolo = document.getElementById("admin_tecnico_ruolo").value;
 
-  if (!nome || !email || !password) {
-    alert("Inserisci nome, email e password iniziale.");
-    return;
+  try {
+
+    const nome = document.getElementById("admin_tecnico_nome").value.trim();
+    const email = document.getElementById("admin_tecnico_email").value.trim().toLowerCase();
+    const password = document.getElementById("admin_tecnico_password").value.trim();
+    const ruolo = document.getElementById("admin_tecnico_ruolo").value;
+
+    if (!nome || !email || !password) {
+      alert("Inserisci nome, email e password.");
+      return;
+    }
+
+    const { data: sessionData } = await supabaseClient.auth.getSession();
+
+    const token = sessionData?.session?.access_token;
+
+    if (!token) {
+      alert("Token admin mancante");
+      return;
+    }
+
+    console.log("TOKEN OK");
+    console.log("EMAIL:", email);
+
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/crea-tecnico`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          nome,
+          email,
+          password,
+          ruolo
+        })
+      }
+    );
+
+    console.log("STATUS:", response.status);
+
+    const testo = await response.text();
+
+    console.log("RISPOSTA:", testo);
+
+    if (!response.ok) {
+      alert("Errore funzione:\n" + testo);
+      return;
+    }
+
+    alert("Tecnico creato correttamente");
+
+    document.getElementById("admin_tecnico_nome").value = "";
+    document.getElementById("admin_tecnico_email").value = "";
+    document.getElementById("admin_tecnico_password").value = "";
+
+    await caricaTecniciAdmin();
+
+  } catch(err) {
+
+    console.error(err);
+
+    alert("Errore JS:\n" + err.message);
+
   }
 
-  const { data: sessionData } = await supabaseClient.auth.getSession();
-  const token = sessionData.session?.access_token;
-
-  if (!token) {
-    alert("Sessione admin non valida. Effettua di nuovo il login.");
-    return;
-  }
-
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/crea-tecnico`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${token}`
-    },
-    body: JSON.stringify({
-      nome,
-      email,
-      password,
-      ruolo
-    })
-  });
-
-  const result = await response.json();
-
-  if (!response.ok || !result.ok) {
-    alert("Errore creazione tecnico: " + (result.error || "Errore sconosciuto"));
-    return;
-  }
-
-  document.getElementById("admin_tecnico_nome").value = "";
-  document.getElementById("admin_tecnico_email").value = "";
-  document.getElementById("admin_tecnico_password").value = "";
-  document.getElementById("admin_tecnico_ruolo").value = "tecnico";
-
-  await caricaTecniciAdmin();
-
-  alert("Tecnico creato correttamente. Ora può accedere con email e password iniziale.");
-}
-async function caricaCommittentiAdmin() {
+}async function caricaCommittentiAdmin() {
   const box = document.getElementById("lista_committenti_admin");
   if (!box) return;
 
