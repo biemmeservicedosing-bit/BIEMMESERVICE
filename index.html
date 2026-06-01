@@ -537,24 +537,55 @@
     <h2>Archivio rapportini</h2>
     <button class="logout-btn" onclick="logout()">Esci</button>
   </div>
-<div class="dashboard-extra">
-  <div class="dashboard-panel">
-    <h3>Top tecnici</h3>
-    <div id="top_tecnici"></div>
+
+  <div class="dashboard-cards">
+    <div class="dashboard-card">
+      <span>Rapportini</span>
+      <strong id="stat_rapportini">0</strong>
+    </div>
+
+    <div class="dashboard-card">
+      <span>Ore</span>
+      <strong id="stat_ore">0</strong>
+    </div>
+
+    <div class="dashboard-card">
+      <span>Km</span>
+      <strong id="stat_km">0</strong>
+    </div>
+
+    <div class="dashboard-card">
+      <span>Tecnici</span>
+      <strong id="stat_tecnici">0</strong>
+    </div>
+
+    <div class="dashboard-card">
+      <span>Dosaggio</span>
+      <strong id="stat_dosaggio">0</strong>
+    </div>
+
+    <div class="dashboard-card">
+      <span>Biossido</span>
+      <strong id="stat_biossido">0</strong>
+    </div>
   </div>
 
-  <div class="dashboard-panel">
-    <h3>Mese corrente</h3>
-    <div id="mese_corrente"></div>
+  <div class="dashboard-extra">
+    <div class="dashboard-panel">
+      <h3>Top tecnici</h3>
+      <div id="top_tecnici"></div>
+    </div>
+
+    <div class="dashboard-panel">
+      <h3>Mese corrente</h3>
+      <div id="mese_corrente"></div>
+    </div>
   </div>
-</div>
 
-<div class="dashboard-panel ultimi-panel">
-  <h3>Ultimi rapportini</h3>
-  <div id="ultimi_rapportini"></div>
-</div>
-
-</div>
+  <div class="dashboard-panel ultimi-panel">
+    <h3>Ultimi rapportini</h3>
+    <div id="ultimi_rapportini"></div>
+  </div>
 
   <div class="admin-filters">
     <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
@@ -572,39 +603,6 @@
 
 <div class="container hidden" id="appBox">
   <div class="top-actions">
-
-<div class="dashboard-cards">
-
-  <div class="dashboard-card">
-    <span>Rapportini</span>
-    <strong id="stat_rapportini">0</strong>
-  </div>
-
-  <div class="dashboard-card">
-    <span>Ore</span>
-    <strong id="stat_ore">0</strong>
-  </div>
-
-  <div class="dashboard-card">
-    <span>Km</span>
-    <strong id="stat_km">0</strong>
-  </div>
-
-  <div class="dashboard-card">
-    <span>Tecnici</span>
-    <strong id="stat_tecnici">0</strong>
-  </div>
-
-  <div class="dashboard-card">
-    <span>Dosaggio</span>
-    <strong id="stat_dosaggio">0</strong>
-  </div>
-
-  <div class="dashboard-card">
-    <span>Biossido</span>
-    <strong id="stat_biossido">0</strong>
-  </div>
-
     <h2>Nuovo rapportino</h2>
     <button class="logout-btn" onclick="logout()">Esci</button>
   </div>
@@ -983,7 +981,7 @@ async function caricaStatisticheAdmin() {
 
   const tecniciUnici = new Set(
     rapportini
-      .map(r => r.tecnico_id)
+      .map(r => r.tecnico_nome)
       .filter(Boolean)
   );
 
@@ -1887,6 +1885,7 @@ async function aggiornaRapportinoEsistente() {
         cene: datiRapportino.cene,
         pernottamento: datiRapportino.pernottamento,
         tipo_addebito: datiRapportino.tipo_addebito,
+        tecnico_nome: datiRapportino.tecnico_nome,
         updated_by: user.id
       })
       .eq("id", rapportinoInModificaId);
@@ -2438,4 +2437,3 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
 </body>
 </html>
-
