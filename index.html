@@ -894,13 +894,19 @@ async function login() {
   }
 async function caricaStatisticheAdmin() {
 
-  const { data: rapportini } = await supabaseClient
-    .from("rapportini")
-    .select("id, tipo_rapportino, km_percorsi, tecnico_id");
+  const rapportini = archivioRapportini || [];
+  const idsRapportini = rapportini.map(r => r.id);
 
-  const { data: ore } = await supabaseClient
+  let ore = [];
+
+if (idsRapportini.length > 0) {
+  const { data } = await supabaseClient
     .from("rapportino_ore")
-    .select("ora_inizio, ora_fine");
+    .select("rapportino_id, ora_inizio, ora_fine")
+    .in("rapportino_id", idsRapportini);
+
+  ore = data || [];
+}
 
   const totaleRapportini = (rapportini || []).length;
 
