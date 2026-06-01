@@ -301,6 +301,36 @@
       grid-template-columns:1fr 90px 90px;
       gap:12px;
     }
+.dashboard-cards {
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:14px;
+  margin-bottom:22px;
+}
+
+.dashboard-card {
+  background:linear-gradient(135deg,#061f2c,#0e5a78);
+  color:white;
+  border-radius:22px;
+  padding:20px;
+  box-shadow:0 12px 28px rgba(6,31,44,.18);
+}
+
+.dashboard-card span {
+  display:block;
+  font-size:13px;
+  color:#bff4ff;
+  font-weight:750;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+}
+
+.dashboard-card strong {
+  display:block;
+  margin-top:8px;
+  font-size:34px;
+  line-height:1;
+}
 
     .admin-filters {
       display:grid;
@@ -403,6 +433,17 @@
       .row, .admin-filters {
         grid-template-columns:1fr;
       }
+.dashboard-cards {
+  grid-template-columns:1fr 1fr;
+}
+
+.dashboard-card {
+  padding:16px;
+}
+
+.dashboard-card strong {
+  font-size:28px;
+}
 
       .row-time {
         grid-template-columns:1fr 1fr 1fr;
@@ -449,6 +490,39 @@
     <h2>Archivio rapportini</h2>
     <button class="logout-btn" onclick="logout()">Esci</button>
   </div>
+<div class="dashboard-cards">
+
+  <div class="dashboard-card">
+    <span>Rapportini</span>
+    <strong id="stat_rapportini">0</strong>
+  </div>
+
+  <div class="dashboard-card">
+    <span>Ore</span>
+    <strong id="stat_ore">0</strong>
+  </div>
+
+  <div class="dashboard-card">
+    <span>Km</span>
+    <strong id="stat_km">0</strong>
+  </div>
+
+  <div class="dashboard-card">
+    <span>Tecnici</span>
+    <strong id="stat_tecnici">0</strong>
+  </div>
+
+  <div class="dashboard-card">
+    <span>Dosaggio</span>
+    <strong id="stat_dosaggio">0</strong>
+  </div>
+
+  <div class="dashboard-card">
+    <span>Biossido</span>
+    <strong id="stat_biossido">0</strong>
+  </div>
+
+</div>
 
   <div class="admin-filters">
     <input type="text" id="admin_cerca" placeholder="Cerca cliente, committente, SO..." oninput="filtraArchivio()" />
@@ -815,8 +889,70 @@ async function login() {
     }
 
     archivioRapportini = rapportiniConPdf;
+    await caricaStatisticheAdmin();
     renderArchivio(archivioRapportini);
   }
+async function caricaStatisticheAdmin() {
+
+  const { data: rapportini } = await supabaseClient
+    .from("rapportini")
+    .select("id, tipo_rapportino, km_percorsi, tecnico_id");
+
+  const { data: ore } = await supabaseClient
+    .from("rapportino_ore")
+    .select("ora_inizio, ora_fine");
+
+  const totaleRapportini = (rapportini || []).length;
+
+  const totaleKm = (rapportini || []).reduce((tot, r) => {
+    return tot + Number(r.km_percorsi || 0);
+  }, 0);
+
+  const totaleDosaggio = (rapportini || []).filter(
+    r => r.tipo_rapportino === "dosaggio"
+  ).length;
+
+  const totaleBiossido = (rapportini || []).filter(
+    r => r.tipo_rapportino === "biossido"
+  ).length;
+
+  const tecniciUnici = new Set(
+    (rapportini || [])
+      .map(r => r.tecnico_id)
+      .filter(Boolean)
+  );
+
+  let totaleOre = 0;
+
+  (ore || []).forEach(o => {
+
+    if (!o.ora_inizio || !o.ora_fine) return;
+
+    const inizio = new Date(o.ora_inizio);
+    const fine = new Date(o.ora_fine);
+
+    totaleOre += (fine - inizio) / 1000 / 60 / 60;
+  });
+
+  document.getElementById("stat_rapportini").textContent =
+    totaleRapportini;
+
+  document.getElementById("stat_ore").textContent =
+    totaleOre.toFixed(1);
+
+  document.getElementById("stat_km").textContent =
+    Math.round(totaleKm);
+
+  document.getElementById("stat_tecnici").textContent =
+    tecniciUnici.size;
+
+  document.getElementById("stat_dosaggio").textContent =
+    totaleDosaggio;
+
+  document.getElementById("stat_biossido").textContent =
+    totaleBiossido;
+}
+
 
   function filtraArchivio() {
     const cerca = document.getElementById("admin_cerca").value.toLowerCase();
