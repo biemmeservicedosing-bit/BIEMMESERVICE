@@ -646,6 +646,7 @@
   let archivioRapportini = [];
   let utenteCorrente = null;
   let ruoloCorrente = "tecnico";
+  let tecnicoNomeCorrente = "";
   let oreInserite = [];
 
   const firmeDisegnate = {
@@ -675,6 +676,7 @@
     if (!utenteCorrente) return;
 
     ruoloCorrente = await leggiRuoloUtente(utenteCorrente.email);
+    await caricaProfiloUtente();
 
     document.getElementById("loginBox").classList.add("hidden");
 
@@ -692,7 +694,7 @@
       }, 200);
 
       await caricaCommittenti();
-      await impostaNomeTecnicoDaUtente();
+      impostaNomeTecnicoDaUtente();
     }
   }
 
@@ -710,7 +712,9 @@
     return data.ruolo;
   }
 
-  async function impostaNomeTecnicoDaUtente() {
+  async function caricaProfiloUtente() {
+    tecnicoNomeCorrente = "";
+
     if (!utenteCorrente) return;
 
     const { data } = await supabaseClient
@@ -719,11 +723,25 @@
       .eq("email", utenteCorrente.email)
       .maybeSingle();
 
-    if (data?.nome) {
-      document.getElementById("nome_tecnico").value = data.nome;
-    } else if (utenteCorrente.email) {
-      document.getElementById("nome_tecnico").value = utenteCorrente.email;
+    if (data && data.nome) {
+      tecnicoNomeCorrente = data.nome;
+    } else {
+      tecnicoNomeCorrente = utenteCorrente.email || "";
     }
+  }
+
+  function impostaNomeTecnicoDaUtente() {
+    const campoTecnico = document.getElementById("nome_tecnico");
+    if (!campoTecnico) return;
+
+    campoTecnico.value = tecnicoNomeCorrente || "";
+  }
+
+  function nomeTecnicoCorrente() {
+    const campo = document.getElementById("nome_tecnico");
+    const valoreCampo = campo ? campo.value.trim() : "";
+
+    return valoreCampo || tecnicoNomeCorrente || utenteCorrente?.email || "-";
   }
 
   async function login() {
@@ -922,23 +940,6 @@
 
     return r;
   }
-async function impostaNomeTecnicoDaUtente() {
-  if (!utenteCorrente) return;
-
-  const { data, error } = await supabaseClient
-    .from("utenti")
-    .select("nome, email")
-    .eq("email", utenteCorrente.email)
-    .maybeSingle();
-
-  const campoTecnico = document.getElementById("nome_tecnico");
-
-  if (data && data.nome) {
-    campoTecnico.value = data.nome;
-  } else {
-    campoTecnico.value = "";
-  }
-}
 
   function cambiaTipoRapportino() {
     const tipo = document.getElementById("tipo_rapportino").value;
@@ -1253,6 +1254,8 @@ async function impostaNomeTecnicoDaUtente() {
       return;
     }
 
+    impostaNomeTecnicoDaUtente();
+
     const datiRapportino = raccogliDatiRapportino(user.id);
 
     const { data: nuovoRapportino, error } = await supabaseClient
@@ -1277,6 +1280,8 @@ async function impostaNomeTecnicoDaUtente() {
 
       if (bioError) {
         mostraMessaggio("appMsg", "Rapportino salvato, ma errore dati biossido: " + bioError.message, "danger");
+        btn.disabled = false;
+        btn.textContent = "Riprova";
         return;
       }
     }
@@ -1295,6 +1300,8 @@ async function impostaNomeTecnicoDaUtente() {
 
       if (oreError) {
         mostraMessaggio("appMsg", "Rapportino salvato, ma errore ore: " + oreError.message, "danger");
+        btn.disabled = false;
+        btn.textContent = "Riprova";
         return;
       }
     }
@@ -1307,7 +1314,7 @@ async function impostaNomeTecnicoDaUtente() {
         firmeDaSalvare.push({
           rapportino_id: nuovoRapportino.id,
           tipo: "tecnico",
-          nome_firmatario: document.getElementById("nome_tecnico").value || null,
+          nome_firmatario: nomeTecnicoCorrente(),
           file_url: firmaTecnicoUrl
         });
       }
@@ -1329,11 +1336,15 @@ async function impostaNomeTecnicoDaUtente() {
 
         if (firmeError) {
           mostraMessaggio("appMsg", "Rapportino salvato, ma errore firme: " + firmeError.message, "danger");
+          btn.disabled = false;
+          btn.textContent = "Riprova";
           return;
         }
       }
     } catch (err) {
       mostraMessaggio("appMsg", "Rapportino salvato, ma errore upload firme: " + err.message, "danger");
+      btn.disabled = false;
+      btn.textContent = "Riprova";
       return;
     }
 
@@ -1348,17 +1359,19 @@ async function impostaNomeTecnicoDaUtente() {
           contentType: "application/pdf",
           upsert: true
         });
-if (uploadPdfError) {
-  mostraMessaggio(
-    "appMsg",
-    "Rapportino salvato, ma errore upload PDF: " + uploadPdfError.message,
-    "danger"
-  );
 
-  btn.disabled = false;
-  btn.textContent = "Riprova salvataggio PDF";
-  return;
-}
+      if (uploadPdfError) {
+        mostraMessaggio(
+          "appMsg",
+          "Rapportino salvato, ma errore upload PDF: " + uploadPdfError.message,
+          "danger"
+        );
+
+        btn.disabled = false;
+        btn.textContent = "Riprova salvataggio PDF";
+        return;
+      }
+
       const { error: updatePdfError } = await supabaseClient
         .from("rapportini")
         .update({
@@ -1370,6 +1383,8 @@ if (uploadPdfError) {
 
       if (updatePdfError) {
         mostraMessaggio("appMsg", "PDF caricato, ma errore aggiornamento rapportino: " + updatePdfError.message, "danger");
+        btn.disabled = false;
+        btn.textContent = "Riprova";
         return;
       }
 
@@ -1380,18 +1395,17 @@ if (uploadPdfError) {
         window.location.reload();
       }, 1500);
 
-   } catch (err) {
-  mostraMessaggio(
-    "appMsg",
-    "Rapportino salvato, ma errore generazione PDF: " + err.message,
-    "danger"
-  );
+    } catch (err) {
+      mostraMessaggio(
+        "appMsg",
+        "Rapportino salvato, ma errore generazione PDF: " + err.message,
+        "danger"
+      );
 
-  btn.disabled = false;
-  btn.textContent = "Riprova salvataggio PDF";
-  return;
-}
-
+      btn.disabled = false;
+      btn.textContent = "Riprova salvataggio PDF";
+      return;
+    }
   }
 
   function raccogliDatiRapportino(userId) {
@@ -1471,7 +1485,7 @@ if (uploadPdfError) {
 
     function intestazione(titolo, pagina) {
       if (logoBase64) {
-        doc.addImage(logoBase64, "JPEG", 16, 10, 26, 26);
+        doc.addImage(logoBase64, "JPEG", 16, 9, 25, 25);
       }
 
       doc.setFont("helvetica", "bold");
@@ -1500,13 +1514,6 @@ if (uploadPdfError) {
     }
 
     return { doc, intestazione };
-  }
-
-  function testoAddebito(value) {
-    if (value === "cliente") return "In conto cliente";
-    if (value === "committente") return "In conto committente";
-    if (value === "garanzia") return "Garanzia";
-    return "-";
   }
 
   function disegnaRigaLabelValore(doc, x, y, w, label, valore) {
@@ -1702,16 +1709,15 @@ if (uploadPdfError) {
     const committenteObj = committenteSelezionato();
     const cliente = dati.descrizione_cliente || "-";
     const indirizzoCliente = dati.indirizzo_cliente || "-";
-    const tecnico = document.getElementById("nome_tecnico").value || "-";
+    const tecnico = nomeTecnicoCorrente();
     const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
 
     intestazione("RAPPORTO ASSISTENZA TECNICA");
 
     let y = 55;
 
-    disegnaRigaLabelValore(doc, 12, y, 60, "Data intervento", formattaDataSolo(dati.data_intervento));
-    disegnaRigaLabelValore(doc, 72, y, 60, "Numero SO", dati.numero_so || "-");
-    disegnaRigaLabelValore(doc, 132, y, 66, "Intervento n.", dati.numero_so || rapportinoId.substring(0, 8));
+disegnaRigaLabelValore(doc, 12, y, 93, "Data intervento", formattaDataSolo(dati.data_intervento));
+disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     y += 16;
 
@@ -1743,7 +1749,7 @@ if (uploadPdfError) {
     const committenteObj = committenteSelezionato();
     const cliente = dati.descrizione_cliente || "-";
     const indirizzoCliente = dati.indirizzo_cliente || "-";
-    const tecnico = document.getElementById("nome_tecnico").value || "-";
+    const tecnico = nomeTecnicoCorrente();
     const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
 
     const bio = {
@@ -1759,9 +1765,8 @@ if (uploadPdfError) {
 
     let y = 55;
 
-    disegnaRigaLabelValore(doc, 12, y, 60, "Data intervento", formattaDataSolo(dati.data_intervento));
-    disegnaRigaLabelValore(doc, 72, y, 60, "Numero SO", dati.numero_so || "-");
-    disegnaRigaLabelValore(doc, 132, y, 66, "Intervento n.", dati.numero_so || rapportinoId.substring(0, 8));
+    disegnaRigaLabelValore(doc, 12, y, 93, "Data intervento", formattaDataSolo(dati.data_intervento));
+disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     y += 16;
 
@@ -1855,3 +1860,4 @@ if (uploadPdfError) {
 
 </body>
 </html>
+
