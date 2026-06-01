@@ -1760,6 +1760,7 @@ async function caricaMieiRapportini() {
     .from("rapportini")
     .select("id, data_intervento, numero_so, descrizione_cliente, indirizzo_cliente, committente_id, tipo_rapportino, tecnico_nome, km_percorsi, pdf_path, pdf_generato_at, created_at")
     .eq("created_by", utenteCorrente.id)
+    .not("pdf_path", "is", null)
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -1769,7 +1770,22 @@ async function caricaMieiRapportini() {
     return;
   }
 
-  mieiRapportini = data || [];
+  const rapportiniConPdf = [];
+
+  for (const r of data || []) {
+    if (!r.pdf_path) continue;
+
+    const { data: signed, error: signedError } = await supabaseClient
+      .storage
+      .from("pdf")
+      .createSignedUrl(r.pdf_path, 60);
+
+    if (!signedError && signed?.signedUrl) {
+      rapportiniConPdf.push(r);
+    }
+  }
+
+  mieiRapportini = rapportiniConPdf;
 
   const ids = mieiRapportini.map(r => r.id);
   mieOre = [];
