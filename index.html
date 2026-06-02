@@ -200,6 +200,24 @@
       margin-bottom:0;
     }
 
+
+    .hub-btn {
+      width:100%;
+      margin-top:14px;
+      background:white;
+      color:var(--dark);
+      border:1px solid rgba(255,255,255,.45);
+      box-shadow:none;
+    }
+
+    .hub-btn-main {
+      background:white;
+      color:var(--dark);
+      border:1px solid var(--border);
+      box-shadow:none;
+      margin-top:14px;
+    }
+
     .logout-btn {
       max-width:150px;
       margin-top:0;
@@ -988,6 +1006,7 @@
   <input type="password" id="password" autocomplete="current-password" />
 
   <button onclick="login()">Accedi</button>
+  <button class="hub-btn-main" onclick="tornaHub()">Torna al HUB</button>
 
   <div id="loginMsg" class="msg hidden"></div>
 </div>
@@ -1009,6 +1028,7 @@
     <button class="admin-nav-btn" id="nav_committenti" onclick="showAdminPage('committenti')">Committenti</button>
     <button class="admin-nav-btn" id="nav_calendario" onclick="showAdminPage('calendario')">Calendario</button>
 
+    <button class="hub-btn" onclick="tornaHub()">Torna al HUB</button>
     <button class="admin-sidebar-logout" onclick="logout()">Esci</button>
   </aside>
 
@@ -1233,6 +1253,7 @@
     <button class="tech-nav-btn" id="tech_nav_calendario" onclick="showTechPage('calendario')">Calendario</button>
     <button class="tech-nav-btn" id="tech_nav_profilo" onclick="showTechPage('profilo')">Profilo</button>
 
+    <button class="hub-btn" onclick="tornaHub()">Torna al HUB</button>
     <button class="tech-sidebar-logout" onclick="logout()">Esci</button>
   </aside>
 
@@ -1561,9 +1582,16 @@
 <script>
   const SUPABASE_URL = "https://ehrmyyjojlgrdgxjsuzu.supabase.co";
   const SUPABASE_KEY = "sb_publishable_5GARNlBShnQXlLnQy-kCnA_JhlcIcr3";
-  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  });
 
   const ADMIN_EMAIL = "biemmeservice.dosing@gmail.com";
+  const HUB_URL = "https://biemme-hub.vercel.app/";
 
   let listaCommittenti = [];
   let archivioRapportini = [];
@@ -1585,6 +1613,34 @@
     firma_cliente: false
   };
 
+
+  async function riceviSessioneDaHub() {
+    if (!window.location.hash || !window.location.hash.includes("access_token=")) return false;
+
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
+
+    if (!access_token || !refresh_token) return false;
+
+    const { error } = await supabaseClient.auth.setSession({
+      access_token,
+      refresh_token
+    });
+
+    if (error) {
+      console.error("Errore ricezione sessione HUB:", error);
+      return false;
+    }
+
+    history.replaceState(null, document.title, window.location.pathname + window.location.search);
+    return true;
+  }
+
+  function tornaHub() {
+    window.location.href = HUB_URL;
+  }
+
   document.addEventListener("DOMContentLoaded", async () => {
     const oggi = new Date().toISOString().split("T")[0];
     document.getElementById("data_intervento").value = oggi;
@@ -1592,6 +1648,8 @@
     creaMenuOre();
     preparaCanvasFirma("firma_tecnico");
     preparaCanvasFirma("firma_cliente");
+
+    await riceviSessioneDaHub();
 
     const { data } = await supabaseClient.auth.getSession();
 
