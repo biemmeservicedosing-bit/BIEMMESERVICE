@@ -1425,6 +1425,12 @@
         <div class="firma-section">
           <h3>Firme</h3>
 
+          <div id="firmeEsistentiBox" class="firme-esistenti-box hidden">
+            <h4>Firme esistenti</h4>
+            <div id="firmeEsistentiLista"></div>
+            <p class="admin-empty">Se non firmi di nuovo, il PDF mantiene queste firme. Se rifai una firma, viene sostituita solo quella.</p>
+          </div>
+
           <div class="firma-box">
             <h4>Firma tecnico</h4>
             <label>Nome tecnico</label>
@@ -1534,7 +1540,7 @@
 
 <div class="modal hidden" id="modalOre">
   <div class="modal-box">
-    <h2>Aggiungi ore</h2>
+    <h2 id="modalOreTitolo">Aggiungi ore</h2>
 
     <label>Tipologia ore</label>
     <select id="modal_tipo_ore">
@@ -1574,7 +1580,7 @@
       <select id="modal_minuti_fine_2"></select>
     </div>
 
-    <button onclick="confermaOre()">Conferma</button>
+    <button id="modalOreBtn" onclick="confermaOre()">Conferma</button>
     <button class="secondary" onclick="chiudiOre()">Annulla</button>
   </div>
 </div>
@@ -1607,6 +1613,8 @@
   const rapportiniPerPagina = 20;
   let mieiRapportini = [];
   let mieOre = [];
+  let editingOreIndex = null;
+  let firmeEsistenti = { tecnico: null, cliente: null };
 
   const firmeDisegnate = {
     firma_tecnico: false,
@@ -1794,6 +1802,7 @@ function showTechPage(page) {
 }
 
 function iniziaNuovoRapportino(tipo) {
+  if (!modalitaModifica) resetFirmeEsistenti();
   document.getElementById("techSceltaRapportino").classList.add("hidden");
   document.getElementById("techFormRapportino").classList.remove("hidden");
 
@@ -2672,6 +2681,132 @@ async function eliminaRapportino(id, pdfPath) {
   }
 }
 
+
+function resetFirmeEsistenti() {
+  firmeEsistenti = { tecnico: null, cliente: null };
+
+  const box = document.getElementById("firmeEsistentiBox");
+  const lista = document.getElementById("firmeEsistentiLista");
+
+  if (box) box.classList.add("hidden");
+  if (lista) lista.innerHTML = "";
+}
+
+async function caricaFirmeEsistenti(rapportinoId) {
+  resetFirmeEsistenti();
+
+  const { data, error } = await supabaseClient
+    .from("firme")
+    .select("tipo, nome_firmatario, file_url")
+    .eq("rapportino_id", rapportinoId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.warn("Errore caricamento firme esistenti:", error.message);
+    return;
+  }
+
+  (data || []).forEach(f => {
+    if (!firmeEsistenti[f.tipo]) firmeEsistenti[f.tipo] = f;
+  });
+
+  renderFirmeEsistenti();
+}
+
+function renderFirmeEsistenti() {
+  const box = document.getElementById("firmeEsistentiBox");
+  const lista = document.getElementById("firmeEsistentiLista");
+
+  if (!box || !lista) return;
+
+  lista.innerHTML = ["tecnico", "cliente"].map(tipo => {
+    const f = firmeEsistenti[tipo];
+    const label = tipo === "tecnico" ? "Firma tecnico" : "Firma cliente";
+
+    if (f?.file_url) {
+      return `
+        <div class="firma-esistente-item">
+          <div><strong>${label}</strong><br><span>${f.nome_firmatario || "-"}</span></div>
+          <img src="${f.file_url}" alt="${label}" />
+        </div>
+      `;
+    }
+
+    return `
+      <div class="firma-esistente-item">
+        <div><strong>${label}</strong><br><span>Non presente</span></div>
+        <div></div>
+      </div>
+    `;
+  }).join("");
+
+  box.classList.remove("hidden");
+}
+
+async function urlToDataUrl(url) {
+  if (!url) return null;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+
+    const blob = await response.blob();
+
+    return await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.warn("Impossibile caricare firma esistente:", err);
+    return null;
+  }
+}
+
+async function firmaPdfDataUrl(tipo, canvasId) {
+  if (firmeDisegnate[canvasId]) {
+    return document.getElementById(canvasId).toDataURL("image/png");
+  }
+
+  const esistente = firmeEsistenti[tipo];
+  if (esistente?.file_url) {
+    return await urlToDataUrl(esistente.file_url);
+  }
+
+  return null;
+}
+
+async function aggiornaFirmaModificata(rapportinoId, tipo, canvasId, nomeFirmatario) {
+  if (!firmeDisegnate[canvasId]) return;
+
+  const firmaUrl = await caricaFirmaSuStorage(canvasId, rapportinoId, tipo);
+  if (!firmaUrl) return;
+
+  await supabaseClient
+    .from("firme")
+    .delete()
+    .eq("rapportino_id", rapportinoId)
+    .eq("tipo", tipo);
+
+  const { error } = await supabaseClient
+    .from("firme")
+    .insert([{
+      rapportino_id: rapportinoId,
+      tipo,
+      nome_firmatario: nomeFirmatario || null,
+      file_url: firmaUrl
+    }]);
+
+  if (error) throw error;
+
+  firmeEsistenti[tipo] = {
+    tipo,
+    nome_firmatario: nomeFirmatario || null,
+    file_url: firmaUrl
+  };
+}
+
+
 async function modificaRapportino(id) {
   const { data, error } = await supabaseClient
     .from("rapportini")
@@ -2721,11 +2856,13 @@ async function modificaRapportino(id) {
 
   const { data: oreDb } = await supabaseClient
     .from("rapportino_ore")
-    .select("tipo, ora_inizio, ora_fine")
+    .select("id, tipo, ora_inizio, ora_fine")
     .eq("rapportino_id", id);
 
   oreInserite = oreDb || [];
   aggiornaRiepilogoOre();
+
+  await caricaFirmeEsistenti(id);
 
   if (data.tipo_rapportino === "biossido") {
     const { data: bio } = await supabaseClient
@@ -2917,7 +3054,15 @@ async function modificaRapportino(id) {
     });
   }
 
-  function apriOre() {
+  function apriOre(index = null) {
+    editingOreIndex = index;
+
+    const titolo = document.getElementById("modalOreTitolo");
+    const btn = document.getElementById("modalOreBtn");
+
+    if (titolo) titolo.textContent = index === null ? "Aggiungi ore" : "Modifica ore";
+    if (btn) btn.textContent = index === null ? "Conferma" : "Salva modifica";
+
     const data = document.getElementById("data_intervento").value || new Date().toISOString().split("T")[0];
 
     document.getElementById("modal_data_inizio_1").value = data;
@@ -2938,15 +3083,34 @@ async function modificaRapportino(id) {
       document.getElementById(id).value = "";
     });
 
+    if (index !== null && oreInserite[index]) {
+      const riga = oreInserite[index];
+      document.getElementById("modal_tipo_ore").value = riga.tipo || "trasferta";
+
+      const inizio = parseDateTimeLocalParts(riga.ora_inizio);
+      const fine = parseDateTimeLocalParts(riga.ora_fine);
+
+      if (inizio && fine) {
+        document.getElementById("modal_data_inizio_1").value = inizio.data;
+        document.getElementById("modal_ora_inizio_1").value = inizio.ora;
+        document.getElementById("modal_minuti_inizio_1").value = inizio.minuti;
+        document.getElementById("modal_data_fine_1").value = fine.data;
+        document.getElementById("modal_ora_fine_1").value = fine.ora;
+        document.getElementById("modal_minuti_fine_1").value = fine.minuti;
+      }
+    }
+
     document.getElementById("modalOre").classList.remove("hidden");
   }
 
   function chiudiOre() {
+    editingOreIndex = null;
     document.getElementById("modalOre").classList.add("hidden");
   }
 
   function confermaOre() {
     const tipo = document.getElementById("modal_tipo_ore").value;
+    const nuoveRighe = [];
 
     aggiungiIntervallo(
       tipo,
@@ -2955,24 +3119,57 @@ async function modificaRapportino(id) {
       "modal_minuti_inizio_1",
       "modal_data_fine_1",
       "modal_ora_fine_1",
-      "modal_minuti_fine_1"
+      "modal_minuti_fine_1",
+      nuoveRighe
     );
 
-    aggiungiIntervallo(
-      tipo,
-      "modal_data_inizio_2",
-      "modal_ora_inizio_2",
-      "modal_minuti_inizio_2",
-      "modal_data_fine_2",
-      "modal_ora_fine_2",
-      "modal_minuti_fine_2"
-    );
+    if (editingOreIndex === null) {
+      aggiungiIntervallo(
+        tipo,
+        "modal_data_inizio_2",
+        "modal_ora_inizio_2",
+        "modal_minuti_inizio_2",
+        "modal_data_fine_2",
+        "modal_ora_fine_2",
+        "modal_minuti_fine_2",
+        nuoveRighe
+      );
+    }
+
+    if (nuoveRighe.length === 0) {
+      alert("Inserisci almeno un intervallo completo.");
+      return;
+    }
+
+    if (editingOreIndex !== null) {
+      oreInserite[editingOreIndex] = nuoveRighe[0];
+    } else {
+      oreInserite.push(...nuoveRighe);
+    }
 
     aggiornaRiepilogoOre();
     chiudiOre();
   }
 
-  function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, minutiInizioId, dataFineId, oraFineId, minutiFineId) {
+  function parseDateTimeLocalParts(value) {
+    if (!value) return null;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return null;
+
+    return {
+      data: d.toISOString().split("T")[0],
+      ora: String(d.getHours()).padStart(2, "0"),
+      minuti: String(d.getMinutes()).padStart(2, "0")
+    };
+  }
+
+  function eliminaOra(index) {
+    if (!confirm("Eliminare questa riga ore?")) return;
+    oreInserite.splice(index, 1);
+    aggiornaRiepilogoOre();
+  }
+
+  function aggiungiIntervallo(tipo, dataInizioId, oraInizioId, minutiInizioId, dataFineId, oraFineId, minutiFineId, target = oreInserite) {
     const dataInizio = document.getElementById(dataInizioId).value;
     const oraInizio = document.getElementById(oraInizioId).value;
     const minutiInizio = document.getElementById(minutiInizioId).value;
@@ -2981,7 +3178,7 @@ async function modificaRapportino(id) {
     const minutiFine = document.getElementById(minutiFineId).value;
 
     if (dataInizio && oraInizio && minutiInizio && dataFine && oraFine && minutiFine) {
-      oreInserite.push({
+      target.push({
         tipo,
         ora_inizio: `${dataInizio}T${oraInizio}:${minutiInizio}:00`,
         ora_fine: `${dataFine}T${oraFine}:${minutiFine}:00`
@@ -2995,11 +3192,23 @@ async function modificaRapportino(id) {
     const box = document.getElementById("riepilogo_ore");
     box.innerHTML = "";
 
+    if (oreInserite.length === 0) {
+      box.innerHTML = "<p>Nessuna ora inserita.</p>";
+      return;
+    }
+
     oreInserite.forEach((o, index) => {
       const nome = o.tipo === "trasferta" ? "Ore trasferta" : "Ore lavorate";
-      const p = document.createElement("p");
-      p.innerHTML = `<strong>${index + 1}. ${nome}</strong><br>${formattaDataOra(o.ora_inizio)} → ${formattaDataOra(o.ora_fine)}`;
-      box.appendChild(p);
+      const div = document.createElement("div");
+      div.className = "sub-card";
+      div.innerHTML = `
+        <p><strong>${index + 1}. ${nome}</strong><br>${formattaDataOra(o.ora_inizio)} → ${formattaDataOra(o.ora_fine)}</p>
+        <div class="ore-actions-row">
+          <button class="secondary" type="button" onclick="apriOre(${index})">Modifica</button>
+          <button class="delete-btn" type="button" onclick="eliminaOra(${index})">Elimina</button>
+        </div>
+      `;
+      box.appendChild(div);
     });
   }
 
@@ -3383,6 +3592,20 @@ async function aggiornaRapportinoEsistente() {
       }
     }
 
+    await aggiornaFirmaModificata(
+      rapportinoInModificaId,
+      "tecnico",
+      "firma_tecnico",
+      nomeTecnicoCorrente()
+    );
+
+    await aggiornaFirmaModificata(
+      rapportinoInModificaId,
+      "cliente",
+      "firma_cliente",
+      document.getElementById("nome_cliente_firma").value || firmeEsistenti.cliente?.nome_firmatario || null
+    );
+
     if (pdfPathVecchio) {
       await supabaseClient
         .storage
@@ -3637,7 +3860,7 @@ async function aggiornaRapportinoEsistente() {
     return y + altezza + 8;
   }
 
-  function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma) {
+  async function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma) {
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
 
@@ -3707,13 +3930,14 @@ async function aggiornaRapportinoEsistente() {
     doc.text("Firma Tecnico", 103, y + 7, { align: "center" });
     doc.text("Visto per accettazione cliente", 166, y + 7, { align: "center" });
 
-    if (firmeDisegnate.firma_tecnico) {
-      const imgTec = document.getElementById("firma_tecnico").toDataURL("image/png");
+    const imgTec = await firmaPdfDataUrl("tecnico", "firma_tecnico");
+    const imgCli = await firmaPdfDataUrl("cliente", "firma_cliente");
+
+    if (imgTec) {
       doc.addImage(imgTec, "PNG", 78, y + 11, 48, 18);
     }
 
-    if (firmeDisegnate.firma_cliente) {
-      const imgCli = document.getElementById("firma_cliente").toDataURL("image/png");
+    if (imgCli) {
       doc.addImage(imgCli, "PNG", 143, y + 11, 48, 18);
     }
 
@@ -3765,7 +3989,7 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     doc.addPage();
     intestazione("RAPPORTO ASSISTENZA TECNICA");
-    disegnaSpeseMaterialiFirme(doc, 58, dati, tecnico, clienteFirma);
+    await disegnaSpeseMaterialiFirme(doc, 58, dati, tecnico, clienteFirma);
 
     return doc.output("blob");
   }
@@ -3840,7 +4064,7 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     y = disegnaRelazione(doc, y, "RELAZIONE INTERVENTO", dati.relazione, 66);
 
-    disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma);
+    await disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma);
 
     return doc.output("blob");
   }
