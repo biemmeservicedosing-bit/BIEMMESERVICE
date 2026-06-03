@@ -1614,6 +1614,7 @@
   let mieiRapportini = [];
   let mieOre = [];
   let editingOreIndex = null;
+  let editingOreTipo = null;
   let firmeEsistenti = { tecnico: null, cliente: null };
 
   const firmeDisegnate = {
@@ -3056,6 +3057,7 @@ async function modificaRapportino(id) {
 
   function apriOre(index = null) {
     editingOreIndex = index;
+    editingOreTipo = index !== null && oreInserite[index] ? oreInserite[index].tipo : null;
 
     const titolo = document.getElementById("modalOreTitolo");
     const btn = document.getElementById("modalOreBtn");
@@ -3105,6 +3107,7 @@ async function modificaRapportino(id) {
 
   function chiudiOre() {
     editingOreIndex = null;
+    editingOreTipo = null;
     document.getElementById("modalOre").classList.add("hidden");
   }
 
@@ -3123,18 +3126,16 @@ async function modificaRapportino(id) {
       nuoveRighe
     );
 
-    if (editingOreIndex === null) {
-      aggiungiIntervallo(
-        tipo,
-        "modal_data_inizio_2",
-        "modal_ora_inizio_2",
-        "modal_minuti_inizio_2",
-        "modal_data_fine_2",
-        "modal_ora_fine_2",
-        "modal_minuti_fine_2",
-        nuoveRighe
-      );
-    }
+    aggiungiIntervallo(
+      tipo,
+      "modal_data_inizio_2",
+      "modal_ora_inizio_2",
+      "modal_minuti_inizio_2",
+      "modal_data_fine_2",
+      "modal_ora_fine_2",
+      "modal_minuti_fine_2",
+      nuoveRighe
+    );
 
     if (nuoveRighe.length === 0) {
       alert("Inserisci almeno un intervallo completo.");
@@ -3142,25 +3143,31 @@ async function modificaRapportino(id) {
     }
 
     if (editingOreIndex !== null) {
-      oreInserite[editingOreIndex] = nuoveRighe[0];
+      const tipoDaSostituire = editingOreTipo || tipo;
+      const altreOre = oreInserite.filter(o => o.tipo !== tipoDaSostituire);
+      oreInserite = [...altreOre, ...nuoveRighe];
     } else {
       oreInserite.push(...nuoveRighe);
     }
 
+    oreInserite.sort((a, b) => String(a.tipo).localeCompare(String(b.tipo)) || String(a.ora_inizio).localeCompare(String(b.ora_inizio)));
     aggiornaRiepilogoOre();
     chiudiOre();
   }
 
   function parseDateTimeLocalParts(value) {
     if (!value) return null;
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return null;
 
-    return {
-      data: d.toISOString().split("T")[0],
-      ora: String(d.getHours()).padStart(2, "0"),
-      minuti: String(d.getMinutes()).padStart(2, "0")
-    };
+    const parts = String(value).split("T");
+    if (parts.length < 2) return null;
+
+    const data = parts[0];
+    const time = parts[1].substring(0, 5);
+    const [ora, minuti] = time.split(":");
+
+    if (!data || !ora || !minuti) return null;
+
+    return { data, ora: String(ora).padStart(2, "0"), minuti: String(minuti).padStart(2, "0") };
   }
 
   function eliminaOra(index) {
