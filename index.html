@@ -1607,7 +1607,8 @@
   let oreInserite = [];
   let modalitaModifica = false;
   let rapportinoInModificaId = null;
-  let pdfPathVecchio = null; 
+  let pdfPathVecchio = null;
+  let rapportinoOriginaleAutore = null; 
   let archivioFiltrato = [];
   let paginaArchivio = 1;
   const rapportiniPerPagina = 20;
@@ -1803,7 +1804,10 @@ function showTechPage(page) {
 }
 
 function iniziaNuovoRapportino(tipo) {
-  if (!modalitaModifica) resetFirmeEsistenti();
+  if (!modalitaModifica) {
+    resetFirmeEsistenti();
+    rapportinoOriginaleAutore = null;
+  }
   document.getElementById("techSceltaRapportino").classList.add("hidden");
   document.getElementById("techFormRapportino").classList.remove("hidden");
 
@@ -2824,6 +2828,13 @@ async function modificaRapportino(id) {
   rapportinoInModificaId = id;
   pdfPathVecchio = data.pdf_path || null;
 
+  rapportinoOriginaleAutore = {
+    tecnico_nome: data.tecnico_nome || null,
+    tecnico_id: data.tecnico_id || null,
+    created_by: data.created_by || null,
+    updated_by: data.updated_by || data.created_by || data.tecnico_id || null
+  };
+
   document.getElementById("adminBox").classList.add("hidden");
   document.getElementById("appBox").classList.remove("hidden");
   showTechPage("nuovo");
@@ -2831,6 +2842,7 @@ async function modificaRapportino(id) {
 
   await caricaCommittenti();
 
+  document.getElementById("nome_tecnico").value = data.tecnico_nome || "";
   document.getElementById("tipo_rapportino").value = data.tipo_rapportino || "dosaggio";
   cambiaTipoRapportino();
 
@@ -3533,6 +3545,16 @@ async function aggiornaRapportinoEsistente() {
 
     const datiRapportino = raccogliDatiRapportino(user.id);
 
+    // In modifica admin, il rapportino deve rimanere intestato al tecnico originale.
+    // L'admin deve risultare solo come updated_by.
+    if (rapportinoOriginaleAutore) {
+      datiRapportino.tecnico_nome = rapportinoOriginaleAutore.tecnico_nome || datiRapportino.tecnico_nome;
+      datiRapportino.tecnico_id = rapportinoOriginaleAutore.tecnico_id || datiRapportino.tecnico_id;
+      datiRapportino.created_by = rapportinoOriginaleAutore.created_by || datiRapportino.created_by;
+      // L'admin NON deve risultare: anche updated_by resta il tecnico originale.
+      datiRapportino.updated_by = rapportinoOriginaleAutore.updated_by || rapportinoOriginaleAutore.created_by || rapportinoOriginaleAutore.tecnico_id || datiRapportino.updated_by;
+    }
+
     const { error: updateError } = await supabaseClient
       .from("rapportini")
       .update({
@@ -3552,7 +3574,9 @@ async function aggiornaRapportinoEsistente() {
         pernottamento: datiRapportino.pernottamento,
         tipo_addebito: datiRapportino.tipo_addebito,
         tecnico_nome: datiRapportino.tecnico_nome,
-        updated_by: user.id
+        tecnico_id: datiRapportino.tecnico_id,
+        created_by: datiRapportino.created_by,
+        updated_by: datiRapportino.updated_by
       })
       .eq("id", rapportinoInModificaId);
 
@@ -3650,6 +3674,7 @@ async function aggiornaRapportinoEsistente() {
     modalitaModifica = false;
     rapportinoInModificaId = null;
     pdfPathVecchio = null;
+    rapportinoOriginaleAutore = null;
 
     mostraMessaggio("appMsg", "Rapportino modificato e PDF rigenerato correttamente.", "success");
 
