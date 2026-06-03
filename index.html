@@ -1623,6 +1623,94 @@
     firma_cliente: false
   };
 
+  const campiRapportino = [
+    "data_intervento",
+    "numero_so",
+    "committente_search",
+    "committente_id",
+    "descrizione_cliente",
+    "indirizzo_cliente",
+    "relazione",
+    "materiali_note",
+    "km_percorsi",
+    "spese_viaggio",
+    "parcheggio",
+    "pranzi",
+    "cene",
+    "pernottamento",
+    "tipo_addebito",
+    "nome_tecnico",
+    "nome_cliente_firma"
+  ];
+
+  const campiBiossido = [
+    "bio_tipologia_intervento",
+    "bio_tipologia_prodotto",
+    "bio_matricola",
+    "bio_codice",
+    "bio_modalita_dosaggio",
+    "bio_concentrazione_impostata"
+  ];
+
+  function valorePerInput(valore) {
+    return valore === null || valore === undefined ? "" : String(valore);
+  }
+
+  function dataPerInput(valore) {
+    if (!valore) return "";
+    return String(valore).split("T")[0];
+  }
+
+  function impostaValore(id, valore) {
+    const el = document.getElementById(id);
+    if (el) el.value = valorePerInput(valore);
+  }
+
+  function resetFirmeDisegnate() {
+    Object.keys(firmeDisegnate).forEach(canvasId => {
+      firmeDisegnate[canvasId] = false;
+
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    });
+  }
+
+  function svuotaCampiRapportino(tipo = "dosaggio") {
+    campiRapportino.forEach(id => impostaValore(id, ""));
+    campiBiossido.forEach(id => impostaValore(id, ""));
+
+    impostaValore("tipo_rapportino", tipo);
+    cambiaTipoRapportino();
+
+    oreInserite = [];
+    editingOreIndex = null;
+    editingOreTipo = null;
+
+    if (document.getElementById("riepilogo_ore")) {
+      aggiornaRiepilogoOre();
+    }
+
+    resetFirmeEsistenti();
+    resetFirmeDisegnate();
+  }
+
+  function nomeClienteFirmaCorrente() {
+    const campo = document.getElementById("nome_cliente_firma");
+    const valoreCampo = campo ? campo.value.trim() : "";
+    return valoreCampo || firmeEsistenti.cliente?.nome_firmatario || "-";
+  }
+
+  function nomeClienteFirmaPerSalvataggio() {
+    const nome = nomeClienteFirmaCorrente();
+    return nome === "-" ? null : nome;
+  }
+
 
   async function riceviSessioneDaHub() {
     if (!window.location.hash || !window.location.hash.includes("access_token=")) return false;
@@ -1805,7 +1893,9 @@ function showTechPage(page) {
 
 function iniziaNuovoRapportino(tipo) {
   if (!modalitaModifica) {
-    resetFirmeEsistenti();
+    svuotaCampiRapportino(tipo);
+    document.getElementById("data_intervento").value = new Date().toISOString().split("T")[0];
+    impostaNomeTecnicoDaUtente();
     rapportinoOriginaleAutore = null;
   }
   document.getElementById("techSceltaRapportino").classList.add("hidden");
@@ -2687,11 +2777,13 @@ async function eliminaRapportino(id, pdfPath) {
 }
 
 
-function resetFirmeEsistenti() {
-  firmeEsistenti = { tecnico: null, cliente: null };
+  function resetFirmeEsistenti() {
+    firmeEsistenti = { tecnico: null, cliente: null };
+    firmeDisegnate.firma_tecnico = false;
+    firmeDisegnate.firma_cliente = false;
 
-  const box = document.getElementById("firmeEsistentiBox");
-  const lista = document.getElementById("firmeEsistentiLista");
+    const box = document.getElementById("firmeEsistentiBox");
+    const lista = document.getElementById("firmeEsistentiLista");
 
   if (box) box.classList.add("hidden");
   if (lista) lista.innerHTML = "";
@@ -2787,11 +2879,13 @@ async function aggiornaFirmaModificata(rapportinoId, tipo, canvasId, nomeFirmata
   const firmaUrl = await caricaFirmaSuStorage(canvasId, rapportinoId, tipo);
   if (!firmaUrl) return;
 
-  await supabaseClient
+  const { error: deleteFirmaError } = await supabaseClient
     .from("firme")
     .delete()
     .eq("rapportino_id", rapportinoId)
     .eq("tipo", tipo);
+
+  if (deleteFirmaError) throw deleteFirmaError;
 
   const { error } = await supabaseClient
     .from("firme")
@@ -2839,61 +2933,79 @@ async function modificaRapportino(id) {
   document.getElementById("appBox").classList.remove("hidden");
   showTechPage("nuovo");
   iniziaNuovoRapportino(data.tipo_rapportino || "dosaggio");
+  svuotaCampiRapportino(data.tipo_rapportino || "dosaggio");
 
   await caricaCommittenti();
 
-  document.getElementById("nome_tecnico").value = data.tecnico_nome || "";
-  document.getElementById("tipo_rapportino").value = data.tipo_rapportino || "dosaggio";
+  impostaValore("nome_tecnico", data.tecnico_nome);
+  impostaValore("tipo_rapportino", data.tipo_rapportino || "dosaggio");
   cambiaTipoRapportino();
 
-  document.getElementById("data_intervento").value = data.data_intervento || "";
-  document.getElementById("numero_so").value = data.numero_so || "";
-  document.getElementById("committente_id").value = data.committente_id || "";
+  impostaValore("data_intervento", dataPerInput(data.data_intervento));
+  impostaValore("numero_so", data.numero_so);
+  impostaValore("committente_id", data.committente_id);
 
-  const committente = listaCommittenti.find(c => c.id === data.committente_id);
-  document.getElementById("committente_search").value = committente ? committente.ragione_sociale : "";
+  const committente = await assicuraCommittenteInLista(data.committente_id);
+  impostaValore("committente_search", committente ? committente.ragione_sociale : "");
 
-  document.getElementById("descrizione_cliente").value = data.descrizione_cliente || "";
-  document.getElementById("indirizzo_cliente").value = data.indirizzo_cliente || "";
-  document.getElementById("relazione").value = data.relazione || "";
-  document.getElementById("materiali_note").value = data.materiali_note || "";
-  document.getElementById("km_percorsi").value = data.km_percorsi || "";
-  document.getElementById("spese_viaggio").value = data.spese_viaggio || "";
-  document.getElementById("parcheggio").value = data.parcheggio || "";
-  document.getElementById("pranzi").value = data.pranzi || "";
-  document.getElementById("cene").value = data.cene || "";
-  document.getElementById("pernottamento").value = data.pernottamento || "";
-  document.getElementById("tipo_addebito").value = data.tipo_addebito || "";
+  impostaValore("descrizione_cliente", data.descrizione_cliente);
+  impostaValore("indirizzo_cliente", data.indirizzo_cliente);
+  impostaValore("relazione", data.relazione);
+  impostaValore("materiali_note", data.materiali_note);
+  impostaValore("km_percorsi", data.km_percorsi);
+  impostaValore("spese_viaggio", data.spese_viaggio);
+  impostaValore("parcheggio", data.parcheggio);
+  impostaValore("pranzi", data.pranzi);
+  impostaValore("cene", data.cene);
+  impostaValore("pernottamento", data.pernottamento);
+  impostaValore("tipo_addebito", data.tipo_addebito);
 
   oreInserite = [];
 
-  const { data: oreDb } = await supabaseClient
+  const { data: oreDb, error: oreError } = await supabaseClient
     .from("rapportino_ore")
     .select("id, tipo, ora_inizio, ora_fine")
-    .eq("rapportino_id", id);
+    .eq("rapportino_id", id)
+    .order("ora_inizio", { ascending: true });
+
+  if (oreError) {
+    mostraMessaggio("appMsg", "Errore caricamento ore: " + oreError.message, "danger");
+    document.getElementById("btnSalva").disabled = true;
+    return;
+  }
 
   oreInserite = oreDb || [];
   aggiornaRiepilogoOre();
 
   await caricaFirmeEsistenti(id);
+  impostaValore("nome_cliente_firma", firmeEsistenti.cliente?.nome_firmatario || "");
 
   if (data.tipo_rapportino === "biossido") {
-    const { data: bio } = await supabaseClient
+    const { data: bioRows, error: bioError } = await supabaseClient
       .from("rapportini_biossido")
       .select("*")
       .eq("rapportino_id", id)
-      .maybeSingle();
+      .limit(1);
+
+    if (bioError) {
+      mostraMessaggio("appMsg", "Errore caricamento dati biossido: " + bioError.message, "danger");
+      document.getElementById("btnSalva").disabled = true;
+      return;
+    }
+
+    const bio = (bioRows || [])[0];
 
     if (bio) {
-      document.getElementById("bio_tipologia_intervento").value = bio.tipologia_intervento || "";
-      document.getElementById("bio_tipologia_prodotto").value = bio.tipologia_prodotto || "";
-      document.getElementById("bio_matricola").value = bio.matricola || "";
-      document.getElementById("bio_codice").value = bio.codice || "";
-      document.getElementById("bio_modalita_dosaggio").value = bio.modalita_dosaggio || "";
-      document.getElementById("bio_concentrazione_impostata").value = bio.concentrazione_impostata || "";
+      impostaValore("bio_tipologia_intervento", bio.tipologia_intervento);
+      impostaValore("bio_tipologia_prodotto", bio.tipologia_prodotto);
+      impostaValore("bio_matricola", bio.matricola);
+      impostaValore("bio_codice", bio.codice);
+      impostaValore("bio_modalita_dosaggio", bio.modalita_dosaggio);
+      impostaValore("bio_concentrazione_impostata", bio.concentrazione_impostata);
     }
   }
 
+  document.getElementById("btnSalva").disabled = false;
   document.getElementById("btnSalva").textContent = "Salva modifiche e rigenera PDF";
   mostraMessaggio("appMsg", "Modifica rapportino aperta. Le firme vanno rifatte se vuoi aggiornarle.", "success");
 }
@@ -2949,6 +3061,30 @@ async function modificaRapportino(id) {
     }
 
     listaCommittenti = data || [];
+  }
+
+  async function assicuraCommittenteInLista(committenteId) {
+    if (!committenteId) return null;
+
+    let committente = listaCommittenti.find(c => c.id === committenteId);
+    if (committente) return committente;
+
+    const { data, error } = await supabaseClient
+      .from("committenti")
+      .select("id, ragione_sociale, codice, indirizzo, citta, cap, provincia, nazione, attivo")
+      .eq("id", committenteId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("Committente salvato non caricato:", error.message);
+      return null;
+    }
+
+    if (data) {
+      listaCommittenti.push(data);
+    }
+
+    return data || null;
   }
 
   function committenteSelezionato() {
@@ -3313,6 +3449,7 @@ async function modificaRapportino(id) {
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    firmeDisegnate[canvasId] = false;
   }
 
   function pulisciFirma(canvasId) {
@@ -3545,13 +3682,11 @@ async function aggiornaRapportinoEsistente() {
 
     const datiRapportino = raccogliDatiRapportino(user.id);
 
-    // In modifica admin, il rapportino deve rimanere intestato al tecnico originale.
-    // L'admin deve risultare solo come updated_by.
+    // In modifica admin, il rapportino resta intestato al tecnico originale.
     if (rapportinoOriginaleAutore) {
       datiRapportino.tecnico_nome = rapportinoOriginaleAutore.tecnico_nome || datiRapportino.tecnico_nome;
       datiRapportino.tecnico_id = rapportinoOriginaleAutore.tecnico_id || datiRapportino.tecnico_id;
       datiRapportino.created_by = rapportinoOriginaleAutore.created_by || datiRapportino.created_by;
-      // L'admin NON deve risultare: anche updated_by resta il tecnico originale.
       datiRapportino.updated_by = rapportinoOriginaleAutore.updated_by || rapportinoOriginaleAutore.created_by || rapportinoOriginaleAutore.tecnico_id || datiRapportino.updated_by;
     }
 
@@ -3584,10 +3719,14 @@ async function aggiornaRapportinoEsistente() {
       throw updateError;
     }
 
-    await supabaseClient
+    const { error: deleteOreError } = await supabaseClient
       .from("rapportino_ore")
       .delete()
       .eq("rapportino_id", rapportinoInModificaId);
+
+    if (deleteOreError) {
+      throw deleteOreError;
+    }
 
     if (oreInserite.length > 0) {
       const righeOre = oreInserite.map(o => ({
@@ -3606,10 +3745,14 @@ async function aggiornaRapportinoEsistente() {
       }
     }
 
-    await supabaseClient
+    const { error: deleteBioError } = await supabaseClient
       .from("rapportini_biossido")
       .delete()
       .eq("rapportino_id", rapportinoInModificaId);
+
+    if (deleteBioError) {
+      throw deleteBioError;
+    }
 
     if (datiRapportino.tipo_rapportino === "biossido") {
       const bio = raccogliDatiBiossido(rapportinoInModificaId);
@@ -3634,15 +3777,8 @@ async function aggiornaRapportinoEsistente() {
       rapportinoInModificaId,
       "cliente",
       "firma_cliente",
-      document.getElementById("nome_cliente_firma").value || firmeEsistenti.cliente?.nome_firmatario || null
+      nomeClienteFirmaPerSalvataggio()
     );
-
-    if (pdfPathVecchio) {
-      await supabaseClient
-        .storage
-        .from("pdf")
-        .remove([pdfPathVecchio]);
-    }
 
     const pdfBlob = await generaPdfBlob(rapportinoInModificaId, datiRapportino);
     const nuovoPdfPath = creaPercorsoPdf(rapportinoInModificaId, datiRapportino);
@@ -3669,6 +3805,13 @@ async function aggiornaRapportinoEsistente() {
 
     if (updatePdfError) {
       throw updatePdfError;
+    }
+
+    if (pdfPathVecchio && pdfPathVecchio !== nuovoPdfPath) {
+      await supabaseClient
+        .storage
+        .from("pdf")
+        .remove([pdfPathVecchio]);
     }
 
     modalitaModifica = false;
@@ -3992,8 +4135,8 @@ async function aggiornaRapportinoEsistente() {
     const committenteObj = committenteSelezionato();
     const cliente = dati.descrizione_cliente || "-";
     const indirizzoCliente = dati.indirizzo_cliente || "-";
-    const tecnico = nomeTecnicoCorrente();
-    const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
+    const tecnico = dati.tecnico_nome || nomeTecnicoCorrente();
+    const clienteFirma = nomeClienteFirmaCorrente();
 
     intestazione("RAPPORTO ASSISTENZA TECNICA");
 
@@ -4032,8 +4175,8 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
     const committenteObj = committenteSelezionato();
     const cliente = dati.descrizione_cliente || "-";
     const indirizzoCliente = dati.indirizzo_cliente || "-";
-    const tecnico = nomeTecnicoCorrente();
-    const clienteFirma = document.getElementById("nome_cliente_firma").value || "-";
+    const tecnico = dati.tecnico_nome || nomeTecnicoCorrente();
+    const clienteFirma = nomeClienteFirmaCorrente();
 
     const bio = {
       tipologia_intervento: document.getElementById("bio_tipologia_intervento").value || "-",
