@@ -1366,6 +1366,9 @@
         <label>Indirizzo cliente</label>
         <input type="text" id="indirizzo_cliente" placeholder="Indirizzo intervento" />
 
+        <label>Numero tecnici intervento</label>
+        <input type="number" id="numero_tecnici" min="1" step="1" value="1" />
+
         <div id="biossidoBox" class="biossido-section hidden">
           <h3>Dati produttore biossido di cloro</h3>
 
@@ -1651,6 +1654,7 @@
     "committente_id",
     "descrizione_cliente",
     "indirizzo_cliente",
+    "numero_tecnici",
     "relazione",
     "materiali_note",
     "km_percorsi",
@@ -1707,6 +1711,7 @@
     campiBiossido.forEach(id => impostaValore(id, ""));
 
     impostaValore("tipo_rapportino", tipo);
+    impostaValore("numero_tecnici", 1);
     cambiaTipoRapportino();
 
     oreInserite = [];
@@ -3007,6 +3012,7 @@ async function modificaRapportino(id) {
 
   impostaValore("descrizione_cliente", data.descrizione_cliente);
   impostaValore("indirizzo_cliente", data.indirizzo_cliente);
+  impostaValore("numero_tecnici", data.numero_tecnici || 1);
   impostaValore("relazione", data.relazione);
   impostaValore("materiali_note", data.materiali_note);
   impostaValore("km_percorsi", data.km_percorsi);
@@ -3908,6 +3914,7 @@ async function aggiornaRapportinoEsistente() {
         committente_id: datiRapportino.committente_id,
         descrizione_cliente: datiRapportino.descrizione_cliente,
         indirizzo_cliente: datiRapportino.indirizzo_cliente,
+        numero_tecnici: datiRapportino.numero_tecnici,
         relazione: datiRapportino.relazione,
         materiali_note: datiRapportino.materiali_note,
         km_percorsi: datiRapportino.km_percorsi,
@@ -4052,6 +4059,7 @@ async function aggiornaRapportinoEsistente() {
       committente_id: document.getElementById("committente_id").value || null,
       descrizione_cliente: document.getElementById("descrizione_cliente").value,
       indirizzo_cliente: document.getElementById("indirizzo_cliente").value,
+      numero_tecnici: Math.max(1, parseInt(document.getElementById("numero_tecnici").value || "1", 10)),
       relazione: document.getElementById("relazione").value,
       materiali_note: document.getElementById("materiali_note").value,
       km_percorsi: document.getElementById("km_percorsi").value || null,
@@ -4501,8 +4509,10 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.text("INTERVENTO EFFETTUATO DA", 16, y + 7);
+    doc.text("N. TECNICI", 154, y + 7);
     doc.setFont("helvetica", "normal");
     doc.text(tecnico.toUpperCase(), 78, y + 7);
+    doc.text(String(dati.numero_tecnici || 1), 188, y + 7, { align: "right" });
 
     y += 16;
 
@@ -4548,8 +4558,9 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     y = disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committenteObj);
 
-    disegnaRigaLabelValore(doc, 12, y, 93, "Intervento effettuato da", tecnico);
-    disegnaRigaLabelValore(doc, 105, y, 93, "Tipologia intervento", bio.tipologia_intervento);
+    disegnaRigaLabelValore(doc, 12, y, 70, "Intervento effettuato da", tecnico);
+    disegnaRigaLabelValore(doc, 82, y, 31, "N. tecnici", dati.numero_tecnici || 1);
+    disegnaRigaLabelValore(doc, 113, y, 85, "Tipologia intervento", bio.tipologia_intervento);
 
     y += 18;
 
@@ -4637,3 +4648,4 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
 </body>
 </html>
+
