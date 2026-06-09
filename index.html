@@ -848,6 +848,26 @@
       line-height:1.45;
     }
 
+    .admin-status-badges {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      margin-top:10px;
+    }
+
+    .admin-status-badge {
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      border:1px solid #b8d6c5;
+      border-radius:999px;
+      padding:4px 8px;
+      background:#edf8f1;
+      color:#17613a;
+      font-size:12px;
+      font-weight:800;
+    }
+
     .admin-actions {
   display:grid;
   grid-template-columns:1fr 1fr 1fr 1fr;
@@ -1384,7 +1404,7 @@
 
           <div class="ore-card">
             <p><strong>Totali</strong></p>
-            <p>Numero di righe: <span id="numero_righe_ore">0</span></p>
+            <p>Numero di passaggi: <span id="numero_righe_ore">0</span></p>
             <div id="riepilogo_ore"></div>
           </div>
         </div>
@@ -1616,6 +1636,7 @@
   let mieOre = [];
   let editingOreIndex = null;
   let editingOreTipo = null;
+  let editingOreGroupKey = null;
   let firmeEsistenti = { tecnico: null, cliente: null };
 
   const firmeDisegnate = {
@@ -2622,6 +2643,40 @@ function tornaDashboardAdmin() {
     renderArchivio();
   }
 
+function statoAdminRapportino(id) {
+  try {
+    const stati = JSON.parse(localStorage.getItem("biemme_service_admin_pdf_stati") || "{}");
+    return stati[id] || {};
+  } catch (err) {
+    return {};
+  }
+}
+
+function marcaStatoAdminRapportino(id, campo) {
+  if (!id || !campo) return;
+
+  try {
+    const stati = JSON.parse(localStorage.getItem("biemme_service_admin_pdf_stati") || "{}");
+    stati[id] = {
+      ...(stati[id] || {}),
+      [campo]: new Date().toISOString()
+    };
+    localStorage.setItem("biemme_service_admin_pdf_stati", JSON.stringify(stati));
+  } catch (err) {
+    console.warn("Stato admin PDF non salvato", err);
+  }
+}
+
+function badgeStatoAdminRapportino(id) {
+  const stato = statoAdminRapportino(id);
+  const badges = [];
+
+  if (stato.modificato) badges.push('<span class="admin-status-badge">✓ Modificato</span>');
+  if (stato.scaricato) badges.push('<span class="admin-status-badge">✓ Scaricato</span>');
+
+  return badges.length ? `<div class="admin-status-badges">${badges.join("")}</div>` : "";
+}
+
 function renderArchivio() {
   const box = document.getElementById("adminLista");
   if (!box) return;
@@ -2662,9 +2717,10 @@ function renderArchivio() {
         <strong>SO:</strong> ${r.numero_so || "-"}<br>
         <strong>PDF:</strong> ${r.pdf_path ? "Disponibile" : "Non generato"}
       </div>
+      ${badgeStatoAdminRapportino(r.id)}
       <div class="admin-actions">
         <button ${r.pdf_path ? "" : "disabled"} onclick="anteprimaPdf('${r.pdf_path || ""}')">Anteprima</button>
-        <button ${r.pdf_path ? "" : "disabled"} onclick="scaricaPdf('${r.pdf_path || ""}')">Scarica</button>
+        <button ${r.pdf_path ? "" : "disabled"} onclick="scaricaPdf('${r.pdf_path || ""}', '${r.id}')">Scarica</button>
         <button class="edit-btn" onclick="modificaRapportino('${r.id}')">Modifica</button>
         <button class="edit-btn" onclick="rigeneraPdfRapportino('${r.id}')">Rigenera PDF</button>
         <button class="delete-btn" onclick="eliminaRapportino('${r.id}', '${r.pdf_path || ""}')">Elimina</button>
@@ -3060,9 +3116,14 @@ async function rigeneraPdfRapportino(id) {
     document.getElementById("modalAnteprima").classList.add("hidden");
   }
 
-  async function scaricaPdf(path) {
+  async function scaricaPdf(path, rapportinoId = null) {
     const url = await creaSignedUrlPdf(path);
     if (!url) return;
+
+    if (rapportinoId) {
+      marcaStatoAdminRapportino(rapportinoId, "scaricato");
+      renderArchivio();
+    }
 
     window.open(url, "_blank");
   }
@@ -3223,8 +3284,12 @@ async function rigeneraPdfRapportino(id) {
   }
 
   function apriOre(index = null) {
+    const gruppi = gruppiOre();
+    const gruppo = index !== null ? gruppi[index] : null;
+
     editingOreIndex = index;
-    editingOreTipo = index !== null && oreInserite[index] ? oreInserite[index].tipo : null;
+    editingOreTipo = gruppo ? gruppo.tipo : null;
+    editingOreGroupKey = gruppo ? gruppo.key : null;
 
     const titolo = document.getElementById("modalOreTitolo");
     const btn = document.getElementById("modalOreBtn");
@@ -3252,21 +3317,23 @@ async function rigeneraPdfRapportino(id) {
       document.getElementById(id).value = "";
     });
 
-    if (index !== null && oreInserite[index]) {
-      const riga = oreInserite[index];
-      document.getElementById("modal_tipo_ore").value = riga.tipo || "trasferta";
+    if (gruppo) {
+      document.getElementById("modal_tipo_ore").value = gruppo.tipo || "trasferta";
 
-      const inizio = parseDateTimeLocalParts(riga.ora_inizio);
-      const fine = parseDateTimeLocalParts(riga.ora_fine);
+      gruppo.righe.slice(0, 2).forEach((riga, i) => {
+        const suffisso = i + 1;
+        const inizio = parseDateTimeLocalParts(riga.ora_inizio);
+        const fine = parseDateTimeLocalParts(riga.ora_fine);
 
-      if (inizio && fine) {
-        document.getElementById("modal_data_inizio_1").value = inizio.data;
-        document.getElementById("modal_ora_inizio_1").value = inizio.ora;
-        document.getElementById("modal_minuti_inizio_1").value = inizio.minuti;
-        document.getElementById("modal_data_fine_1").value = fine.data;
-        document.getElementById("modal_ora_fine_1").value = fine.ora;
-        document.getElementById("modal_minuti_fine_1").value = fine.minuti;
-      }
+        if (inizio && fine) {
+          document.getElementById(`modal_data_inizio_${suffisso}`).value = inizio.data;
+          document.getElementById(`modal_ora_inizio_${suffisso}`).value = inizio.ora;
+          document.getElementById(`modal_minuti_inizio_${suffisso}`).value = inizio.minuti;
+          document.getElementById(`modal_data_fine_${suffisso}`).value = fine.data;
+          document.getElementById(`modal_ora_fine_${suffisso}`).value = fine.ora;
+          document.getElementById(`modal_minuti_fine_${suffisso}`).value = fine.minuti;
+        }
+      });
     }
 
     document.getElementById("modalOre").classList.remove("hidden");
@@ -3275,6 +3342,7 @@ async function rigeneraPdfRapportino(id) {
   function chiudiOre() {
     editingOreIndex = null;
     editingOreTipo = null;
+    editingOreGroupKey = null;
     document.getElementById("modalOre").classList.add("hidden");
   }
 
@@ -3309,8 +3377,21 @@ async function rigeneraPdfRapportino(id) {
       return;
     }
 
+    const gruppoId = editingOreGroupKey || creaGruppoOreId();
+    nuoveRighe.forEach(r => {
+      r.gruppo_ore = gruppoId;
+    });
+
     if (editingOreIndex !== null) {
-      oreInserite.splice(editingOreIndex, 1, ...nuoveRighe);
+      const gruppo = gruppiOre()[editingOreIndex];
+      const indici = gruppo ? gruppo.indexes : [editingOreIndex];
+
+      indici
+        .slice()
+        .sort((a, b) => b - a)
+        .forEach(i => oreInserite.splice(i, 1));
+
+      oreInserite.push(...nuoveRighe);
     } else {
       oreInserite.push(...nuoveRighe);
     }
@@ -3336,8 +3417,16 @@ async function rigeneraPdfRapportino(id) {
   }
 
   function eliminaOra(index) {
-    if (!confirm("Eliminare questa riga ore?")) return;
-    oreInserite.splice(index, 1);
+    if (!confirm("Eliminare questo passaggio ore?")) return;
+    const gruppo = gruppiOre()[index];
+
+    if (!gruppo) return;
+
+    gruppo.indexes
+      .slice()
+      .sort((a, b) => b - a)
+      .forEach(i => oreInserite.splice(i, 1));
+
     aggiornaRiepilogoOre();
   }
 
@@ -3358,7 +3447,110 @@ async function rigeneraPdfRapportino(id) {
     }
   }
 
+  function creaGruppoOreId() {
+    if (window.crypto && window.crypto.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+
+    return `ore_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  }
+
+  function gruppiOre() {
+    const ordinate = oreInserite
+      .map((riga, index) => ({ riga, index }))
+      .sort((a, b) =>
+        String(a.riga.tipo).localeCompare(String(b.riga.tipo)) ||
+        String(a.riga.ora_inizio).localeCompare(String(b.riga.ora_inizio))
+      );
+
+    const gruppi = [];
+    let bufferSenzaGruppo = [];
+    let tipoBuffer = null;
+
+    function svuotaBuffer() {
+      for (let i = 0; i < bufferSenzaGruppo.length; i += 2) {
+        const chunk = bufferSenzaGruppo.slice(i, i + 2);
+        gruppi.push({
+          key: `legacy_${chunk.map(x => x.index).join("_")}`,
+          tipo: chunk[0].riga.tipo,
+          righe: chunk.map(x => x.riga),
+          indexes: chunk.map(x => x.index)
+        });
+      }
+
+      bufferSenzaGruppo = [];
+      tipoBuffer = null;
+    }
+
+    ordinate.forEach(item => {
+      const gruppoId = item.riga.gruppo_ore;
+
+      if (gruppoId) {
+        svuotaBuffer();
+        let gruppo = gruppi.find(g => g.key === gruppoId);
+
+        if (!gruppo) {
+          gruppo = {
+            key: gruppoId,
+            tipo: item.riga.tipo,
+            righe: [],
+            indexes: []
+          };
+          gruppi.push(gruppo);
+        }
+
+        gruppo.righe.push(item.riga);
+        gruppo.indexes.push(item.index);
+        return;
+      }
+
+      if (tipoBuffer !== item.riga.tipo) {
+        svuotaBuffer();
+        tipoBuffer = item.riga.tipo;
+      }
+
+      bufferSenzaGruppo.push(item);
+    });
+
+    svuotaBuffer();
+
+    return gruppi.map(gruppo => ({
+      ...gruppo,
+      righe: gruppo.righe.sort((a, b) => String(a.ora_inizio).localeCompare(String(b.ora_inizio)))
+    }));
+  }
+
   function aggiornaRiepilogoOre() {
+    const gruppi = gruppiOre();
+    document.getElementById("numero_righe_ore").textContent = gruppi.length;
+
+    const boxNuovo = document.getElementById("riepilogo_ore");
+    boxNuovo.innerHTML = "";
+
+    if (gruppi.length === 0) {
+      boxNuovo.innerHTML = "<p>Nessuna ora inserita.</p>";
+      return;
+    }
+
+    gruppi.forEach((gruppo, index) => {
+      const nome = gruppo.tipo === "trasferta" ? "Ore trasferta" : "Ore lavorate";
+      const intervalli = gruppo.righe
+        .map(o => `${formattaDataOra(o.ora_inizio)} - ${formattaDataOra(o.ora_fine)}`)
+        .join("<br>");
+      const div = document.createElement("div");
+      div.className = "sub-card";
+      div.innerHTML = `
+        <p><strong>${index + 1}. ${nome}</strong><br>${intervalli}</p>
+        <div class="ore-actions-row">
+          <button class="secondary" type="button" onclick="apriOre(${index})">Modifica</button>
+          <button class="delete-btn" type="button" onclick="eliminaOra(${index})">Elimina</button>
+        </div>
+      `;
+      boxNuovo.appendChild(div);
+    });
+
+    return;
+
     document.getElementById("numero_righe_ore").textContent = oreInserite.length;
 
     const box = document.getElementById("riepilogo_ore");
@@ -3830,6 +4022,8 @@ async function aggiornaRapportinoEsistente() {
         .from("pdf")
         .remove([pdfPathVecchio]);
     }
+
+    marcaStatoAdminRapportino(rapportinoInModificaId, "modificato");
 
     modalitaModifica = false;
     rapportinoInModificaId = null;
@@ -4443,5 +4637,3 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
 </body>
 </html>
-
-
