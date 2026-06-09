@@ -2666,6 +2666,7 @@ function renderArchivio() {
         <button ${r.pdf_path ? "" : "disabled"} onclick="anteprimaPdf('${r.pdf_path || ""}')">Anteprima</button>
         <button ${r.pdf_path ? "" : "disabled"} onclick="scaricaPdf('${r.pdf_path || ""}')">Scarica</button>
         <button class="edit-btn" onclick="modificaRapportino('${r.id}')">Modifica</button>
+        <button class="edit-btn" onclick="rigeneraPdfRapportino('${r.id}')">Rigenera PDF</button>
         <button class="delete-btn" onclick="eliminaRapportino('${r.id}', '${r.pdf_path || ""}')">Elimina</button>
       </div>
     `;
@@ -3008,6 +3009,24 @@ async function modificaRapportino(id) {
   document.getElementById("btnSalva").disabled = false;
   document.getElementById("btnSalva").textContent = "Salva modifiche e rigenera PDF";
   mostraMessaggio("appMsg", "Modifica rapportino aperta. Le firme vanno rifatte se vuoi aggiornarle.", "success");
+}
+
+async function rigeneraPdfRapportino(id) {
+  const ok = confirm("Rigenerare il PDF di questo rapportino usando i dati salvati in archivio?");
+  if (!ok) return;
+
+  try {
+    await modificaRapportino(id);
+
+    if (!rapportinoInModificaId) {
+      return;
+    }
+
+    mostraMessaggio("appMsg", "Rigenerazione PDF in corso...", "success");
+    await aggiornaRapportinoEsistente();
+  } catch (err) {
+    mostraMessaggio("adminMsg", "Errore rigenerazione PDF: " + err.message, "danger");
+  }
 }
     async function creaSignedUrlPdf(path) {
     if (!path || path === "null" || path === "undefined") {
@@ -4382,3 +4401,4 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
 </body>
 </html>
+
