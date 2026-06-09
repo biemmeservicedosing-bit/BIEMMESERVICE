@@ -3908,6 +3908,14 @@ async function aggiornaRapportinoEsistente() {
     return `${d.toLocaleDateString("it-IT")} ${d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}`;
   }
 
+  function testoOraPdf(valore) {
+    if (!valore) return "-";
+    const d = new Date(valore);
+    const data = d.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" });
+    const ora = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+    return `${data} ${ora}`;
+  }
+
   function gruppoOre(tipo) {
     return oreInserite.filter(o => o.tipo === tipo);
   }
@@ -3927,7 +3935,7 @@ async function aggiornaRapportinoEsistente() {
 
     function intestazione(titolo, pagina) {
       if (logoBase64) {
-        doc.addImage(logoBase64, "JPEG", 16, 9, 25, 25);
+        doc.addImage(logoBase64, "JPEG", 14, 7, 30, 30);
       }
 
       doc.setFont("helvetica", "bold");
@@ -4026,23 +4034,40 @@ async function aggiornaRapportinoEsistente() {
 
     y += 7;
 
-    doc.rect(12, y, 40, 7);
-    doc.rect(52, y, 61, 7);
-    doc.rect(113, y, 61, 7);
-    doc.rect(174, y, 24, 7);
+    doc.rect(12, y, 38, 7);
+    doc.rect(50, y, 37, 7);
+    doc.rect(87, y, 37, 7);
+    doc.rect(124, y, 37, 7);
+    doc.rect(161, y, 37, 7);
     doc.text("Tipo", 14, y + 5);
-    doc.text("Da", 54, y + 5);
-    doc.text("A", 115, y + 5);
-    doc.text("Ore", 176, y + 5);
+    doc.text("Da", 52, y + 5);
+    doc.text("A", 89, y + 5);
+    doc.text("Da", 126, y + 5);
+    doc.text("A", 163, y + 5);
 
     return y + 7;
   }
 
+  function righeOrePdf(label, lista) {
+    const ordinate = [...lista].sort((a, b) => String(a.ora_inizio).localeCompare(String(b.ora_inizio)));
+    const righe = [];
+
+    for (let i = 0; i < ordinate.length; i += 2) {
+      righe.push({
+        label,
+        primo: ordinate[i] || null,
+        secondo: ordinate[i + 1] || null
+      });
+    }
+
+    return righe;
+  }
+
   function disegnaTabellaOre(doc, y, labelTrasferta, labelLavoro, ctx = {}) {
     const righe = [
-      ...gruppoOre("trasferta").map(o => ({ label: labelTrasferta, ...o })),
-      ...gruppoOre("lavoro").map(o => ({ label: labelLavoro, ...o }))
-    ].sort((a, b) => String(a.ora_inizio).localeCompare(String(b.ora_inizio)));
+      ...righeOrePdf(labelTrasferta, gruppoOre("trasferta")),
+      ...righeOrePdf(labelLavoro, gruppoOre("lavoro"))
+    ];
 
     y = assicuraSpazioPdf(doc, y, 22, ctx);
     y = disegnaHeaderOre(doc, y);
@@ -4061,16 +4086,22 @@ async function aggiornaRapportinoEsistente() {
         y = disegnaHeaderOre(doc, y);
       }
 
-      doc.rect(12, y, 40, 8);
-      doc.rect(52, y, 61, 8);
-      doc.rect(113, y, 61, 8);
-      doc.rect(174, y, 24, 8);
+      doc.rect(12, y, 38, 8);
+      doc.rect(50, y, 37, 8);
+      doc.rect(87, y, 37, 8);
+      doc.rect(124, y, 37, 8);
+      doc.rect(161, y, 37, 8);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.2);
       doc.text(riga.label, 14, y + 5.5);
-      doc.text(testoDataOra(riga.ora_inizio), 54, y + 5.5);
-      doc.text(testoDataOra(riga.ora_fine), 115, y + 5.5);
-      doc.text(oreIntervallo(riga.ora_inizio, riga.ora_fine), 176, y + 5.5);
+      if (riga.primo) {
+        doc.text(testoOraPdf(riga.primo.ora_inizio), 52, y + 5.5);
+        doc.text(testoOraPdf(riga.primo.ora_fine), 89, y + 5.5);
+      }
+      if (riga.secondo) {
+        doc.text(testoOraPdf(riga.secondo.ora_inizio), 126, y + 5.5);
+        doc.text(testoOraPdf(riga.secondo.ora_fine), 163, y + 5.5);
+      }
 
       y += 8;
     });
@@ -4135,7 +4166,7 @@ async function aggiornaRapportinoEsistente() {
     });
   }
 
-  async function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma, ctx = {}) {
+  function disegnaSpeseMateriali(doc, y, dati, ctx = {}) {
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
 
@@ -4177,6 +4208,10 @@ async function aggiornaRapportinoEsistente() {
       larghezzaTesto: 180
     });
 
+    return y;
+  }
+
+  async function disegnaAddebitoFirme(doc, y, dati, tecnico, clienteFirma, ctx = {}) {
     y = assicuraSpazioPdf(doc, y, 88, ctx);
 
     doc.rect(12, y, 60, 38);
@@ -4227,6 +4262,13 @@ async function aggiornaRapportinoEsistente() {
     doc.text(tecnico, 58, y);
     doc.text(new Date().toLocaleDateString("it-IT"), 150, y);
     doc.text(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), 170, y);
+
+    return y + 8;
+  }
+
+  async function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma, ctx = {}) {
+    y = disegnaSpeseMateriali(doc, y, dati, ctx);
+    return await disegnaAddebitoFirme(doc, y, dati, tecnico, clienteFirma, ctx);
   }
 
   function aggiungiNumeriPagina(doc) {
@@ -4272,11 +4314,11 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     y = disegnaTabellaOre(doc, y, "Ore trasferta", "Ore lavorate", ctxPdf);
 
-    y = disegnaRelazione(doc, y + 6, "RELAZIONE INTERVENTO", dati.relazione, 88, ctxPdf);
+    y = disegnaSpeseMateriali(doc, y + 6, dati, ctxPdf);
 
-    doc.addPage();
-    intestazione("RAPPORTO ASSISTENZA TECNICA");
-    await disegnaSpeseMaterialiFirme(doc, 58, dati, tecnico, clienteFirma, ctxPdf);
+    y = nuovaPaginaPdf(doc, ctxPdf);
+    y = disegnaRelazione(doc, y, "RELAZIONE INTERVENTO", dati.relazione, 88, ctxPdf);
+    await disegnaAddebitoFirme(doc, y, dati, tecnico, clienteFirma, ctxPdf);
 
     aggiungiNumeriPagina(doc);
     return doc.output("blob");
@@ -4401,4 +4443,5 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
 </body>
 </html>
+
 
