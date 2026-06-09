@@ -3291,9 +3291,7 @@ async function modificaRapportino(id) {
     }
 
     if (editingOreIndex !== null) {
-      const tipoDaSostituire = editingOreTipo || tipo;
-      const altreOre = oreInserite.filter(o => o.tipo !== tipoDaSostituire);
-      oreInserite = [...altreOre, ...nuoveRighe];
+      oreInserite.splice(editingOreIndex, 1, ...nuoveRighe);
     } else {
       oreInserite.push(...nuoveRighe);
     }
@@ -3978,7 +3976,30 @@ async function aggiornaRapportinoEsistente() {
     return y + 43;
   }
 
-  function disegnaTabellaOre(doc, y, labelTrasferta, labelLavoro) {
+  const PDF_TOP = 58;
+  const PDF_BOTTOM = 282;
+
+  function nuovaPaginaPdf(doc, ctx = {}) {
+    doc.addPage();
+    if (ctx.intestazione && ctx.titolo) {
+      ctx.intestazione(ctx.titolo);
+    }
+    return PDF_TOP;
+  }
+
+  function assicuraSpazioPdf(doc, y, altezza, ctx = {}) {
+    if (y + altezza <= PDF_BOTTOM) return y;
+    return nuovaPaginaPdf(doc, ctx);
+  }
+
+  function oreIntervallo(oraInizio, oraFine) {
+    const inizio = new Date(oraInizio);
+    const fine = new Date(oraFine);
+    const ore = (fine - inizio) / 1000 / 60 / 60;
+    return ore > 0 ? ore.toFixed(2) : "0.00";
+  }
+
+  function disegnaHeaderOre(doc, y) {
     doc.rect(12, y, 186, 7);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
@@ -3986,61 +4007,123 @@ async function aggiornaRapportinoEsistente() {
 
     y += 7;
 
-    doc.rect(12, y, 186, 7);
-    doc.text("da", 48, y + 5);
-    doc.text("a", 88, y + 5);
-    doc.text("da", 130, y + 5);
-    doc.text("a", 172, y + 5);
+    doc.rect(12, y, 40, 7);
+    doc.rect(52, y, 61, 7);
+    doc.rect(113, y, 61, 7);
+    doc.rect(174, y, 24, 7);
+    doc.text("Tipo", 14, y + 5);
+    doc.text("Da", 54, y + 5);
+    doc.text("A", 115, y + 5);
+    doc.text("Ore", 176, y + 5);
 
-    y += 7;
+    return y + 7;
+  }
 
-    function rigaOrePdf(label, lista) {
-      doc.rect(12, y, 186, 7);
+  function disegnaTabellaOre(doc, y, labelTrasferta, labelLavoro, ctx = {}) {
+    const righe = [
+      ...gruppoOre("trasferta").map(o => ({ label: labelTrasferta, ...o })),
+      ...gruppoOre("lavoro").map(o => ({ label: labelLavoro, ...o }))
+    ].sort((a, b) => String(a.ora_inizio).localeCompare(String(b.ora_inizio)));
+
+    y = assicuraSpazioPdf(doc, y, 22, ctx);
+    y = disegnaHeaderOre(doc, y);
+
+    if (righe.length === 0) {
+      doc.rect(12, y, 186, 8);
       doc.setFont("helvetica", "normal");
-      doc.text(label, 14, y + 5);
-
-      if (lista[0]) {
-        doc.text(testoDataOra(lista[0].ora_inizio), 42, y + 5);
-        doc.text(testoDataOra(lista[0].ora_fine), 82, y + 5);
-      }
-
-      if (lista[1]) {
-        doc.text(testoDataOra(lista[1].ora_inizio), 124, y + 5);
-        doc.text(testoDataOra(lista[1].ora_fine), 164, y + 5);
-      }
-
-      y += 7;
+      doc.setFontSize(7.2);
+      doc.text("Nessuna ora inserita", 14, y + 5.5);
+      return y + 14;
     }
 
-    rigaOrePdf(labelTrasferta, gruppoOre("trasferta"));
-    rigaOrePdf(labelLavoro, gruppoOre("lavoro"));
+    righe.forEach(riga => {
+      if (y + 8 > PDF_BOTTOM) {
+        y = nuovaPaginaPdf(doc, ctx);
+        y = disegnaHeaderOre(doc, y);
+      }
+
+      doc.rect(12, y, 40, 8);
+      doc.rect(52, y, 61, 8);
+      doc.rect(113, y, 61, 8);
+      doc.rect(174, y, 24, 8);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.2);
+      doc.text(riga.label, 14, y + 5.5);
+      doc.text(testoDataOra(riga.ora_inizio), 54, y + 5.5);
+      doc.text(testoDataOra(riga.ora_fine), 115, y + 5.5);
+      doc.text(oreIntervallo(riga.ora_inizio, riga.ora_fine), 176, y + 5.5);
+
+      y += 8;
+    });
 
     return y + 6;
   }
 
-  function disegnaRelazione(doc, y, titolo, testo, altezza) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text(titolo, 105, y, { align: "center" });
-
-    y += 5;
-
-    doc.rect(12, y, 186, altezza);
+  function disegnaSezioneTestoPaginata(doc, y, titolo, testo, ctx = {}, opzioni = {}) {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(opzioni.fontSize || 9);
 
-    const righe = doc.splitTextToSize(testo || "-", 178);
-    doc.text(righe, 16, y + 7);
+    const righe = doc.splitTextToSize(testo || "-", opzioni.larghezzaTesto || 178);
+    const lineHeight = opzioni.lineHeight || 4.2;
+    const minHeight = opzioni.minHeight || 30;
+    let index = 0;
+    let primaPagina = true;
 
-    return y + altezza + 8;
+    while (index < righe.length || primaPagina) {
+      y = assicuraSpazioPdf(doc, y, 20, ctx);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(opzioni.titleSize || 11);
+      doc.text(titolo, 105, y, { align: "center" });
+
+      y += 5;
+
+      const spazioDisponibile = PDF_BOTTOM - y;
+      const altezzaMassimaBox = Math.max(24, spazioDisponibile);
+      const righeMassime = Math.max(1, Math.floor((altezzaMassimaBox - 10) / lineHeight));
+      const chunk = righe.slice(index, index + righeMassime);
+      const altezzaContenuto = 10 + chunk.length * lineHeight;
+      const altezzaBox = Math.max(primaPagina ? minHeight : 24, Math.min(altezzaContenuto, altezzaMassimaBox));
+
+      if (y + altezzaBox > PDF_BOTTOM) {
+        y = nuovaPaginaPdf(doc, ctx);
+        primaPagina = false;
+        continue;
+      }
+
+      doc.rect(12, y, 186, altezzaBox);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(opzioni.fontSize || 9);
+      doc.text(chunk.length ? chunk : ["-"], 16, y + 7);
+
+      index += chunk.length;
+      y += altezzaBox + 8;
+      primaPagina = false;
+
+      if (index < righe.length) {
+        y = nuovaPaginaPdf(doc, ctx);
+      }
+    }
+
+    return y;
   }
 
-  async function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma) {
+  function disegnaRelazione(doc, y, titolo, testo, altezza, ctx = {}) {
+    return disegnaSezioneTestoPaginata(doc, y, titolo, testo, ctx, {
+      minHeight: altezza,
+      fontSize: 9,
+      titleSize: 12
+    });
+  }
+
+  async function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma, ctx = {}) {
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
 
     const colW = 31;
     const startX = 12;
+
+    y = assicuraSpazioPdf(doc, y, 36, ctx);
 
     doc.rect(startX, y, 186, 32);
 
@@ -4067,17 +4150,15 @@ async function aggiornaRapportinoEsistente() {
 
     y += 38;
 
-    doc.rect(12, y, 186, 35);
-    doc.setFont("helvetica", "bold");
-    doc.text("MATERIALI", 105, y + 6, { align: "center" });
-    doc.line(12, y + 9, 198, y + 9);
+    y = disegnaSezioneTestoPaginata(doc, y, "MATERIALI", dati.materiali_note, ctx, {
+      minHeight: 35,
+      fontSize: 8,
+      titleSize: 8,
+      lineHeight: 3.8,
+      larghezzaTesto: 180
+    });
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    const materiali = doc.splitTextToSize(dati.materiali_note || "-", 180);
-    doc.text(materiali, 14, y + 15);
-
-    y += 42;
+    y = assicuraSpazioPdf(doc, y, 88, ctx);
 
     doc.rect(12, y, 60, 38);
     doc.rect(72, y, 63, 38);
@@ -4129,6 +4210,17 @@ async function aggiornaRapportinoEsistente() {
     doc.text(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }), 170, y);
   }
 
+  function aggiungiNumeriPagina(doc) {
+    const totale = doc.internal.getNumberOfPages();
+
+    for (let i = 1; i <= totale; i++) {
+      doc.setPage(i);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(`${i} / ${totale}`, 190, 47, { align: "right" });
+    }
+  }
+
   async function generaPdfDosaggio(rapportinoId, dati) {
     const { doc, intestazione } = await creaDocBase();
 
@@ -4139,6 +4231,7 @@ async function aggiornaRapportinoEsistente() {
     const clienteFirma = nomeClienteFirmaCorrente();
 
     intestazione("RAPPORTO ASSISTENZA TECNICA");
+    const ctxPdf = { intestazione, titolo: "RAPPORTO ASSISTENZA TECNICA" };
 
     let y = 55;
 
@@ -4158,14 +4251,15 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     y += 16;
 
-    y = disegnaTabellaOre(doc, y, "Ore trasferta", "Ore lavorate");
+    y = disegnaTabellaOre(doc, y, "Ore trasferta", "Ore lavorate", ctxPdf);
 
-    y = disegnaRelazione(doc, y + 6, "RELAZIONE INTERVENTO", dati.relazione, 88);
+    y = disegnaRelazione(doc, y + 6, "RELAZIONE INTERVENTO", dati.relazione, 88, ctxPdf);
 
     doc.addPage();
     intestazione("RAPPORTO ASSISTENZA TECNICA");
-    await disegnaSpeseMaterialiFirme(doc, 58, dati, tecnico, clienteFirma);
+    await disegnaSpeseMaterialiFirme(doc, 58, dati, tecnico, clienteFirma, ctxPdf);
 
+    aggiungiNumeriPagina(doc);
     return doc.output("blob");
   }
 
@@ -4187,7 +4281,8 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
       concentrazione_impostata: document.getElementById("bio_concentrazione_impostata").value || "-"
     };
 
-    intestazione("ASSISTENZA PRODUTTORI CLO2", "1 / 2");
+    intestazione("ASSISTENZA PRODUTTORI CLO2");
+    const ctxPdf = { intestazione, titolo: "ASSISTENZA PRODUTTORI CLO2" };
 
     let y = 55;
 
@@ -4203,7 +4298,7 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     y += 18;
 
-    y = disegnaTabellaOre(doc, y, "Ore trasferimento", "Ore mano d'opera");
+    y = disegnaTabellaOre(doc, y, "Ore trasferimento", "Ore mano d'opera", ctxPdf);
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
@@ -4233,14 +4328,15 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
     doc.text(bio.concentrazione_impostata, 100, y + 35);
 
     doc.addPage();
-    intestazione("ASSISTENZA PRODUTTORI CLO2", "2 / 2");
+    intestazione("ASSISTENZA PRODUTTORI CLO2");
 
     y = 58;
 
-    y = disegnaRelazione(doc, y, "RELAZIONE INTERVENTO", dati.relazione, 66);
+    y = disegnaRelazione(doc, y, "RELAZIONE INTERVENTO", dati.relazione, 66, ctxPdf);
 
-    await disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma);
+    await disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma, ctxPdf);
 
+    aggiungiNumeriPagina(doc);
     return doc.output("blob");
   }
 
