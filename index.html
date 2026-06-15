@@ -3864,8 +3864,9 @@ async function rigeneraPdfRapportino(id) {
       btn.textContent = "Salvato correttamente";
 
       setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+  btn.disabled = false;
+  btn.textContent = "Salva modifiche e rigenera PDF";
+}, 3000);
 
     } catch (err) {
       mostraMessaggio(
