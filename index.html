@@ -2027,7 +2027,7 @@ function aggiornaHomeTecnico() {
     if (!idsMese.includes(o.rapportino_id)) return tot;
     if (!o.ora_inizio || !o.ora_fine) return tot;
 
-    const diff = (new Date(o.ora_fine) - new Date(o.ora_inizio)) / 1000 / 60 / 60;
+    const diff = minutiTraDateTimeRapportino(o.ora_inizio, o.ora_fine) / 60;
     return diff > 0 ? tot + diff : tot;
   }, 0);
 
@@ -2246,9 +2246,7 @@ async function caricaStatisticheAdmin() {
   ore.forEach(o => {
     if (!o.ora_inizio || !o.ora_fine) return;
 
-    const inizio = new Date(o.ora_inizio);
-    const fine = new Date(o.ora_fine);
-    const diff = (fine - inizio) / 1000 / 60 / 60;
+    const diff = minutiTraDateTimeRapportino(o.ora_inizio, o.ora_fine) / 60;
 
     if (diff > 0) totaleOre += diff;
   });
@@ -2310,7 +2308,7 @@ function renderMeseCorrente(rapportini, ore) {
     if (!idsMese.includes(o.rapportino_id)) return tot;
     if (!o.ora_inizio || !o.ora_fine) return tot;
 
-    const diff = (new Date(o.ora_fine) - new Date(o.ora_inizio)) / 1000 / 60 / 60;
+    const diff = minutiTraDateTimeRapportino(o.ora_inizio, o.ora_fine) / 60;
     return diff > 0 ? tot + diff : tot;
   }, 0);
 
@@ -3402,7 +3400,7 @@ async function rigeneraPdfRapportino(id) {
       oreInserite.push(...nuoveRighe);
     }
 
-    oreInserite.sort((a, b) => String(a.tipo).localeCompare(String(b.tipo)) || String(a.ora_inizio).localeCompare(String(b.ora_inizio)));
+    oreInserite.sort((a, b) => String(a.tipo).localeCompare(String(b.tipo)) || chiaveDateTimeRapportino(a.ora_inizio).localeCompare(chiaveDateTimeRapportino(b.ora_inizio)));
     aggiornaRiepilogoOre();
     chiudiOre();
   }
@@ -3410,7 +3408,25 @@ async function rigeneraPdfRapportino(id) {
   function parseDateTimeLocalParts(value) {
     if (!value) return null;
 
-    const parts = String(value).split("T");
+    const raw = String(value);
+    const haTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(raw);
+
+    if (haTimezone) {
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) return null;
+
+      return {
+        data: [
+          d.getFullYear(),
+          String(d.getMonth() + 1).padStart(2, "0"),
+          String(d.getDate()).padStart(2, "0")
+        ].join("-"),
+        ora: String(d.getHours()).padStart(2, "0"),
+        minuti: String(d.getMinutes()).padStart(2, "0")
+      };
+    }
+
+    const parts = raw.split("T");
     if (parts.length < 2) return null;
 
     const data = parts[0];
@@ -3420,6 +3436,56 @@ async function rigeneraPdfRapportino(id) {
     if (!data || !ora || !minuti) return null;
 
     return { data, ora: String(ora).padStart(2, "0"), minuti: String(minuti).padStart(2, "0") };
+  }
+
+  function formattaDateTimeLocalePerDb(data, ora, minuti) {
+    const d = new Date(
+      Number(data.substring(0, 4)),
+      Number(data.substring(5, 7)) - 1,
+      Number(data.substring(8, 10)),
+      Number(ora),
+      Number(minuti),
+      0
+    );
+
+    const offsetMinuti = -d.getTimezoneOffset();
+    const segno = offsetMinuti >= 0 ? "+" : "-";
+    const abs = Math.abs(offsetMinuti);
+    const offset = `${segno}${String(Math.floor(abs / 60)).padStart(2, "0")}:${String(abs % 60).padStart(2, "0")}`;
+
+    return `${data}T${ora}:${minuti}:00${offset}`;
+  }
+
+  function minutiTraDateTimeRapportino(inizioValore, fineValore) {
+    const inizio = parseDateTimeLocalParts(inizioValore);
+    const fine = parseDateTimeLocalParts(fineValore);
+
+    if (!inizio || !fine) return 0;
+
+    const da = new Date(
+      Number(inizio.data.substring(0, 4)),
+      Number(inizio.data.substring(5, 7)) - 1,
+      Number(inizio.data.substring(8, 10)),
+      Number(inizio.ora),
+      Number(inizio.minuti),
+      0
+    );
+    const a = new Date(
+      Number(fine.data.substring(0, 4)),
+      Number(fine.data.substring(5, 7)) - 1,
+      Number(fine.data.substring(8, 10)),
+      Number(fine.ora),
+      Number(fine.minuti),
+      0
+    );
+
+    return Math.max(0, (a - da) / 1000 / 60);
+  }
+
+  function chiaveDateTimeRapportino(valore) {
+    const parti = parseDateTimeLocalParts(valore);
+    if (!parti) return "";
+    return `${parti.data}T${parti.ora}:${parti.minuti}`;
   }
 
   function eliminaOra(index) {
@@ -3447,8 +3513,8 @@ async function rigeneraPdfRapportino(id) {
     if (dataInizio && oraInizio && minutiInizio && dataFine && oraFine && minutiFine) {
       target.push({
         tipo,
-        ora_inizio: `${dataInizio}T${oraInizio}:${minutiInizio}:00`,
-        ora_fine: `${dataFine}T${oraFine}:${minutiFine}:00`
+        ora_inizio: formattaDateTimeLocalePerDb(dataInizio, oraInizio, minutiInizio),
+        ora_fine: formattaDateTimeLocalePerDb(dataFine, oraFine, minutiFine)
       });
     }
   }
@@ -3466,7 +3532,7 @@ async function rigeneraPdfRapportino(id) {
       .map((riga, index) => ({ riga, index }))
       .sort((a, b) =>
         String(a.riga.tipo).localeCompare(String(b.riga.tipo)) ||
-        String(a.riga.ora_inizio).localeCompare(String(b.riga.ora_inizio))
+        chiaveDateTimeRapportino(a.riga.ora_inizio).localeCompare(chiaveDateTimeRapportino(b.riga.ora_inizio))
       );
 
     const gruppi = [];
@@ -3522,7 +3588,7 @@ async function rigeneraPdfRapportino(id) {
 
     return gruppi.map(gruppo => ({
       ...gruppo,
-      righe: gruppo.righe.sort((a, b) => String(a.ora_inizio).localeCompare(String(b.ora_inizio)))
+      righe: gruppo.righe.sort((a, b) => chiaveDateTimeRapportino(a.ora_inizio).localeCompare(chiaveDateTimeRapportino(b.ora_inizio)))
     }));
   }
 
@@ -3583,14 +3649,10 @@ async function rigeneraPdfRapportino(id) {
   }
 
   function formattaDataOra(valore) {
-    const d = new Date(valore);
-    return d.toLocaleString("it-IT", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+    const parti = parseDateTimeLocalParts(valore);
+    if (!parti) return "-";
+    const [anno, mese, giorno] = parti.data.split("-");
+    return `${giorno}/${mese}/${anno}, ${parti.ora}:${parti.minuti}`;
   }
 
   function preparaCanvasFirma(canvasId) {
@@ -3864,9 +3926,8 @@ async function rigeneraPdfRapportino(id) {
       btn.textContent = "Salvato correttamente";
 
       setTimeout(() => {
-  btn.disabled = false;
-  btn.textContent = "Salva modifiche e rigenera PDF";
-}, 3000);
+        window.location.reload();
+      }, 1500);
 
     } catch (err) {
       mostraMessaggio(
@@ -4107,16 +4168,16 @@ async function aggiornaRapportinoEsistente() {
   }
 
   function testoDataOra(valore) {
-    const d = new Date(valore);
-    return `${d.toLocaleDateString("it-IT")} ${d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}`;
+    const parti = parseDateTimeLocalParts(valore);
+    if (!parti) return "-";
+    return `${parti.data.split("-").reverse().join("/")} ${parti.ora}:${parti.minuti}`;
   }
 
   function testoOraPdf(valore) {
-    if (!valore) return "-";
-    const d = new Date(valore);
-    const data = d.toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" });
-    const ora = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-    return `${data} ${ora}`;
+    const parti = parseDateTimeLocalParts(valore);
+    if (!parti) return "-";
+    const [, mese, giorno] = parti.data.split("-");
+    return `${giorno}/${mese} ${parti.ora}:${parti.minuti}`;
   }
 
   function gruppoOre(tipo) {
@@ -4223,9 +4284,7 @@ async function aggiornaRapportinoEsistente() {
   }
 
   function oreIntervallo(oraInizio, oraFine) {
-    const inizio = new Date(oraInizio);
-    const fine = new Date(oraFine);
-    const ore = (fine - inizio) / 1000 / 60 / 60;
+    const ore = minutiTraDateTimeRapportino(oraInizio, oraFine) / 60;
     return ore > 0 ? ore.toFixed(2) : "0.00";
   }
 
@@ -4252,7 +4311,7 @@ async function aggiornaRapportinoEsistente() {
   }
 
   function righeOrePdf(label, lista) {
-    const ordinate = [...lista].sort((a, b) => String(a.ora_inizio).localeCompare(String(b.ora_inizio)));
+    const ordinate = [...lista].sort((a, b) => chiaveDateTimeRapportino(a.ora_inizio).localeCompare(chiaveDateTimeRapportino(b.ora_inizio)));
     const righe = [];
 
     for (let i = 0; i < ordinate.length; i += 2) {
@@ -4649,4 +4708,3 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
 </body>
 </html>
-
