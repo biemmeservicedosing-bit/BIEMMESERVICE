@@ -1372,8 +1372,10 @@
         <input type="hidden" id="committente_id" />
         <div id="risultati_committenti" class="hidden"></div>
 
-        <label>Cliente</label>
-        <input type="text" id="descrizione_cliente" placeholder="Nome cliente / hotel / stabilimento" />
+        <div id="cliente_libero_box">
+          <label>Cliente</label>
+          <input type="text" id="descrizione_cliente" placeholder="Nome cliente / hotel / stabilimento" />
+        </div>
 
         <label>Indirizzo cliente</label>
         <input type="text" id="indirizzo_cliente" placeholder="Indirizzo intervento" />
@@ -3507,6 +3509,7 @@ async function rigeneraPdfRapportino(id) {
     document.getElementById("biossidoBox").classList.toggle("hidden", !biossido);
     document.getElementById("bio_visita_contratto").checked = contratto;
     document.getElementById("bio_cliente_contratto_box").classList.toggle("hidden", !contratto);
+    document.getElementById("cliente_libero_box").classList.toggle("hidden", contratto);
     if (descrizioneCliente) descrizioneCliente.readOnly = contratto;
 
     if (contratto) {
