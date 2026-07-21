@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -1625,7 +1626,6 @@
   let listaCommittenti = [];
   let archivioRapportini = [];
   let utenteCorrente = null;
-  let utenteDbCorrente = null;
   let ruoloCorrente = "tecnico";
   let tecnicoNomeCorrente = "";
   let oreInserite = [];
@@ -1786,7 +1786,6 @@
   async function avviaSessione() {
     const { data: userData } = await supabaseClient.auth.getUser();
     utenteCorrente = userData.user;
-    utenteDbCorrente = null;
 
     if (!utenteCorrente) return;
 
@@ -1830,45 +1829,16 @@
     return data.ruolo;
   }
 
-  async function leggiUtenteDbDaAuth(user) {
-    if (!user || !user.email) {
-      throw new Error("Utente autenticato senza email.");
-    }
-
-    if (utenteDbCorrente && utenteDbCorrente.email === user.email) {
-      return utenteDbCorrente;
-    }
-
-    const { data, error } = await supabaseClient
-      .from("utenti")
-      .select("id, nome, email, ruolo, attivo")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (error) {
-      throw new Error("Errore lettura tabella utenti: " + error.message);
-    }
-
-    if (!data || !data.id) {
-      throw new Error("Utente non trovato in public.utenti per email " + user.email);
-    }
-
-    utenteDbCorrente = data;
-    return data;
-  }
-
  async function caricaProfiloUtente() {
   tecnicoNomeCorrente = "";
 
   if (!utenteCorrente) return;
 
-  let data = null;
-
-  try {
-    data = await leggiUtenteDbDaAuth(utenteCorrente);
-  } catch (err) {
-    console.warn(err);
-  }
+  const { data } = await supabaseClient
+    .from("utenti")
+    .select("nome")
+    .eq("email", utenteCorrente.email)
+    .maybeSingle();
 
   if (data && data.nome) {
     tecnicoNomeCorrente = data.nome;
@@ -1989,20 +1959,10 @@ async function refreshTecnico() {
 async function caricaMieiRapportini() {
   if (!utenteCorrente) return;
 
-  let utenteDb;
-
-  try {
-    utenteDb = await leggiUtenteDbDaAuth(utenteCorrente);
-  } catch (err) {
-    const box = document.getElementById("mieiRapportiniLista");
-    if (box) box.innerHTML = "<p>Errore utente: " + err.message + "</p>";
-    return;
-  }
-
   const { data, error } = await supabaseClient
     .from("rapportini")
     .select("id, data_intervento, numero_so, descrizione_cliente, indirizzo_cliente, committente_id, tipo_rapportino, tecnico_nome, km_percorsi, pdf_path, pdf_generato_at, created_at")
-    .eq("tecnico_id", utenteDb.id)
+    .eq("created_by", utenteCorrente.id)
     .not("pdf_path", "is", null)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -3820,8 +3780,10 @@ async function rigeneraPdfRapportino(id) {
     btn.disabled = true;
     btn.textContent = "Salvataggio in corso...";
 
-    const { data: userData } = await supabaseClient.auth.getUser();
-    const user = userData.user;
+    try {
+    // La sessione è già stata verificata in avviaSessione(): evitiamo una seconda
+    // richiesta remota che, con token in rinnovo, può lasciare il salvataggio sospeso.
+    const user = utenteCorrente;
 
     if (!user) {
       mostraMessaggio("appMsg", "Utente non autenticato", "danger");
@@ -3831,8 +3793,7 @@ async function rigeneraPdfRapportino(id) {
     }
 
 
-    const utenteDb = await leggiUtenteDbDaAuth(user);
-    const datiRapportino = raccogliDatiRapportino(utenteDb.id);
+    const datiRapportino = raccogliDatiRapportino(user.id);
 
     const { data: nuovoRapportino, error } = await supabaseClient
       .from("rapportini")
@@ -3982,6 +3943,16 @@ async function rigeneraPdfRapportino(id) {
       btn.textContent = "Riprova salvataggio PDF";
       return;
     }
+    } catch (err) {
+      console.error("Errore salvataggio rapportino:", err);
+      mostraMessaggio(
+        "appMsg",
+        "Errore salvataggio: " + (err?.message || "errore imprevisto"),
+        "danger"
+      );
+      btn.disabled = false;
+      btn.textContent = "Riprova salvataggio";
+    }
   }
 async function aggiornaRapportinoEsistente() {
   const btn = document.getElementById("btnSalva");
@@ -3999,15 +3970,14 @@ async function aggiornaRapportinoEsistente() {
       return;
     }
 
-    const utenteDb = await leggiUtenteDbDaAuth(user);
-    const datiRapportino = raccogliDatiRapportino(utenteDb.id);
+    const datiRapportino = raccogliDatiRapportino(user.id);
 
     // In modifica admin, il rapportino resta intestato al tecnico originale.
     if (rapportinoOriginaleAutore) {
       datiRapportino.tecnico_nome = rapportinoOriginaleAutore.tecnico_nome || datiRapportino.tecnico_nome;
       datiRapportino.tecnico_id = rapportinoOriginaleAutore.tecnico_id || datiRapportino.tecnico_id;
       datiRapportino.created_by = rapportinoOriginaleAutore.created_by || datiRapportino.created_by;
-      datiRapportino.updated_by = utenteDb.id;
+      datiRapportino.updated_by = rapportinoOriginaleAutore.updated_by || rapportinoOriginaleAutore.created_by || rapportinoOriginaleAutore.tecnico_id || datiRapportino.updated_by;
     }
 
     const { error: updateError } = await supabaseClient
