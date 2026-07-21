@@ -225,7 +225,8 @@
       background:#667085;
     }
 
-    #risultati_committenti {
+    #risultati_committenti,
+    #bio_risultati_clienti_contratto {
       border:1px solid var(--border);
       border-radius:15px;
       background:white;
@@ -1335,6 +1336,11 @@
           <strong>Nuovo rapporto impianti biossido di cloro</strong>
           <span>Assistenza produttori CLO2 e relativi controlli.</span>
         </button>
+
+        <button class="tech-big-card" onclick="iniziaNuovoRapportino('biossido_contratto')">
+          <strong>Biossido di cloro - visita a contratto</strong>
+          <span>Cliente, numero e taglia degli impianti compilati automaticamente.</span>
+        </button>
       </div>
 
       <div id="techFormRapportino" class="tech-form-card hidden">
@@ -1348,6 +1354,7 @@
         <select id="tipo_rapportino" onchange="cambiaTipoRapportino()">
           <option value="dosaggio">Sistemi di dosaggio</option>
           <option value="biossido">Biossido di cloro</option>
+          <option value="biossido_contratto">Biossido di cloro - visita a contratto</option>
         </select>
 
         <label>Data intervento</label>
@@ -1357,6 +1364,10 @@
         <input type="text" id="numero_so" placeholder="Facoltativo" />
 
         <label>Committente</label>
+        <select id="committente_select" onchange="selezionaCommittenteDaTendina()">
+          <option value="">Seleziona dalla lista</option>
+        </select>
+        <label>Oppure cerca il committente</label>
         <input type="text" id="committente_search" placeholder="Scrivi per cercare il committente..." oninput="cercaCommittente()" autocomplete="off" />
         <input type="hidden" id="committente_id" />
         <div id="risultati_committenti" class="hidden"></div>
@@ -1374,16 +1385,65 @@
           <h3>Dati produttore biossido di cloro</h3>
 
           <div class="sub-card">
-            <label>Tipologia intervento</label>
-            <select id="bio_tipologia_intervento">
+            <label>Tipologia intervento *</label>
+            <select id="bio_tipologia_intervento" onchange="aggiornaMaterialiBiossido()" required>
               <option value="">Seleziona</option>
-              <option value="Service">Service</option>
+              <option value="Manutenzione">Manutenzione</option>
+              <option value="Controllo">Controllo</option>
               <option value="Nuova installazione">Nuova installazione</option>
               <option value="Da richiesta">Da richiesta</option>
             </select>
 
-            <label>Modello produttore</label>
-            <input type="text" id="bio_tipologia_prodotto" placeholder="Es. OCD-162 5" />
+            <label class="checkbox-label hidden">
+              <input type="checkbox" id="bio_visita_contratto" onchange="aggiornaVisitaContratto()" />
+              Visita a contratto?
+            </label>
+
+            <div id="bio_cliente_contratto_box" class="hidden">
+              <label>Cliente a contratto *</label>
+              <input
+                type="text"
+                id="bio_cliente_contratto_search"
+                placeholder="Cerca, ad esempio: sestrie"
+                oninput="cercaClienteContratto()"
+                autocomplete="off"
+              />
+              <div id="bio_risultati_clienti_contratto" class="hidden"></div>
+              <select id="bio_cliente_contratto" onchange="applicaClienteContratto()">
+                <option value="">Seleziona il cliente</option>
+              </select>
+              <small>Il nome cliente, la dicitura del PDF, la quantità e le taglie vengono impostati automaticamente.</small>
+            </div>
+
+            <div id="bio_numero_visita_box" class="hidden">
+              <label>Numero visita a contratto *</label>
+              <select id="bio_numero_visita">
+                <option value="">Seleziona</option>
+                <option value="Prima">Prima</option>
+                <option value="Seconda">Seconda</option>
+                <option value="Terza">Terza</option>
+                <option value="Quarta">Quarta</option>
+                <option value="Quinta">Quinta</option>
+                <option value="Sesta">Sesta</option>
+              </select>
+            </div>
+
+            <label>Quantità impianti controllati / manutenzionati *</label>
+            <select id="bio_numero_impianti" onchange="generaSelettoriImpianti()" required>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+              <option value="9">9</option>
+              <option value="10">10</option>
+            </select>
+
+            <div id="bio_impianti_taglie"></div>
+            <input type="hidden" id="bio_tipologia_prodotto" />
 
             <label>Nr matricola</label>
             <input type="text" id="bio_matricola" placeholder="Es. S/N: 1000098" />
@@ -1651,6 +1711,7 @@
   const campiRapportino = [
     "data_intervento",
     "numero_so",
+    "committente_select",
     "committente_search",
     "committente_id",
     "descrizione_cliente",
@@ -1671,12 +1732,69 @@
 
   const campiBiossido = [
     "bio_tipologia_intervento",
+    "bio_cliente_contratto_search",
+    "bio_cliente_contratto",
+    "bio_numero_visita",
+    "bio_numero_impianti",
     "bio_tipologia_prodotto",
     "bio_matricola",
     "bio_codice",
     "bio_modalita_dosaggio",
     "bio_concentrazione_impostata"
   ];
+
+  const kitManutenzioneBiossido = {
+    "5": {
+      codice: "99136353",
+      descrizione: "Kit, maint.ClO2/162-005/with dosing pump",
+      quantita: 1
+    },
+    "10": {
+      codice: "98153962",
+      descrizione: "Kit, maint.ClO2/162-010/with dosing pump",
+      quantita: 1
+    },
+    "30": {
+      codice: "98162644",
+      descrizione: "Kit, maint.ClO2/162-030/with dosing pump",
+      quantita: 1
+    },
+    "60": {
+      codice: "95717920",
+      descrizione: "Kit, maint.ClO2/162-060/with dosing pump",
+      quantita: 1
+    }
+  };
+
+  const clientiBiossidoContratto = [
+    { id: "bologna_centro", nome: "UNAHOTELS Bologna Centro", file: "Bologna_Centro", taglie: ["5"] },
+    { id: "bologna_fiera", nome: "UNAHOTELS Bologna Fiera", file: "Bologna_Fiera", taglie: ["5", "5"] },
+    { id: "century", nome: "UnaHotels Century", file: "Century", taglie: ["5"] },
+    { id: "condominio_santa_rita", nome: "Comunione del complesso Santa Rita", file: "Condominio_Santa_Rita", taglie: ["10"] },
+    { id: "contessa_jolanda", nome: "UnaHotels Contessa Jolanda", file: "Contessa_Jolanda", taglie: ["5"] },
+    { id: "cusani", nome: "Una Hotels Cusani", file: "Cusani", taglie: ["5"] },
+    { id: "ekolat", nome: "EKOLAT d.o.o.", file: "Ekolat", taglie: ["30"] },
+    { id: "emmi_dessert", nome: "Emmi Dessert Italia", file: "Emmi_Dessert", taglie: ["5"] },
+    { id: "expo_fiera", nome: "UnaHotels Expo Fiera", file: "Expo_Fiera", taglie: ["5"] },
+    { id: "hotel_malpensa", nome: "UnaHotel Malpensa", file: "Hotel_Malpensa", taglie: ["5"] },
+    { id: "hotel_varese", nome: "UnaHotels Varese", file: "Hotel_Varese", taglie: ["5"] },
+    { id: "hotel_vittoria_firenze", nome: "UNAHOTELS Vittoria Firenze", file: "Hotel_Vittoria_Firenze", taglie: ["5"] },
+    { id: "hyatt_centric", nome: "Hyatt Centric Milan Centrale", file: "Hyatt_Centric", taglie: ["5"] },
+    { id: "mediterraneo", nome: "UnaHotels Mediterraneo", file: "Mediterraneo", taglie: ["5"] },
+    { id: "scandinavia", nome: "UnaHotels Scandinavia", file: "Scandinavia", taglie: ["5"] },
+    { id: "th_cadore", nome: "TH Cadore", file: "TH_Cadore", taglie: ["5"] },
+    { id: "th_costa_rei", nome: "TH Costa Rei", file: "TH_Costa_Rei", taglie: ["5"] },
+    { id: "th_lacona", nome: "TH Lacona", file: "TH_Lacona", taglie: ["5"] },
+    { id: "th_park_hotel_des_dolomites", nome: "TH Park Hotel Des Dolomites", file: "TH_Park_Hotel_Des_Dolomites", taglie: ["5"] },
+    { id: "th_pila", nome: "TH Pila", file: "Th_Pila", taglie: ["5"] },
+    { id: "th_planibel", nome: "TH La Thuile - Planibel Hotel", file: "TH_Planibel", taglie: ["5", "5", "5", "5", "5"] },
+    { id: "th_sestriere", nome: "TH Sestriere", file: "TH_Sestriere", taglie: ["5"] },
+    { id: "tocq", nome: "Tocq Hotel", file: "Tocq", taglie: ["5"] },
+    { id: "trastevere_roma", nome: "Trastevere Roma | UNA Esperienze", file: "Trastevere_Roma", taglie: ["5"] }
+  ].sort((a, b) => a.nome.localeCompare(b.nome, "it", { sensitivity: "base" }));
+
+  const inizioKitAutomatici = "--- KIT MANUTENZIONE BIOSSIDO (automatici) ---";
+  const fineKitAutomatici = "--- FINE KIT AUTOMATICI ---";
 
   function valorePerInput(valore) {
     return valore === null || valore === undefined ? "" : String(valore);
@@ -1713,7 +1831,11 @@
 
     impostaValore("tipo_rapportino", tipo);
     impostaValore("numero_tecnici", 1);
+    impostaValore("bio_numero_impianti", 1);
+    document.getElementById("bio_visita_contratto").checked = tipo === "biossido_contratto";
+    aggiornaVisitaContratto();
     cambiaTipoRapportino();
+    generaSelettoriImpianti();
 
     oreInserite = [];
     editingOreIndex = null;
@@ -1931,9 +2053,11 @@ function iniziaNuovoRapportino(tipo) {
   document.getElementById("tipo_rapportino").value = tipo;
   cambiaTipoRapportino();
 
-  const titolo = tipo === "biossido"
-    ? "Nuovo rapporto impianti biossido di cloro"
-    : "Nuovo rapporto sistemi di dosaggio";
+  const titolo = tipo === "biossido_contratto"
+    ? "Biossido di cloro - visita a contratto"
+    : tipo === "biossido"
+      ? "Nuovo rapporto impianti biossido di cloro"
+      : "Nuovo rapporto sistemi di dosaggio";
 
   document.getElementById("tech_form_titolo").textContent = titolo;
 
@@ -3006,8 +3130,9 @@ async function modificaRapportino(id) {
   impostaValore("numero_so", data.numero_so);
   impostaValore("committente_id", data.committente_id);
 
-  const committente = await assicuraCommittenteInLista(data.committente_id);
-  impostaValore("committente_search", committente ? committente.ragione_sociale : "");
+    const committente = await assicuraCommittenteInLista(data.committente_id);
+    impostaValore("committente_search", committente ? committente.ragione_sociale : "");
+    impostaValore("committente_select", committente ? committente.id : "");
 
   impostaValore("descrizione_cliente", data.descrizione_cliente);
   impostaValore("indirizzo_cliente", data.indirizzo_cliente);
@@ -3058,12 +3183,23 @@ async function modificaRapportino(id) {
     const bio = (bioRows || [])[0];
 
     if (bio) {
-      impostaValore("bio_tipologia_intervento", bio.tipologia_intervento);
-      impostaValore("bio_tipologia_prodotto", bio.tipologia_prodotto);
+      impostaValore(
+        "bio_tipologia_intervento",
+        bio.tipologia_intervento === "Service" ? "Manutenzione" : bio.tipologia_intervento
+      );
+      const visitaContratto = Boolean(bio.visita_contratto);
+      impostaValore("tipo_rapportino", visitaContratto ? "biossido_contratto" : "biossido");
+      cambiaTipoRapportino();
+      document.getElementById("bio_visita_contratto").checked = visitaContratto;
+      if (visitaContratto) sincronizzaClienteContrattoDaNome(data.descrizione_cliente);
+      impostaValore("bio_numero_visita", bio.numero_visita);
+      aggiornaVisitaContratto();
+      impostaImpiantiDaValoreSalvato(bio.tipologia_prodotto);
       impostaValore("bio_matricola", bio.matricola);
       impostaValore("bio_codice", bio.codice);
       impostaValore("bio_modalita_dosaggio", bio.modalita_dosaggio);
       impostaValore("bio_concentrazione_impostata", bio.concentrazione_impostata);
+      aggiornaMaterialiBiossido();
     }
   }
 
@@ -3146,6 +3282,42 @@ async function rigeneraPdfRapportino(id) {
     }
 
     listaCommittenti = data || [];
+    popolaTendinaCommittenti();
+  }
+
+  function popolaTendinaCommittenti() {
+    const select = document.getElementById("committente_select");
+    if (!select) return;
+
+    const valoreCorrente = document.getElementById("committente_id")?.value || select.value;
+    select.innerHTML = "";
+
+    const vuota = document.createElement("option");
+    vuota.value = "";
+    vuota.textContent = "Seleziona dalla lista";
+    select.appendChild(vuota);
+
+    listaCommittenti.forEach(committente => {
+      const option = document.createElement("option");
+      option.value = committente.id;
+      option.textContent = committente.ragione_sociale;
+      select.appendChild(option);
+    });
+
+    select.value = listaCommittenti.some(c => c.id === valoreCorrente) ? valoreCorrente : "";
+  }
+
+  function selezionaCommittenteDaTendina() {
+    const id = document.getElementById("committente_select").value;
+    const committente = listaCommittenti.find(c => c.id === id);
+
+    if (!committente) {
+      document.getElementById("committente_id").value = "";
+      document.getElementById("committente_search").value = "";
+      return;
+    }
+
+    selezionaCommittente(committente);
   }
 
   async function assicuraCommittenteInLista(committenteId) {
@@ -3167,6 +3339,8 @@ async function rigeneraPdfRapportino(id) {
 
     if (data) {
       listaCommittenti.push(data);
+      listaCommittenti.sort((a, b) => a.ragione_sociale.localeCompare(b.ragione_sociale, "it"));
+      popolaTendinaCommittenti();
     }
 
     return data || null;
@@ -3200,9 +3374,322 @@ async function rigeneraPdfRapportino(id) {
     return r;
   }
 
+  function eTipoBiossido(tipo) {
+    return tipo === "biossido" || tipo === "biossido_contratto";
+  }
+
+  function modalitaContrattoAttiva() {
+    return document.getElementById("tipo_rapportino")?.value === "biossido_contratto";
+  }
+
+  function normalizzaRicercaCliente(testo) {
+    return String(testo || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
+  function clienteContrattoSelezionato() {
+    const id = document.getElementById("bio_cliente_contratto")?.value;
+    return clientiBiossidoContratto.find(cliente => cliente.id === id) || null;
+  }
+
+  function popolaClientiContratto() {
+    const select = document.getElementById("bio_cliente_contratto");
+    if (!select) return;
+
+    const valoreCorrente = select.value;
+    select.innerHTML = '<option value="">Seleziona il cliente</option>';
+
+    clientiBiossidoContratto.forEach(cliente => {
+      const option = document.createElement("option");
+      option.value = cliente.id;
+      option.textContent = cliente.nome;
+      select.appendChild(option);
+    });
+
+    if (clientiBiossidoContratto.some(cliente => cliente.id === valoreCorrente)) {
+      select.value = valoreCorrente;
+    }
+  }
+
+  function selezionaClienteContratto(id) {
+    const select = document.getElementById("bio_cliente_contratto");
+    if (!select) return;
+    select.value = id;
+    applicaClienteContratto();
+  }
+
+  function cercaClienteContratto() {
+    const input = document.getElementById("bio_cliente_contratto_search");
+    const select = document.getElementById("bio_cliente_contratto");
+    const box = document.getElementById("bio_risultati_clienti_contratto");
+    if (!input || !select || !box) return;
+
+    const ricerca = normalizzaRicercaCliente(input.value);
+    select.value = "";
+
+    if (modalitaContrattoAttiva()) {
+      document.getElementById("descrizione_cliente").value = "";
+    }
+
+    box.innerHTML = "";
+
+    if (ricerca.length < 2) {
+      box.classList.add("hidden");
+      return;
+    }
+
+    const risultati = clientiBiossidoContratto.filter(cliente => {
+      const chiave = normalizzaRicercaCliente(`${cliente.nome} ${cliente.file}`);
+      return ricerca.split(/\s+/).every(parola => chiave.includes(parola));
+    });
+
+    risultati.forEach(cliente => {
+      const div = document.createElement("div");
+      div.className = "risultato-committente";
+      div.textContent = cliente.nome;
+      div.onclick = () => selezionaClienteContratto(cliente.id);
+      box.appendChild(div);
+    });
+
+    if (!risultati.length) {
+      const div = document.createElement("div");
+      div.className = "risultato-committente";
+      div.textContent = "Nessun cliente a contratto trovato";
+      box.appendChild(div);
+    }
+
+    box.classList.remove("hidden");
+  }
+
+  function applicaClienteContratto() {
+    const cliente = clienteContrattoSelezionato();
+    const input = document.getElementById("bio_cliente_contratto_search");
+    const risultati = document.getElementById("bio_risultati_clienti_contratto");
+    if (risultati) risultati.classList.add("hidden");
+
+    if (!cliente) {
+      if (input) input.value = "";
+      return;
+    }
+
+    if (input) input.value = cliente.nome;
+    document.getElementById("descrizione_cliente").value = cliente.nome;
+    document.getElementById("bio_numero_impianti").value = String(cliente.taglie.length);
+    generaSelettoriImpianti(cliente.taglie);
+  }
+
+  function sincronizzaClienteContrattoDaNome(nomeCliente) {
+    const chiave = normalizzaRicercaCliente(nomeCliente);
+    const cliente = clientiBiossidoContratto.find(item => {
+      return normalizzaRicercaCliente(item.nome) === chiave ||
+        normalizzaRicercaCliente(item.file) === chiave;
+    });
+
+    const select = document.getElementById("bio_cliente_contratto");
+    const input = document.getElementById("bio_cliente_contratto_search");
+    if (!select || !input) return null;
+
+    select.value = cliente?.id || "";
+    input.value = cliente?.nome || nomeCliente || "";
+    return cliente || null;
+  }
+
   function cambiaTipoRapportino() {
     const tipo = document.getElementById("tipo_rapportino").value;
-    document.getElementById("biossidoBox").classList.toggle("hidden", tipo !== "biossido");
+    const biossido = eTipoBiossido(tipo);
+    const contratto = tipo === "biossido_contratto";
+    const descrizioneCliente = document.getElementById("descrizione_cliente");
+
+    document.getElementById("biossidoBox").classList.toggle("hidden", !biossido);
+    document.getElementById("bio_visita_contratto").checked = contratto;
+    document.getElementById("bio_cliente_contratto_box").classList.toggle("hidden", !contratto);
+    if (descrizioneCliente) descrizioneCliente.readOnly = contratto;
+
+    if (contratto) {
+      popolaClientiContratto();
+      sincronizzaClienteContrattoDaNome(descrizioneCliente?.value || "");
+    } else {
+      document.getElementById("bio_risultati_clienti_contratto").classList.add("hidden");
+    }
+
+    aggiornaVisitaContratto();
+
+    if (biossido && !document.querySelector(".bio-taglia-impianto")) {
+      generaSelettoriImpianti();
+    }
+    aggiornaMaterialiBiossido();
+  }
+
+  function aggiornaVisitaContratto() {
+    const checkbox = document.getElementById("bio_visita_contratto");
+    const box = document.getElementById("bio_numero_visita_box");
+    const select = document.getElementById("bio_numero_visita");
+    if (!checkbox || !box || !select) return;
+
+    box.classList.toggle("hidden", !checkbox.checked);
+    select.required = checkbox.checked;
+    document.getElementById("bio_cliente_contratto").required = checkbox.checked;
+    if (!checkbox.checked) select.value = "";
+  }
+
+  function taglieImpiantiSelezionate() {
+    return Array.from(document.querySelectorAll(".bio-taglia-impianto"))
+      .map(select => select.value)
+      .filter(Boolean);
+  }
+
+  function riepilogoTaglieImpianti() {
+    const conteggi = {};
+    taglieImpiantiSelezionate().forEach(taglia => {
+      conteggi[taglia] = (conteggi[taglia] || 0) + 1;
+    });
+
+    return Object.entries(conteggi)
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([taglia, quantita]) => `${taglia} g/h × ${quantita}`)
+      .join("; ");
+  }
+
+  function generaSelettoriImpianti(taglieIniziali = null) {
+    const contenitore = document.getElementById("bio_impianti_taglie");
+    const numeroEl = document.getElementById("bio_numero_impianti");
+    if (!contenitore || !numeroEl) return;
+
+    const precedenti = taglieIniziali || Array.from(contenitore.querySelectorAll(".bio-taglia-impianto"))
+      .map(select => select.value);
+    const numero = Math.min(10, Math.max(1, Number(numeroEl.value || 1)));
+
+    contenitore.innerHTML = "";
+
+    for (let i = 0; i < numero; i++) {
+      const label = document.createElement("label");
+      label.textContent = `Grandezza impianto ${i + 1} *`;
+
+      const select = document.createElement("select");
+      select.className = "bio-taglia-impianto";
+      select.required = true;
+      select.innerHTML = `
+        <option value="">Seleziona</option>
+        <option value="5">5 g/h</option>
+        <option value="10">10 g/h</option>
+        <option value="30">30 g/h</option>
+        <option value="60">60 g/h</option>
+      `;
+      select.value = precedenti[i] || "";
+      select.addEventListener("change", aggiornaMaterialiBiossido);
+
+      contenitore.appendChild(label);
+      contenitore.appendChild(select);
+    }
+
+    aggiornaMaterialiBiossido();
+  }
+
+  function taglieDaValoreSalvato(valore) {
+    const testo = String(valore || "");
+    const taglie = [];
+    const regexRiepilogo = /(5|10|30|60)\s*g\/h\s*[×x]\s*(\d+)/gi;
+    let match;
+
+    while ((match = regexRiepilogo.exec(testo)) !== null) {
+      const quantita = Math.max(1, Number(match[2] || 1));
+      for (let i = 0; i < quantita; i++) taglie.push(match[1]);
+    }
+
+    if (!taglie.length) {
+      const matchLegacy = testo.match(/(?:OCD[-\s]*162[-\s]*)?(5|10|30|60)\b/i);
+      if (matchLegacy) taglie.push(matchLegacy[1]);
+    }
+
+    return taglie.slice(0, 10);
+  }
+
+  function impostaImpiantiDaValoreSalvato(valore) {
+    const taglie = taglieDaValoreSalvato(valore);
+    document.getElementById("bio_numero_impianti").value = String(Math.max(1, taglie.length || 1));
+    generaSelettoriImpianti(taglie.length ? taglie : [""]);
+  }
+
+  function rimuoviKitAutomatici(testo) {
+    const valore = String(testo || "");
+    const inizio = valore.indexOf(inizioKitAutomatici);
+    const fine = valore.indexOf(fineKitAutomatici);
+    if (inizio < 0 || fine < inizio) return valore.trim();
+
+    return (valore.slice(0, inizio) + valore.slice(fine + fineKitAutomatici.length)).trim();
+  }
+
+  function aggiornaMaterialiBiossido() {
+    const tipoRapportino = document.getElementById("tipo_rapportino")?.value;
+    const tipoIntervento = document.getElementById("bio_tipologia_intervento")?.value;
+    const materiali = document.getElementById("materiali_note");
+    const prodotto = document.getElementById("bio_tipologia_prodotto");
+    if (!materiali || !prodotto) return;
+
+    prodotto.value = riepilogoTaglieImpianti();
+    const noteManuali = rimuoviKitAutomatici(materiali.value);
+
+    if (!eTipoBiossido(tipoRapportino) || tipoIntervento !== "Manutenzione") {
+      materiali.value = noteManuali;
+      return;
+    }
+
+    const conteggi = {};
+    taglieImpiantiSelezionate().forEach(taglia => {
+      conteggi[taglia] = (conteggi[taglia] || 0) + 1;
+    });
+
+    const righe = Object.entries(conteggi)
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([taglia, numeroImpianti]) => {
+        const kit = kitManutenzioneBiossido[taglia];
+        const quantitaTotale = numeroImpianti * kit.quantita;
+        return `${quantitaTotale} × ${kit.codice} - ${kit.descrizione}`;
+      });
+
+    if (!righe.length) {
+      materiali.value = noteManuali;
+      return;
+    }
+
+    const blocco = [inizioKitAutomatici, ...righe, fineKitAutomatici].join("\n");
+    materiali.value = noteManuali ? `${blocco}\n\n${noteManuali}` : blocco;
+  }
+
+  function validaAutomazioniRapportino() {
+    const tipoRapportino = document.getElementById("tipo_rapportino").value;
+    if (!eTipoBiossido(tipoRapportino)) return true;
+
+    const tipoIntervento = document.getElementById("bio_tipologia_intervento").value;
+    if (!tipoIntervento) {
+      alert("Seleziona la tipologia di intervento per il biossido di cloro.");
+      return false;
+    }
+
+    const visitaContratto = document.getElementById("bio_visita_contratto").checked;
+    const numeroVisita = document.getElementById("bio_numero_visita").value;
+    if (visitaContratto && !numeroVisita) {
+      alert("Seleziona il numero della visita a contratto.");
+      return false;
+    }
+
+    if (visitaContratto && !clienteContrattoSelezionato()) {
+      alert("Cerca il cliente e selezionalo dalla lista dei clienti a contratto.");
+      return false;
+    }
+
+    const selettori = Array.from(document.querySelectorAll(".bio-taglia-impianto"));
+    if (!selettori.length || selettori.some(select => !select.value)) {
+      alert("Seleziona la grandezza di tutti gli impianti controllati o manutenzionati.");
+      return false;
+    }
+
+    aggiornaMaterialiBiossido();
+    return true;
   }
 
   function cercaCommittente() {
@@ -3210,6 +3697,7 @@ async function rigeneraPdfRapportino(id) {
     const box = document.getElementById("risultati_committenti");
 
     document.getElementById("committente_id").value = "";
+    document.getElementById("committente_select").value = "";
 
     if (testo.length < 2) {
       box.classList.add("hidden");
@@ -3244,6 +3732,7 @@ async function rigeneraPdfRapportino(id) {
   function selezionaCommittente(committente) {
     document.getElementById("committente_search").value = committente.ragione_sociale;
     document.getElementById("committente_id").value = committente.id;
+    document.getElementById("committente_select").value = committente.id;
     document.getElementById("risultati_committenti").classList.add("hidden");
   }
 
@@ -3776,6 +4265,8 @@ async function rigeneraPdfRapportino(id) {
       return;
     }
 
+    if (!validaAutomazioniRapportino()) return;
+
     const btn = document.getElementById("btnSalva");
     btn.disabled = true;
     btn.textContent = "Salvataggio in corso...";
@@ -3955,6 +4446,8 @@ async function rigeneraPdfRapportino(id) {
     }
   }
 async function aggiornaRapportinoEsistente() {
+  if (!validaAutomazioniRapportino()) return;
+
   const btn = document.getElementById("btnSalva");
   btn.disabled = true;
   btn.textContent = "Salvataggio modifiche...";
@@ -4126,8 +4619,9 @@ async function aggiornaRapportinoEsistente() {
 }
 
   function raccogliDatiRapportino(userId) {
+    const tipoModulo = document.getElementById("tipo_rapportino").value;
     return {
-      tipo_rapportino: document.getElementById("tipo_rapportino").value,
+      tipo_rapportino: eTipoBiossido(tipoModulo) ? "biossido" : tipoModulo,
       data_intervento: document.getElementById("data_intervento").value,
       numero_so: document.getElementById("numero_so").value || null,
       tecnico_nome: nomeTecnicoCorrente(),
@@ -4152,9 +4646,12 @@ async function aggiornaRapportinoEsistente() {
   }
 
   function raccogliDatiBiossido(rapportinoId) {
+    const visitaContratto = document.getElementById("bio_visita_contratto").checked;
     return {
       rapportino_id: rapportinoId,
       tipologia_intervento: document.getElementById("bio_tipologia_intervento").value || null,
+      visita_contratto: visitaContratto,
+      numero_visita: visitaContratto ? document.getElementById("bio_numero_visita").value || null : null,
       tipologia_prodotto: document.getElementById("bio_tipologia_prodotto").value || null,
       matricola: document.getElementById("bio_matricola").value || null,
       codice: document.getElementById("bio_codice").value || null,
@@ -4683,6 +5180,27 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
     const data = dati.data_intervento || new Date().toISOString().split("T")[0];
     const anno = data.substring(0, 4);
     const mese = data.substring(5, 7);
+
+    const visitaContratto = dati.tipo_rapportino === "biossido" &&
+      document.getElementById("bio_visita_contratto").checked;
+
+    if (visitaContratto) {
+      const dataNome = data.replace(/-/g, "_");
+      const tipoIntervento = pulisciNomeFileConUnderscore(
+        document.getElementById("bio_tipologia_intervento").value || "Intervento"
+      );
+      const clienteContratto = clienteContrattoSelezionato();
+      const cliente = clienteContratto
+        ? clienteContratto.file
+        : pulisciNomeFileConUnderscore(dati.descrizione_cliente || "Cliente");
+      const numeroVisita = pulisciNomeFileConUnderscore(
+        document.getElementById("bio_numero_visita").value || ""
+      );
+      const nomePdf = `${numeroVisita}_Visita_${tipoIntervento}_${dataNome}_${cliente}.pdf`;
+
+      return `${anno}/${mese}/${rapportinoId}/${nomePdf}`;
+    }
+
     const tipo = dati.tipo_rapportino === "biossido" ? "BIO" : "DOS";
     const committente = pulisciNomeFile(document.getElementById("committente_search").value || "committente");
     const cliente = pulisciNomeFile(dati.descrizione_cliente || "cliente");
@@ -4703,6 +5221,16 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
       .replace(/[^a-z0-9]+/gi, "-")
       .replace(/^-+|-+$/g, "")
       .substring(0, 40);
+  }
+
+  function pulisciNomeFileConUnderscore(testo) {
+    return String(testo || "")
+      .trim()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/gi, "_")
+      .replace(/^_+|_+$/g, "")
+      .substring(0, 80);
   }
 
   function formattaDataSolo(data) {
