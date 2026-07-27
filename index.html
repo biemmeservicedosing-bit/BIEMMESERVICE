@@ -5112,6 +5112,8 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     const bio = {
       tipologia_intervento: document.getElementById("bio_tipologia_intervento").value || "-",
+      visita_contratto: document.getElementById("bio_visita_contratto").checked,
+      numero_visita: document.getElementById("bio_numero_visita").value || "-",
       tipologia_prodotto: document.getElementById("bio_tipologia_prodotto").value || "-",
       matricola: document.getElementById("bio_matricola").value || "-",
       codice: document.getElementById("bio_codice").value || "-",
@@ -5131,9 +5133,16 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     y = disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committenteObj);
 
-    disegnaRigaLabelValore(doc, 12, y, 70, "Intervento effettuato da", tecnico);
-    disegnaRigaLabelValore(doc, 82, y, 31, "N. tecnici", dati.numero_tecnici || 1);
-    disegnaRigaLabelValore(doc, 113, y, 85, "Tipologia intervento", bio.tipologia_intervento);
+    if (bio.visita_contratto) {
+      disegnaRigaLabelValore(doc, 12, y, 60, "Intervento effettuato da", tecnico);
+      disegnaRigaLabelValore(doc, 72, y, 25, "N. tecnici", dati.numero_tecnici || 1);
+      disegnaRigaLabelValore(doc, 97, y, 55, "Tipologia intervento", bio.tipologia_intervento);
+      disegnaRigaLabelValore(doc, 152, y, 46, "Numero visita", bio.numero_visita);
+    } else {
+      disegnaRigaLabelValore(doc, 12, y, 70, "Intervento effettuato da", tecnico);
+      disegnaRigaLabelValore(doc, 82, y, 31, "N. tecnici", dati.numero_tecnici || 1);
+      disegnaRigaLabelValore(doc, 113, y, 85, "Tipologia intervento", bio.tipologia_intervento);
+    }
 
     y += 18;
 
@@ -5252,3 +5261,4 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
 </body>
 </html>
+
