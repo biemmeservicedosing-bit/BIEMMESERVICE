@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -226,7 +227,8 @@
     }
 
     #risultati_committenti,
-    #bio_risultati_clienti_contratto {
+    #bio_risultati_clienti_contratto,
+    #bio_risultati_ricambi_extra {
       border:1px solid var(--border);
       border-radius:15px;
       background:white;
@@ -270,6 +272,77 @@
     .ore-card p {
       margin:8px 0;
       color:var(--muted);
+    }
+
+    .bio-ricambi-grid {
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .bio-ricambio-card {
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:12px;
+      background:#fff;
+    }
+
+    .bio-ricambio-card label {
+      display:flex;
+      align-items:flex-start;
+      gap:9px;
+      margin:0;
+      cursor:pointer;
+    }
+
+    .bio-ricambio-card input[type="checkbox"] {
+      width:auto;
+      margin-top:3px;
+    }
+
+    .bio-ricambio-card input[type="number"] {
+      margin-top:9px;
+      padding:9px 10px;
+    }
+
+    .bio-ricambio-codice {
+      display:block;
+      color:var(--blue);
+      font-weight:850;
+      margin-bottom:3px;
+    }
+
+    #bio_ricambi_extra_selezionati {
+      display:flex;
+      flex-direction:column;
+      gap:9px;
+      margin-top:12px;
+    }
+
+    .bio-ricambio-selezionato {
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+      align-items:center;
+      border:1px solid var(--border);
+      border-radius:15px;
+      padding:11px 12px;
+      background:#f8fbfc;
+    }
+
+    .bio-ricambio-selezionato button {
+      width:auto;
+      min-width:95px;
+      margin:0;
+      padding:9px 11px;
+      background:#b42318;
+      box-shadow:none;
+      font-size:13px;
+    }
+
+    @media (max-width:720px) {
+      .bio-ricambi-grid { grid-template-columns:1fr; }
     }
 
     canvas {
@@ -1414,7 +1487,7 @@
               <select id="bio_cliente_contratto" onchange="applicaClienteContratto()">
                 <option value="">Seleziona il cliente</option>
               </select>
-              <small>Il nome cliente, la dicitura del PDF, la quantità e le taglie vengono impostati automaticamente.</small>
+              <small>Se il cliente esiste, selezionalo. Se è nuovo, scrivi il nome completo: verrà salvato automaticamente insieme all'indirizzo e agli impianti quando salvi il rapportino.</small>
             </div>
 
             <div id="bio_numero_visita_box" class="hidden">
@@ -1447,17 +1520,75 @@
             <div id="bio_impianti_taglie"></div>
             <input type="hidden" id="bio_tipologia_prodotto" />
 
+            <div id="bio_impianto_anagrafica_box" class="hidden">
+              <label>Impianto registrato</label>
+              <select id="bio_impianto_anagrafica" onchange="applicaImpiantoAnagrafica()">
+                <option value="">Seleziona impianto</option>
+              </select>
+              <small>La selezione propone i dati conosciuti. Tutti i campi sottostanti restano modificabili.</small>
+            </div>
+
+            <label>Modello impianto</label>
+            <input type="text" id="bio_modello_impianto" placeholder="Es. OCD-162 5" oninput="aggiornaMaterialiBiossido()" />
+
             <label>Nr matricola</label>
             <input type="text" id="bio_matricola" placeholder="Es. S/N: 1000098" />
 
             <label>Codice</label>
             <input type="text" id="bio_codice" placeholder="Es. 95735160" />
 
+            <div class="row">
+              <div>
+                <label>Modello pompa</label>
+                <input type="text" id="bio_modello_pompa" placeholder="Es. DDA 7,5" />
+              </div>
+              <div>
+                <label>Codice pompa</label>
+                <input type="text" id="bio_codice_pompa" />
+              </div>
+            </div>
+
+            <div class="row">
+              <div>
+                <label>Modello cella / sensore</label>
+                <input type="text" id="bio_modello_cella" placeholder="Es. AQC-D11" />
+              </div>
+              <div>
+                <label>Codice cella / sensore</label>
+                <input type="text" id="bio_codice_cella" />
+              </div>
+            </div>
+
+            <label>N. seriale cella / sensore</label>
+            <input type="text" id="bio_matricola_cella" />
+
+            <label>Ubicazione / reparto</label>
+            <input type="text" id="bio_ubicazione_impianto" placeholder="Es. Centrale termica" />
+
             <label>Modalità dosaggio</label>
             <input type="text" id="bio_modalita_dosaggio" placeholder="Es. Proporzionale" />
 
             <label>Concentrazione impostata</label>
             <input type="text" id="bio_concentrazione_impostata" />
+
+            <div id="bio_ricambi_extra_box">
+              <label>Ricambi extra</label>
+              <input
+                type="text"
+                id="bio_ricambio_extra_search"
+                placeholder="Cerca per codice o descrizione..."
+                oninput="cercaRicambioExtra()"
+                autocomplete="off"
+              />
+              <div id="bio_risultati_ricambi_extra" class="hidden"></div>
+              <select id="bio_ricambio_extra_select" onchange="selezionaRicambioExtraDaTendina()">
+                <option value="">Seleziona un ricambio extra</option>
+              </select>
+              <label>Quantità ricambio extra</label>
+              <input type="number" id="bio_ricambio_extra_quantita" min="1" step="1" value="1" />
+              <button type="button" class="secondary" onclick="aggiungiRicambioExtra()">Aggiungi ricambio extra</button>
+              <div id="bio_ricambi_extra_selezionati"></div>
+            </div>
           </div>
         </div>
 
@@ -1739,10 +1870,21 @@
     "bio_numero_visita",
     "bio_numero_impianti",
     "bio_tipologia_prodotto",
+    "bio_impianto_anagrafica",
+    "bio_modello_impianto",
     "bio_matricola",
     "bio_codice",
+    "bio_modello_pompa",
+    "bio_codice_pompa",
+    "bio_modello_cella",
+    "bio_codice_cella",
+    "bio_matricola_cella",
+    "bio_ubicazione_impianto",
     "bio_modalita_dosaggio",
-    "bio_concentrazione_impostata"
+    "bio_concentrazione_impostata",
+    "bio_ricambio_extra_search",
+    "bio_ricambio_extra_select",
+    "bio_ricambio_extra_quantita"
   ];
 
   const kitManutenzioneBiossido = {
@@ -1768,35 +1910,64 @@
     }
   };
 
-  const clientiBiossidoContratto = [
-    { id: "bologna_centro", nome: "UNAHOTELS Bologna Centro", file: "Bologna_Centro", taglie: ["5"] },
-    { id: "bologna_fiera", nome: "UNAHOTELS Bologna Fiera", file: "Bologna_Fiera", taglie: ["5", "5"] },
-    { id: "century", nome: "UnaHotels Century", file: "Century", taglie: ["5"] },
-    { id: "condominio_santa_rita", nome: "Comunione del complesso Santa Rita", file: "Condominio_Santa_Rita", taglie: ["10"] },
-    { id: "contessa_jolanda", nome: "UnaHotels Contessa Jolanda", file: "Contessa_Jolanda", taglie: ["5"] },
-    { id: "cusani", nome: "Una Hotels Cusani", file: "Cusani", taglie: ["5"] },
-    { id: "ekolat", nome: "EKOLAT d.o.o.", file: "Ekolat", taglie: ["30"] },
-    { id: "emmi_dessert", nome: "Emmi Dessert Italia", file: "Emmi_Dessert", taglie: ["5"] },
-    { id: "expo_fiera", nome: "UnaHotels Expo Fiera", file: "Expo_Fiera", taglie: ["5"] },
-    { id: "hotel_malpensa", nome: "UnaHotel Malpensa", file: "Hotel_Malpensa", taglie: ["5"] },
-    { id: "hotel_varese", nome: "UnaHotels Varese", file: "Hotel_Varese", taglie: ["5"] },
-    { id: "hotel_vittoria_firenze", nome: "UNAHOTELS Vittoria Firenze", file: "Hotel_Vittoria_Firenze", taglie: ["5"] },
-    { id: "hyatt_centric", nome: "Hyatt Centric Milan Centrale", file: "Hyatt_Centric", taglie: ["5"] },
-    { id: "mediterraneo", nome: "UnaHotels Mediterraneo", file: "Mediterraneo", taglie: ["5"] },
-    { id: "scandinavia", nome: "UnaHotels Scandinavia", file: "Scandinavia", taglie: ["5"] },
-    { id: "th_cadore", nome: "TH Cadore", file: "TH_Cadore", taglie: ["5"] },
-    { id: "th_costa_rei", nome: "TH Costa Rei", file: "TH_Costa_Rei", taglie: ["5"] },
-    { id: "th_lacona", nome: "TH Lacona", file: "TH_Lacona", taglie: ["5"] },
-    { id: "th_park_hotel_des_dolomites", nome: "TH Park Hotel Des Dolomites", file: "TH_Park_Hotel_Des_Dolomites", taglie: ["5"] },
-    { id: "th_pila", nome: "TH Pila", file: "Th_Pila", taglie: ["5"] },
-    { id: "th_planibel", nome: "TH La Thuile - Planibel Hotel", file: "TH_Planibel", taglie: ["5", "5", "5", "5", "5"] },
-    { id: "th_sestriere", nome: "TH Sestriere", file: "TH_Sestriere", taglie: ["5"] },
-    { id: "tocq", nome: "Tocq Hotel", file: "Tocq", taglie: ["5"] },
-    { id: "trastevere_roma", nome: "Trastevere Roma | UNA Esperienze", file: "Trastevere_Roma", taglie: ["5"] }
-  ].sort((a, b) => a.nome.localeCompare(b.nome, "it", { sensitivity: "base" }));
+  const clientiBiossidoContrattoPredefiniti = [
+    { id:"bologna_centro", nome:"UNAHOTELS Bologna Centro", file:"Bologna_Centro", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Viale Pietro Pietramellara, 41 - 40121 Bologna (BO)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95702474",matricola:"S/N: 1000089",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"bologna_fiera", nome:"UNAHOTELS Bologna Fiera", file:"Bologna_Fiera", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Piazza della Costituzione, 1 - 40128 Bologna (BO)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"},{n:2,taglia:"5",modello:"OCD-162 5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"century", nome:"UnaHotels Century", file:"Century", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Pirelli, 20 - 20124 Milano (MI)", impianti:[1,2,3].map(n=>({n,taglia:"5",modello:"OCD-162 5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"})) },
+    { id:"condominio_santa_rita", nome:"Comunione del complesso Santa Rita", file:"Condominio_Santa_Rita", gruppo:"Comunione del complesso res. Santa Rita", indirizzo:"Via Vergerio, 21 - 35126 Padova (PD)", impianti:[{n:1,taglia:"10",modello:"OCD-162 10",codice:"95735168",matricola:"S/N: 10000027",pompa:"DDA 7,5",cella:"DID",codiceCella:"98915657",modalita:"COMBINATO"}] },
+    { id:"contessa_jolanda", nome:"UnaHotels Contessa Jolanda", file:"Contessa_Jolanda", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Gioacchino Murat, 21 - 20159 Milano (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95723427",matricola:"S/N: 11/037476",pompa:"DMI",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"cusani", nome:"Una Hotels Cusani", file:"Cusani", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Cusani, 13 - 20121 Milano (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735160",matricola:"S/N: 10000103",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"ekolat", nome:"EKOLAT d.o.o.", file:"Ekolat", gruppo:"Ekolat", indirizzo:"Goriska cesta 11 - 5271 Vipava (SLO)", impianti:[{n:1,taglia:"30",modello:"OCD-162 30",codice:"95735171",matricola:"S/N: 10000103",pompa:"DDI 60",cella:"AQC-D12",codiceCella:"95737691",modalita:"COMBINATO"}] },
+    { id:"emmi_dessert", nome:"Emmi Dessert Italia", file:"Emmi_Dessert", gruppo:"Emmi Desserts", indirizzo:"Via Leonardo Da Vinci, 10 - 20016 Pero (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735160",matricola:"S/N: 10000108",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"SET POINT"}] },
+    { id:"expo_fiera", nome:"UnaHotels Expo Fiera", file:"Expo_Fiera", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Keplero, 12 - 20016 Pero (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95723427",matricola:"S/N: 11/039127",pompa:"DMI",cella:"AQC-D12",codiceCella:"95737691",modalita:"COMBINATO"}] },
+    { id:"hotel_malpensa", nome:"UnaHotel Malpensa", file:"Hotel_Malpensa", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via F. Turati, 84 - 20023 Cerro Maggiore (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95723427",matricola:"S/N: 11/108361",pompa:"DMI",cella:"AQC-D11",codiceCella:"95737681",modalita:"SET POINT"}] },
+    { id:"hotel_varese", nome:"UnaHotels Varese", file:"Hotel_Varese", gruppo:"PIAZZA HOTEL", indirizzo:"Via Francesco Albani, 73 - 21100 Varese (VA)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95702474",matricola:"S/N: 10/366509",pompa:"DMI",cella:"DID",codiceCella:"98915657",modalita:"COMBINATO"}] },
+    { id:"hotel_vittoria_firenze", nome:"UNAHOTELS Vittoria Firenze", file:"Hotel_Vittoria_Firenze", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Pisana, 59 - 50143 Firenze (FI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735153",matricola:"S/N: 10000717",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"hyatt_centric", nome:"Hyatt Centric Milan Centrale", file:"Hyatt_Centric", gruppo:"FEURING HOTEL", indirizzo:"Via Pirelli, 20 - 20124 Milano (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735168",matricola:"S/N: 10000026",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"mediterraneo", nome:"UnaHotels Mediterraneo", file:"Mediterraneo", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Ludovico Muratori, 14 - 20135 Milano (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735160",matricola:"S/N: 10000063",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"scandinavia", nome:"UnaHotels Scandinavia", file:"Scandinavia", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Giovanni Battista Fauchè, 15 - 20154 Milano (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95723427",matricola:"S/N: 11/037475",pompa:"DMI",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"th_cadore", nome:"TH Cadore", file:"TH_Cadore_Antelao", gruppo:"TH Resorts", indirizzo:"Via Roma, 11 - 32040 Borca di Cadore (BL)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735153",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"th_costa_rei", nome:"TH Costa Rei", file:"TH_Costa_Rei", gruppo:"TH Resorts", indirizzo:"Via Ichnusa, 25 - 09043 Costa Rei (CI)", impianti:[{n:1,taglia:"10",modello:"OCD-162 10",codice:"95735161",pompa:"DDA 7,5"}] },
+    { id:"th_lacona", nome:"TH Lacona", file:"TH_Lacona", gruppo:"TH Resorts", indirizzo:"Viale dei Golfi, 544/B - 57031 Lacona (LI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735153",pompa:"DDA 7,5",cella:"AQC-D12",codiceCella:"95737691",modalita:"COMBINATO"}] },
+    { id:"th_park_hotel_des_dolomites", nome:"TH Park Hotel Des Dolomites", file:"TH_Park_Hotel_Des_Dolomites", gruppo:"TH Resorts", indirizzo:"Via Roma, 81 - 32040 Borca di Cadore (BL)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735153",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"th_pila", nome:"TH Pila", file:"Th_Pila", gruppo:"TH Resorts", indirizzo:"Frazione Pila, 76 - 11020 Gressan (AO)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735160",matricola:"S/N: 10000134",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"th_planibel", nome:"TH La Thuile - Planibel Hotel", file:"TH_Planibel", gruppo:"TH Resorts", indirizzo:"Frazione Entreves, 158 - 11016 La Thuile (AO)", impianti:["HOTEL/CUCINA","MONTE ROSA","CERVINO","MONTE BIANCO","SAN BERNARDO"].map((ubicazione,i)=>({n:i+1,taglia:"5",modello:"OCD-162 5",pompa:i===0?"DDA 7,6":"",modalita:"COMBINATO",ubicazione})) },
+    { id:"th_sestriere", nome:"TH Sestriere", file:"TH_Sestriere", gruppo:"TH Resorts", indirizzo:"Via Sauze, 14 - 10058 Sestriere (TO)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",pompa:"DDA 7,5",modalita:"COMBINATO"}] },
+    { id:"tocq", nome:"Tocq Hotel", file:"Tocq", gruppo:"Elleterm", indirizzo:"Via Alessio di Tocqueville, 7/D - 20124 Milano (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735160",matricola:"S/N: 10000093",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"torre_galfa", nome:"Torre GalFa", file:"Torre_GalFa", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Gustavo Fara, 41 - 20124 Milano (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95723427",matricola:"S/N: 11/037476",pompa:"DDI",cella:"AQC-D11",codiceCella:"95737681",modalita:"SET POINT"}] },
+    { id:"trastevere_roma", nome:"Trastevere Roma | UNA Esperienze", file:"Trastevere_Roma", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Emilio Morosini, 27 - 00153 Roma (RM)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735160",matricola:"S/N: 10000035",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] }
+  ].map(cliente => ({ ...cliente, taglie: cliente.impianti.map(impianto => impianto.taglia || "") }))
+    .sort((a, b) => a.nome.localeCompare(b.nome, "it", { sensitivity: "base" }));
+
+  let clientiBiossidoContratto = clientiBiossidoContrattoPredefiniti.map(cliente => ({
+    ...cliente,
+    impianti: cliente.impianti.map(impianto => ({ ...impianto }))
+  }));
+  let anagraficaContrattiDbAttiva = false;
+
+  const catalogoRicambiExtra = [
+    { codice:"99327316", descrizione:"Spare, float switch, 4 switch 162-5/10, PVC", taglie:["5","10"] },
+    { codice:"95717906", descrizione:"Spare, float switch, 2 switch, 162-5/10", taglie:["5","10"] },
+    { codice:"95717446", descrizione:"Kit, Float switch 4 switch 162-30", taglie:["30"] },
+    { codice:"95717447", descrizione:"Kit, Float switch 2 switch 162-30", taglie:["30"] },
+    { codice:"95717455", descrizione:"Kit, Float switch 4 switch 162-60", taglie:["60"] },
+    { codice:"95717456", descrizione:"Kit, Float switch 2 switch 162-60", taglie:["60"] },
+    { codice:"95730826", descrizione:"MFV-G5/8-16 PV/V U2", taglie:[] },
+    { codice:"95737681", descrizione:"AQC-D11", taglie:[], celle:["AQC-D11"] },
+    { codice:"91835242", descrizione:"Spare electrode - G- for AQC-D11", taglie:[], celle:["AQC-D11"] },
+    { codice:"91835822", descrizione:"Service kit - M/C AQC-D11", taglie:[], celle:["AQC-D11"] },
+    { codice:"95737691", descrizione:"AQC-D12, P-AU-X-X, QS-T-X", taglie:[], celle:["AQC-D12"] },
+    { codice:"96609174", descrizione:"Chlorine electrode, reference AQC-D12", taglie:[], celle:["AQC-D12"] },
+    { codice:"95717903", descrizione:"Solenoid valve 5-10 g/h", taglie:["5","10"] },
+    { codice:"99958495", descrizione:"Solenoid valve 230V OCD 162-030/060", taglie:["30","60"] }
+  ];
+
+  let ricambiExtraSelezionati = [];
 
   const inizioKitAutomatici = "--- KIT MANUTENZIONE BIOSSIDO (automatici) ---";
   const fineKitAutomatici = "--- FINE KIT AUTOMATICI ---";
+  const inizioRicambiExtra = "--- RICAMBI EXTRA ---";
+  const fineRicambiExtra = "--- FINE RICAMBI EXTRA ---";
 
   function valorePerInput(valore) {
     return valore === null || valore === undefined ? "" : String(valore);
@@ -1830,14 +2001,18 @@
   function svuotaCampiRapportino(tipo = "dosaggio") {
     campiRapportino.forEach(id => impostaValore(id, ""));
     campiBiossido.forEach(id => impostaValore(id, ""));
+    ricambiExtraSelezionati = [];
 
     impostaValore("tipo_rapportino", tipo);
     impostaValore("numero_tecnici", 1);
     impostaValore("bio_numero_impianti", 1);
+    impostaValore("bio_ricambio_extra_quantita", 1);
     document.getElementById("bio_visita_contratto").checked = tipo === "biossido_contratto";
     aggiornaVisitaContratto();
     cambiaTipoRapportino();
     generaSelettoriImpianti();
+    popolaTendinaRicambiExtra();
+    renderRicambiExtraSelezionati();
 
     oreInserite = [];
     editingOreIndex = null;
@@ -1928,6 +2103,7 @@
       document.getElementById("appBox").classList.remove("hidden");
 
       await caricaCommittenti();
+      await caricaAnagraficaContratti();
       impostaNomeTecnicoDaUtente();
       await caricaMieiRapportini();
       showTechPage("home");
@@ -2514,6 +2690,20 @@ async function caricaTecniciAdmin() {
   });
 }
 
+async function toggleTecnico(email, nuovoStato) {
+  const { error } = await supabaseClient
+    .from("utenti")
+    .update({ attivo: nuovoStato })
+    .eq("email", email);
+
+  if (error) {
+    alert("Errore aggiornamento tecnico: " + error.message);
+    return;
+  }
+
+  await caricaTecniciAdmin();
+}
+
 async function salvaTecnicoAdmin() {
   const nome = document.getElementById("admin_tecnico_nome").value.trim();
   const email = document.getElementById("admin_tecnico_email").value.trim().toLowerCase();
@@ -2666,6 +2856,7 @@ async function salvaCommittenteAdmin() {
 
   await caricaCommittentiAdmin();
   await caricaCommittenti();
+  await caricaAnagraficaContratti();
 
   alert("Committente salvato correttamente.");
 }
@@ -3123,6 +3314,7 @@ async function modificaRapportino(id) {
   svuotaCampiRapportino(data.tipo_rapportino || "dosaggio");
 
   await caricaCommittenti();
+  await caricaAnagraficaContratti();
 
   impostaValore("nome_tecnico", data.tecnico_nome);
   impostaValore("tipo_rapportino", data.tipo_rapportino || "dosaggio");
@@ -3141,6 +3333,7 @@ async function modificaRapportino(id) {
   impostaValore("numero_tecnici", data.numero_tecnici || 1);
   impostaValore("relazione", data.relazione);
   impostaValore("materiali_note", data.materiali_note);
+  ripristinaRicambiExtraDaMateriali(data.materiali_note);
   impostaValore("km_percorsi", data.km_percorsi);
   impostaValore("spese_viaggio", data.spese_viaggio);
   impostaValore("parcheggio", data.parcheggio);
@@ -3197,6 +3390,8 @@ async function modificaRapportino(id) {
       impostaValore("bio_numero_visita", bio.numero_visita);
       aggiornaVisitaContratto();
       impostaImpiantiDaValoreSalvato(bio.tipologia_prodotto);
+      const partiProdotto = String(bio.tipologia_prodotto || "").split("|").map(parte => parte.trim());
+      if (partiProdotto.length > 1) impostaValore("bio_modello_impianto", partiProdotto.slice(1).join(" | "));
       impostaValore("bio_matricola", bio.matricola);
       impostaValore("bio_codice", bio.codice);
       impostaValore("bio_modalita_dosaggio", bio.modalita_dosaggio);
@@ -3398,6 +3593,405 @@ async function rigeneraPdfRapportino(id) {
     return clientiBiossidoContratto.find(cliente => cliente.id === id) || null;
   }
 
+  function impiantoLocaleDaDb(riga) {
+    return {
+      dbId: riga.id,
+      n: riga.numero,
+      taglia: riga.taglia || "",
+      modello: riga.modello || "",
+      codice: riga.codice_prodotto || "",
+      matricola: riga.matricola || "",
+      pompa: riga.modello_pompa || "",
+      codicePompa: riga.codice_pompa || "",
+      cella: riga.modello_cella || "",
+      codiceCella: riga.codice_cella || "",
+      matricolaCella: riga.matricola_cella || "",
+      modalita: riga.modalita_dosaggio || "",
+      concentrazione: riga.concentrazione_impostata || "",
+      ubicazione: riga.ubicazione || ""
+    };
+  }
+
+  function clienteLocaleDaDb(riga) {
+    const impianti = (riga.impianti_biossido_contratto || [])
+      .filter(impianto => impianto.attivo !== false)
+      .sort((a, b) => a.numero - b.numero)
+      .map(impiantoLocaleDaDb);
+    return {
+      id: riga.chiave,
+      dbId: riga.id,
+      nome: riga.nome,
+      file: riga.dicitura_pdf,
+      gruppo: riga.gruppo_committente || "",
+      indirizzo: riga.indirizzo_completo || "",
+      impianti,
+      taglie: impianti.map(impianto => impianto.taglia || "")
+    };
+  }
+
+  function clienteDbDaPredefinito(cliente) {
+    return {
+      chiave: cliente.id,
+      nome: cliente.nome,
+      dicitura_pdf: cliente.file,
+      gruppo_committente: cliente.gruppo || null,
+      indirizzo_completo: cliente.indirizzo || null,
+      attivo: true
+    };
+  }
+
+  function impiantoDbDaLocale(clienteDbId, impianto) {
+    const pulisci = valore => String(valore || "").trim() || null;
+    return {
+      cliente_id: clienteDbId,
+      numero: Math.max(1, Number(impianto.n || 1)),
+      taglia: pulisci(impianto.taglia),
+      modello: pulisci(impianto.modello),
+      codice_prodotto: pulisci(impianto.codice),
+      matricola: pulisci(impianto.matricola),
+      modello_pompa: pulisci(impianto.pompa),
+      codice_pompa: pulisci(impianto.codicePompa),
+      modello_cella: pulisci(impianto.cella),
+      codice_cella: pulisci(impianto.codiceCella),
+      matricola_cella: pulisci(impianto.matricolaCella),
+      modalita_dosaggio: pulisci(impianto.modalita),
+      concentrazione_impostata: pulisci(impianto.concentrazione),
+      ubicazione: pulisci(impianto.ubicazione),
+      attivo: true
+    };
+  }
+
+  async function leggiAnagraficaContrattiDb() {
+    return await supabaseClient
+      .from("clienti_biossido_contratto")
+      .select(`
+        id, chiave, nome, dicitura_pdf, gruppo_committente, indirizzo_completo, attivo,
+        impianti_biossido_contratto (
+          id, numero, taglia, modello, codice_prodotto, matricola,
+          modello_pompa, codice_pompa, modello_cella, codice_cella,
+          matricola_cella, modalita_dosaggio, concentrazione_impostata,
+          ubicazione, attivo
+        )
+      `)
+      .eq("attivo", true)
+      .order("nome", { ascending: true });
+  }
+
+  async function caricaAnagraficaContratti() {
+    const primaLettura = await leggiAnagraficaContrattiDb();
+    if (primaLettura.error) {
+      anagraficaContrattiDbAttiva = false;
+      console.warn("Anagrafica dinamica non disponibile:", primaLettura.error.message);
+      popolaClientiContratto();
+      return false;
+    }
+
+    anagraficaContrattiDbAttiva = true;
+    let righeDb = primaLettura.data || [];
+    const chiaviPresenti = new Set(righeDb.map(riga => riga.chiave));
+    const clientiMancanti = clientiBiossidoContrattoPredefiniti
+      .filter(cliente => !chiaviPresenti.has(cliente.id))
+      .map(clienteDbDaPredefinito);
+
+    if (clientiMancanti.length) {
+      const inserimento = await supabaseClient.from("clienti_biossido_contratto").insert(clientiMancanti);
+      if (inserimento.error && inserimento.error.code !== "23505") {
+        console.warn("Importazione clienti iniziali incompleta:", inserimento.error.message);
+      }
+      const rilettura = await leggiAnagraficaContrattiDb();
+      if (!rilettura.error) righeDb = rilettura.data || [];
+    }
+
+    const clientiDbPerChiave = new Map(righeDb.map(riga => [riga.chiave, riga]));
+    const impiantiMancanti = [];
+    clientiBiossidoContrattoPredefiniti.forEach(cliente => {
+      const clienteDb = clientiDbPerChiave.get(cliente.id);
+      if (!clienteDb) return;
+      const numeriPresenti = new Set((clienteDb.impianti_biossido_contratto || []).map(impianto => impianto.numero));
+      cliente.impianti.forEach(impianto => {
+        if (!numeriPresenti.has(impianto.n)) {
+          impiantiMancanti.push(impiantoDbDaLocale(clienteDb.id, impianto));
+        }
+      });
+    });
+
+    if (impiantiMancanti.length) {
+      const inserimento = await supabaseClient.from("impianti_biossido_contratto").insert(impiantiMancanti);
+      if (inserimento.error && inserimento.error.code !== "23505") {
+        console.warn("Importazione impianti iniziali incompleta:", inserimento.error.message);
+      }
+    }
+
+    const letturaFinale = await leggiAnagraficaContrattiDb();
+    if (!letturaFinale.error) righeDb = letturaFinale.data || [];
+    clientiBiossidoContratto = righeDb.map(clienteLocaleDaDb)
+      .sort((a, b) => a.nome.localeCompare(b.nome, "it", { sensitivity: "base" }));
+    popolaClientiContratto();
+    return true;
+  }
+
+  function datiImpiantoDaForm(impiantoBase = {}, numero = 1, taglia = "") {
+    const valore = id => document.getElementById(id)?.value?.trim() || "";
+    return {
+      ...impiantoBase,
+      n: numero,
+      taglia: taglia || impiantoBase.taglia || "",
+      modello: valore("bio_modello_impianto"),
+      codice: valore("bio_codice"),
+      matricola: valore("bio_matricola"),
+      pompa: valore("bio_modello_pompa"),
+      codicePompa: valore("bio_codice_pompa"),
+      cella: valore("bio_modello_cella"),
+      codiceCella: valore("bio_codice_cella"),
+      matricolaCella: valore("bio_matricola_cella"),
+      modalita: valore("bio_modalita_dosaggio"),
+      concentrazione: valore("bio_concentrazione_impostata"),
+      ubicazione: valore("bio_ubicazione_impianto")
+    };
+  }
+
+  async function creaClienteContrattoDaForm() {
+    const input = document.getElementById("bio_cliente_contratto_search");
+    const nome = input?.value?.trim() || document.getElementById("descrizione_cliente")?.value?.trim() || "";
+    if (!nome) throw new Error("Inserisci il nome del nuovo cliente a contratto.");
+
+    const giaPresente = clientiBiossidoContratto.find(cliente =>
+      normalizzaRicercaCliente(cliente.nome) === normalizzaRicercaCliente(nome)
+    );
+    if (giaPresente) {
+      selezionaClienteContratto(giaPresente.id);
+      return giaPresente;
+    }
+
+    const file = pulisciNomeFileConUnderscore(nome) || "Nuovo_Cliente";
+    let chiave = file.toLowerCase();
+    const indirizzo = document.getElementById("indirizzo_cliente")?.value?.trim() || "";
+    const gruppo = committenteSelezionato()?.ragione_sociale || "";
+    let rigaDb = null;
+
+    if (anagraficaContrattiDbAttiva) {
+      const payload = {
+        chiave,
+        nome,
+        dicitura_pdf: file,
+        gruppo_committente: gruppo || null,
+        indirizzo_completo: indirizzo || null,
+        attivo: true
+      };
+      let inserimento = await supabaseClient
+        .from("clienti_biossido_contratto")
+        .insert([payload])
+        .select("id, chiave, nome, dicitura_pdf, gruppo_committente, indirizzo_completo, attivo")
+        .single();
+
+      if (inserimento.error?.code === "23505") {
+        chiave = `${chiave}_${Date.now().toString().slice(-6)}`;
+        inserimento = await supabaseClient
+          .from("clienti_biossido_contratto")
+          .insert([{ ...payload, chiave }])
+          .select("id, chiave, nome, dicitura_pdf, gruppo_committente, indirizzo_completo, attivo")
+          .single();
+      }
+      if (inserimento.error) throw inserimento.error;
+      rigaDb = inserimento.data;
+    }
+
+    const cliente = {
+      id: rigaDb?.chiave || chiave,
+      dbId: rigaDb?.id || null,
+      nome,
+      file,
+      gruppo,
+      indirizzo,
+      impianti: [],
+      taglie: []
+    };
+    clientiBiossidoContratto.push(cliente);
+    clientiBiossidoContratto.sort((a, b) => a.nome.localeCompare(b.nome, "it", { sensitivity: "base" }));
+    popolaClientiContratto();
+    document.getElementById("bio_cliente_contratto").value = cliente.id;
+    document.getElementById("bio_cliente_contratto_search").value = cliente.nome;
+    document.getElementById("descrizione_cliente").value = cliente.nome;
+    return cliente;
+  }
+
+  async function salvaAnagraficaContrattoDaForm() {
+    if (!modalitaContrattoAttiva()) return { aggiornato: false, database: anagraficaContrattiDbAttiva };
+
+    let cliente = clienteContrattoSelezionato();
+    const nuovoCliente = !cliente;
+    if (!cliente) cliente = await creaClienteContrattoDaForm();
+
+    const nome = document.getElementById("bio_cliente_contratto_search")?.value?.trim() || cliente.nome;
+    const indirizzo = document.getElementById("indirizzo_cliente")?.value?.trim() || "";
+    const gruppo = committenteSelezionato()?.ragione_sociale || cliente.gruppo || "";
+    cliente.nome = nome;
+    cliente.indirizzo = indirizzo;
+    cliente.gruppo = gruppo;
+
+    if (anagraficaContrattiDbAttiva && cliente.dbId) {
+      const aggiornamentoCliente = await supabaseClient
+        .from("clienti_biossido_contratto")
+        .update({
+          nome,
+          indirizzo_completo: indirizzo || null,
+          gruppo_committente: gruppo || null,
+          dicitura_pdf: cliente.file
+        })
+        .eq("id", cliente.dbId);
+      if (aggiornamentoCliente.error) throw aggiornamentoCliente.error;
+    }
+
+    const taglie = taglieImpiantiSelezionate();
+    const indiceSelezionato = Math.max(0, Number(document.getElementById("bio_impianto_anagrafica")?.value || 0));
+    const numeroImpianti = Math.max(1, Number(document.getElementById("bio_numero_impianti")?.value || 1));
+    const impiantiAggiornati = [];
+
+    for (let i = 0; i < numeroImpianti; i++) {
+      const base = cliente.impianti[i] || { n: i + 1 };
+      const taglia = taglie[i] || base.taglia || "";
+      const impianto = (i === indiceSelezionato || (nuovoCliente && i === 0))
+        ? datiImpiantoDaForm(base, i + 1, taglia)
+        : { ...base, n: i + 1, taglia };
+      impiantiAggiornati.push(impianto);
+    }
+
+    cliente.impianti = impiantiAggiornati;
+    cliente.taglie = impiantiAggiornati.map(impianto => impianto.taglia || "");
+
+    if (anagraficaContrattiDbAttiva && cliente.dbId) {
+      const righe = impiantiAggiornati.map(impianto => impiantoDbDaLocale(cliente.dbId, impianto));
+      const salvataggioImpianti = await supabaseClient
+        .from("impianti_biossido_contratto")
+        .upsert(righe, { onConflict: "cliente_id,numero" });
+      if (salvataggioImpianti.error) throw salvataggioImpianti.error;
+      await caricaAnagraficaContratti();
+    }
+
+    return { aggiornato: true, nuovoCliente, database: anagraficaContrattiDbAttiva };
+  }
+
+  function ricambiExtraCompatibili() {
+    const taglie = taglieImpiantiSelezionate();
+    const cliente = clienteContrattoSelezionato();
+    const indiceImpianto = Number(document.getElementById("bio_impianto_anagrafica")?.value);
+    const cella = cliente?.impianti?.[indiceImpianto]?.cella || "";
+    return catalogoRicambiExtra.filter(ricambio => {
+      const compatibileTaglia = !taglie.length || !ricambio.taglie.length ||
+        ricambio.taglie.some(taglia => taglie.includes(taglia));
+      const compatibileCella = !ricambio.celle?.length || !cella || ricambio.celle.includes(cella);
+      return compatibileTaglia && compatibileCella;
+    });
+  }
+
+  function popolaTendinaRicambiExtra() {
+    const select = document.getElementById("bio_ricambio_extra_select");
+    if (!select) return;
+    const valore = select.value;
+    select.innerHTML = '<option value="">Seleziona un ricambio extra</option>';
+    ricambiExtraCompatibili().forEach(ricambio => {
+      const option = document.createElement("option");
+      option.value = ricambio.codice;
+      option.textContent = `${ricambio.codice} - ${ricambio.descrizione}`;
+      select.appendChild(option);
+    });
+    if (Array.from(select.options).some(option => option.value === valore)) select.value = valore;
+  }
+
+  function cercaRicambioExtra() {
+    const input = document.getElementById("bio_ricambio_extra_search");
+    const select = document.getElementById("bio_ricambio_extra_select");
+    const box = document.getElementById("bio_risultati_ricambi_extra");
+    if (!input || !select || !box) return;
+
+    const ricerca = normalizzaRicercaCliente(input.value);
+    select.value = "";
+    box.innerHTML = "";
+    if (ricerca.length < 2) {
+      box.classList.add("hidden");
+      return;
+    }
+
+    const risultati = ricambiExtraCompatibili().filter(ricambio =>
+      ricerca.split(/\s+/).every(parola =>
+        normalizzaRicercaCliente(`${ricambio.codice} ${ricambio.descrizione}`).includes(parola)
+      )
+    );
+
+    risultati.forEach(ricambio => {
+      const div = document.createElement("div");
+      div.className = "risultato-committente";
+      div.textContent = `${ricambio.codice} - ${ricambio.descrizione}`;
+      div.onclick = () => selezionaRicambioExtra(ricambio.codice);
+      box.appendChild(div);
+    });
+
+    if (!risultati.length) {
+      const div = document.createElement("div");
+      div.className = "risultato-committente";
+      div.textContent = "Nessun ricambio extra compatibile trovato";
+      box.appendChild(div);
+    }
+    box.classList.remove("hidden");
+  }
+
+  function selezionaRicambioExtra(codice) {
+    const ricambio = catalogoRicambiExtra.find(item => item.codice === codice);
+    if (!ricambio) return;
+    document.getElementById("bio_ricambio_extra_select").value = codice;
+    document.getElementById("bio_ricambio_extra_search").value = `${codice} - ${ricambio.descrizione}`;
+    document.getElementById("bio_risultati_ricambi_extra").classList.add("hidden");
+  }
+
+  function selezionaRicambioExtraDaTendina() {
+    const codice = document.getElementById("bio_ricambio_extra_select")?.value;
+    if (codice) selezionaRicambioExtra(codice);
+  }
+
+  function aggiungiRicambioExtra() {
+    const codice = document.getElementById("bio_ricambio_extra_select")?.value;
+    const quantita = Math.max(1, Number(document.getElementById("bio_ricambio_extra_quantita")?.value || 1));
+    const ricambio = catalogoRicambiExtra.find(item => item.codice === codice);
+    if (!ricambio) {
+      alert("Cerca e seleziona un ricambio extra dalla tendina.");
+      return;
+    }
+
+    const esistente = ricambiExtraSelezionati.find(item => item.codice === codice);
+    if (esistente) esistente.quantita += quantita;
+    else ricambiExtraSelezionati.push({ ...ricambio, quantita });
+
+    document.getElementById("bio_ricambio_extra_search").value = "";
+    document.getElementById("bio_ricambio_extra_select").value = "";
+    document.getElementById("bio_ricambio_extra_quantita").value = "1";
+    renderRicambiExtraSelezionati();
+    aggiornaMaterialiBiossido();
+  }
+
+  function rimuoviRicambioExtra(codice) {
+    ricambiExtraSelezionati = ricambiExtraSelezionati.filter(item => item.codice !== codice);
+    renderRicambiExtraSelezionati();
+    aggiornaMaterialiBiossido();
+  }
+
+  function renderRicambiExtraSelezionati() {
+    const box = document.getElementById("bio_ricambi_extra_selezionati");
+    if (!box) return;
+    box.innerHTML = "";
+    ricambiExtraSelezionati.forEach(ricambio => {
+      const riga = document.createElement("div");
+      riga.className = "bio-ricambio-selezionato";
+      const testo = document.createElement("div");
+      testo.innerHTML = `<span class="bio-ricambio-codice">${ricambio.quantita} × ${ricambio.codice}</span>${ricambio.descrizione}`;
+      const elimina = document.createElement("button");
+      elimina.type = "button";
+      elimina.textContent = "Rimuovi";
+      elimina.onclick = () => rimuoviRicambioExtra(ricambio.codice);
+      riga.append(testo, elimina);
+      box.appendChild(riga);
+    });
+  }
+
   function popolaClientiContratto() {
     const select = document.getElementById("bio_cliente_contratto");
     if (!select) return;
@@ -3480,8 +4074,64 @@ async function rigeneraPdfRapportino(id) {
 
     if (input) input.value = cliente.nome;
     document.getElementById("descrizione_cliente").value = cliente.nome;
+    document.getElementById("indirizzo_cliente").value = cliente.indirizzo || "";
     document.getElementById("bio_numero_impianti").value = String(cliente.taglie.length);
     generaSelettoriImpianti(cliente.taglie);
+    popolaImpiantiAnagrafica(cliente);
+    popolaTendinaRicambiExtra();
+  }
+
+  function popolaImpiantiAnagrafica(cliente = clienteContrattoSelezionato()) {
+    const box = document.getElementById("bio_impianto_anagrafica_box");
+    const select = document.getElementById("bio_impianto_anagrafica");
+    if (!box || !select) return;
+    select.innerHTML = '<option value="">Seleziona impianto</option>';
+
+    if (!cliente?.impianti?.length) {
+      box.classList.add("hidden");
+      return;
+    }
+
+    cliente.impianti.forEach((impianto, index) => {
+      const option = document.createElement("option");
+      option.value = String(index);
+      const dettagli = [
+        `Impianto ${impianto.n || index + 1}`,
+        impianto.ubicazione,
+        impianto.modello,
+        impianto.matricola
+      ].filter(Boolean);
+      option.textContent = dettagli.join(" - ");
+      select.appendChild(option);
+    });
+
+    box.classList.remove("hidden");
+    select.value = "0";
+    applicaImpiantoAnagrafica();
+  }
+
+  function applicaImpiantoAnagrafica() {
+    const cliente = clienteContrattoSelezionato();
+    const indice = Number(document.getElementById("bio_impianto_anagrafica")?.value);
+    const impianto = cliente?.impianti?.[indice];
+    if (!impianto) return;
+
+    impostaValore("bio_modello_impianto", impianto.modello || "");
+    impostaValore("bio_matricola", impianto.matricola || "");
+    impostaValore("bio_codice", impianto.codice || "");
+    impostaValore("bio_modello_pompa", impianto.pompa || "");
+    impostaValore("bio_codice_pompa", impianto.codicePompa || "");
+    impostaValore("bio_modello_cella", impianto.cella || "");
+    impostaValore("bio_codice_cella", impianto.codiceCella || "");
+    impostaValore("bio_matricola_cella", impianto.matricolaCella || "");
+    impostaValore("bio_ubicazione_impianto", impianto.ubicazione || "");
+    impostaValore("bio_modalita_dosaggio", impianto.modalita || "");
+    impostaValore("bio_concentrazione_impostata", impianto.concentrazione || "");
+
+    const taglie = Array.from(document.querySelectorAll(".bio-taglia-impianto"));
+    if (taglie[indice] && impianto.taglia) taglie[indice].value = impianto.taglia;
+    popolaTendinaRicambiExtra();
+    aggiornaMaterialiBiossido();
   }
 
   function sincronizzaClienteContrattoDaNome(nomeCliente) {
@@ -3497,6 +4147,7 @@ async function rigeneraPdfRapportino(id) {
 
     select.value = cliente?.id || "";
     input.value = cliente?.nome || nomeCliente || "";
+    if (cliente) popolaImpiantiAnagrafica(cliente);
     return cliente || null;
   }
 
@@ -3517,6 +4168,7 @@ async function rigeneraPdfRapportino(id) {
       sincronizzaClienteContrattoDaNome(descrizioneCliente?.value || "");
     } else {
       document.getElementById("bio_risultati_clienti_contratto").classList.add("hidden");
+      document.getElementById("bio_impianto_anagrafica_box").classList.add("hidden");
     }
 
     aggiornaVisitaContratto();
@@ -3524,6 +4176,7 @@ async function rigeneraPdfRapportino(id) {
     if (biossido && !document.querySelector(".bio-taglia-impianto")) {
       generaSelettoriImpianti();
     }
+    popolaTendinaRicambiExtra();
     aggiornaMaterialiBiossido();
   }
 
@@ -3589,6 +4242,7 @@ async function rigeneraPdfRapportino(id) {
       contenitore.appendChild(select);
     }
 
+    popolaTendinaRicambiExtra();
     aggiornaMaterialiBiossido();
   }
 
@@ -3617,13 +4271,28 @@ async function rigeneraPdfRapportino(id) {
     generaSelettoriImpianti(taglie.length ? taglie : [""]);
   }
 
-  function rimuoviKitAutomatici(testo) {
+  function rimuoviBloccoMateriali(testo, inizioBlocco, fineBlocco) {
     const valore = String(testo || "");
-    const inizio = valore.indexOf(inizioKitAutomatici);
-    const fine = valore.indexOf(fineKitAutomatici);
+    const inizio = valore.indexOf(inizioBlocco);
+    const fine = valore.indexOf(fineBlocco);
     if (inizio < 0 || fine < inizio) return valore.trim();
 
-    return (valore.slice(0, inizio) + valore.slice(fine + fineKitAutomatici.length)).trim();
+    return (valore.slice(0, inizio) + valore.slice(fine + fineBlocco.length)).trim();
+  }
+
+  function rimuoviBlocchiAutomatici(testo) {
+    const senzaKit = rimuoviBloccoMateriali(testo, inizioKitAutomatici, fineKitAutomatici);
+    return rimuoviBloccoMateriali(senzaKit, inizioRicambiExtra, fineRicambiExtra);
+  }
+
+  function ripristinaRicambiExtraDaMateriali(testo) {
+    const valore = String(testo || "");
+    ricambiExtraSelezionati = catalogoRicambiExtra.flatMap(ricambio => {
+      const regex = new RegExp(`(\\d+)\\s*[×x]\\s*${ricambio.codice}\\b`, "i");
+      const match = valore.match(regex);
+      return match ? [{ ...ricambio, quantita: Math.max(1, Number(match[1])) }] : [];
+    });
+    renderRicambiExtraSelezionati();
   }
 
   function aggiornaMaterialiBiossido() {
@@ -3633,20 +4302,24 @@ async function rigeneraPdfRapportino(id) {
     const prodotto = document.getElementById("bio_tipologia_prodotto");
     if (!materiali || !prodotto) return;
 
-    prodotto.value = riepilogoTaglieImpianti();
-    const noteManuali = rimuoviKitAutomatici(materiali.value);
+    const riepilogoTaglie = riepilogoTaglieImpianti();
+    const modelloImpianto = document.getElementById("bio_modello_impianto")?.value?.trim() || "";
+    prodotto.value = [riepilogoTaglie, modelloImpianto].filter(Boolean).join(" | ");
+    const noteManuali = rimuoviBlocchiAutomatici(materiali.value);
 
-    if (!eTipoBiossido(tipoRapportino) || tipoIntervento !== "Manutenzione") {
+    if (!eTipoBiossido(tipoRapportino)) {
       materiali.value = noteManuali;
       return;
     }
+
+    const blocchiAutomatici = [];
 
     const conteggi = {};
     taglieImpiantiSelezionate().forEach(taglia => {
       conteggi[taglia] = (conteggi[taglia] || 0) + 1;
     });
 
-    const righe = Object.entries(conteggi)
+    const righeKit = Object.entries(conteggi)
       .sort((a, b) => Number(a[0]) - Number(b[0]))
       .map(([taglia, numeroImpianti]) => {
         const kit = kitManutenzioneBiossido[taglia];
@@ -3654,13 +4327,19 @@ async function rigeneraPdfRapportino(id) {
         return `${quantitaTotale} × ${kit.codice} - ${kit.descrizione}`;
       });
 
-    if (!righe.length) {
-      materiali.value = noteManuali;
-      return;
+    if (tipoIntervento === "Manutenzione" && righeKit.length) {
+      blocchiAutomatici.push([inizioKitAutomatici, ...righeKit, fineKitAutomatici].join("\n"));
     }
 
-    const blocco = [inizioKitAutomatici, ...righe, fineKitAutomatici].join("\n");
-    materiali.value = noteManuali ? `${blocco}\n\n${noteManuali}` : blocco;
+    if (ricambiExtraSelezionati.length) {
+      const righeExtra = ricambiExtraSelezionati.map(ricambio =>
+        `${ricambio.quantita} × ${ricambio.codice} - ${ricambio.descrizione}`
+      );
+      blocchiAutomatici.push([inizioRicambiExtra, ...righeExtra, fineRicambiExtra].join("\n"));
+    }
+
+    const blocco = blocchiAutomatici.join("\n\n");
+    materiali.value = [blocco, noteManuali].filter(Boolean).join("\n\n");
   }
 
   function validaAutomazioniRapportino() {
@@ -3681,8 +4360,16 @@ async function rigeneraPdfRapportino(id) {
     }
 
     if (visitaContratto && !clienteContrattoSelezionato()) {
-      alert("Cerca il cliente e selezionalo dalla lista dei clienti a contratto.");
-      return false;
+      const nuovoNome = document.getElementById("bio_cliente_contratto_search")?.value?.trim() || "";
+      const indirizzo = document.getElementById("indirizzo_cliente")?.value?.trim() || "";
+      if (nuovoNome.length < 2) {
+        alert("Seleziona un cliente esistente oppure scrivi il nome completo del nuovo cliente.");
+        return false;
+      }
+      if (!indirizzo) {
+        alert("Per salvare un nuovo cliente a contratto inserisci anche l'indirizzo dell'intervento.");
+        return false;
+      }
     }
 
     const selettori = Array.from(document.querySelectorAll(".bio-taglia-impianto"));
@@ -4286,7 +4973,7 @@ async function rigeneraPdfRapportino(id) {
       return;
     }
 
-
+    const esitoAnagrafica = await salvaAnagraficaContrattoDaForm();
     const datiRapportino = raccogliDatiRapportino(user.id);
 
     const { data: nuovoRapportino, error } = await supabaseClient
@@ -4419,7 +5106,12 @@ async function rigeneraPdfRapportino(id) {
         return;
       }
 
-      mostraMessaggio("appMsg", "Rapportino salvato e PDF archiviato correttamente.", "success");
+      const notaAnagrafica = esitoAnagrafica.aggiornato
+        ? (esitoAnagrafica.database
+          ? (esitoAnagrafica.nuovoCliente ? " Nuovo cliente e impianto salvati in anagrafica." : " Anagrafica impianto aggiornata.")
+          : " Rapportino salvato; esegui il nuovo SQL per rendere permanente l'anagrafica.")
+        : "";
+      mostraMessaggio("appMsg", "Rapportino salvato e PDF archiviato correttamente." + notaAnagrafica, "success");
       btn.textContent = "Salvato correttamente";
 
       setTimeout(() => {
@@ -4466,6 +5158,7 @@ async function aggiornaRapportinoEsistente() {
       return;
     }
 
+    const esitoAnagrafica = await salvaAnagraficaContrattoDaForm();
     const datiRapportino = raccogliDatiRapportino(user.id);
 
     // In modifica admin, il rapportino resta intestato al tecnico originale.
@@ -4608,7 +5301,10 @@ async function aggiornaRapportinoEsistente() {
     pdfPathVecchio = null;
     rapportinoOriginaleAutore = null;
 
-    mostraMessaggio("appMsg", "Rapportino modificato e PDF rigenerato correttamente.", "success");
+    const notaAnagrafica = esitoAnagrafica.aggiornato
+      ? (esitoAnagrafica.database ? " Anagrafica impianto aggiornata." : " Esegui il nuovo SQL per rendere permanente l'anagrafica.")
+      : "";
+    mostraMessaggio("appMsg", "Rapportino modificato e PDF rigenerato correttamente." + notaAnagrafica, "success");
 
     setTimeout(() => {
       window.location.reload();
@@ -5261,4 +5957,3 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
 </body>
 </html>
-
