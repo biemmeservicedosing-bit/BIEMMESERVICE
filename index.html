@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -1607,25 +1606,27 @@
         </div>
 
         <div class="spese-section">
-          <h3>Spese</h3>
+          <h3 id="spese_titolo">Spese</h3>
 
           <label>Km percorsi</label>
           <input type="number" id="km_percorsi" placeholder="0" />
 
-          <label>Spese viaggio</label>
-          <input type="number" id="spese_viaggio" placeholder="0" />
+          <div id="spese_extra_box">
+            <label>Spese viaggio</label>
+            <input type="number" id="spese_viaggio" placeholder="0" />
 
-          <label>Parcheggio</label>
-          <input type="number" id="parcheggio" placeholder="0" />
+            <label>Parcheggio</label>
+            <input type="number" id="parcheggio" placeholder="0" />
 
-          <label>Pranzi</label>
-          <input type="number" id="pranzi" placeholder="0" />
+            <label>Pranzi</label>
+            <input type="number" id="pranzi" placeholder="0" />
 
-          <label>Cene</label>
-          <input type="number" id="cene" placeholder="0" />
+            <label>Cene</label>
+            <input type="number" id="cene" placeholder="0" />
 
-          <label>Pernottamento</label>
-          <input type="number" id="pernottamento" placeholder="0" />
+            <label>Pernottamento</label>
+            <input type="number" id="pernottamento" placeholder="0" />
+          </div>
         </div>
 
         <label>Materiali utilizzati</label>
@@ -4161,6 +4162,12 @@ async function rigeneraPdfRapportino(id) {
     document.getElementById("bio_visita_contratto").checked = contratto;
     document.getElementById("bio_cliente_contratto_box").classList.toggle("hidden", !contratto);
     document.getElementById("cliente_libero_box").classList.toggle("hidden", contratto);
+    document.getElementById("spese_extra_box").classList.toggle("hidden", contratto);
+    document.getElementById("spese_titolo").textContent = contratto ? "Percorrenza" : "Spese";
+    if (contratto) {
+      ["spese_viaggio", "parcheggio", "pranzi", "cene", "pernottamento"]
+        .forEach(id => impostaValore(id, ""));
+    }
     if (descrizioneCliente) descrizioneCliente.readOnly = contratto;
 
     if (contratto) {
@@ -5637,39 +5644,49 @@ async function aggiornaRapportinoEsistente() {
     });
   }
 
-  function disegnaSpeseMateriali(doc, y, dati, ctx = {}) {
+  function disegnaSpeseMateriali(doc, y, dati, ctx = {}, soloKm = false) {
     doc.setFontSize(8);
     doc.setFont("helvetica", "bold");
 
     const colW = 31;
     const startX = 12;
 
-    y = assicuraSpazioPdf(doc, y, 36, ctx);
+    y = assicuraSpazioPdf(doc, y, soloKm ? 28 : 36, ctx);
 
-    doc.rect(startX, y, 186, 32);
+    if (soloKm) {
+      doc.rect(startX, y, 186, 22);
+      doc.line(startX, y + 10, startX + 186, y + 10);
+      doc.text("Km percorsi", 105, y + 7, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.text(String(dati.km_percorsi || ""), 105, y + 17, { align: "center" });
+      y += 28;
+    } else {
 
-    for (let i = 1; i < 6; i++) {
-      doc.line(startX + colW * i, y, startX + colW * i, y + 32);
+      doc.rect(startX, y, 186, 32);
+
+      for (let i = 1; i < 6; i++) {
+        doc.line(startX + colW * i, y, startX + colW * i, y + 32);
+      }
+
+      doc.line(startX, y + 12, startX + 186, y + 12);
+
+      doc.text("Km percorsi", startX + colW * 0.5, y + 7, { align: "center" });
+      doc.text("Spese viaggio", startX + colW * 1.5, y + 7, { align: "center" });
+      doc.text("Parcheggio", startX + colW * 2.5, y + 7, { align: "center" });
+      doc.text("Pranzi", startX + colW * 3.5, y + 7, { align: "center" });
+      doc.text("Cene", startX + colW * 4.5, y + 7, { align: "center" });
+      doc.text("Pernott.", startX + colW * 5.5, y + 7, { align: "center" });
+
+      doc.setFont("helvetica", "normal");
+      doc.text(String(dati.km_percorsi || ""), startX + colW * 0.5, y + 22, { align: "center" });
+      doc.text(String(dati.spese_viaggio || ""), startX + colW * 1.5, y + 22, { align: "center" });
+      doc.text(String(dati.parcheggio || ""), startX + colW * 2.5, y + 22, { align: "center" });
+      doc.text(String(dati.pranzi || ""), startX + colW * 3.5, y + 22, { align: "center" });
+      doc.text(String(dati.cene || ""), startX + colW * 4.5, y + 22, { align: "center" });
+      doc.text(String(dati.pernottamento || ""), startX + colW * 5.5, y + 22, { align: "center" });
+
+      y += 38;
     }
-
-    doc.line(startX, y + 12, startX + 186, y + 12);
-
-    doc.text("Km percorsi", startX + colW * 0.5, y + 7, { align: "center" });
-    doc.text("Spese viaggio", startX + colW * 1.5, y + 7, { align: "center" });
-    doc.text("Parcheggio", startX + colW * 2.5, y + 7, { align: "center" });
-    doc.text("Pranzi", startX + colW * 3.5, y + 7, { align: "center" });
-    doc.text("Cene", startX + colW * 4.5, y + 7, { align: "center" });
-    doc.text("Pernott.", startX + colW * 5.5, y + 7, { align: "center" });
-
-    doc.setFont("helvetica", "normal");
-    doc.text(String(dati.km_percorsi || ""), startX + colW * 0.5, y + 22, { align: "center" });
-    doc.text(String(dati.spese_viaggio || ""), startX + colW * 1.5, y + 22, { align: "center" });
-    doc.text(String(dati.parcheggio || ""), startX + colW * 2.5, y + 22, { align: "center" });
-    doc.text(String(dati.pranzi || ""), startX + colW * 3.5, y + 22, { align: "center" });
-    doc.text(String(dati.cene || ""), startX + colW * 4.5, y + 22, { align: "center" });
-    doc.text(String(dati.pernottamento || ""), startX + colW * 5.5, y + 22, { align: "center" });
-
-    y += 38;
 
     y = disegnaSezioneTestoPaginata(doc, y, "MATERIALI", dati.materiali_note, ctx, {
       minHeight: 35,
@@ -5737,8 +5754,8 @@ async function aggiornaRapportinoEsistente() {
     return y + 8;
   }
 
-  async function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma, ctx = {}) {
-    y = disegnaSpeseMateriali(doc, y, dati, ctx);
+  async function disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma, ctx = {}, soloKm = false) {
+    y = disegnaSpeseMateriali(doc, y, dati, ctx, soloKm);
     return await disegnaAddebitoFirme(doc, y, dati, tecnico, clienteFirma, ctx);
   }
 
@@ -5878,7 +5895,7 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     y = disegnaRelazione(doc, y, "RELAZIONE INTERVENTO", dati.relazione, 66, ctxPdf);
 
-    await disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma, ctxPdf);
+    await disegnaSpeseMaterialiFirme(doc, y, dati, tecnico, clienteFirma, ctxPdf, bio.visita_contratto);
 
     aggiungiNumeriPagina(doc);
     return doc.output("blob");
