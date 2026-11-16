@@ -5168,12 +5168,10 @@ async function aggiornaRapportinoEsistente() {
     const esitoAnagrafica = await salvaAnagraficaContrattoDaForm();
     const datiRapportino = raccogliDatiRapportino(user.id);
 
-    // In modifica admin, il rapportino resta intestato al tecnico originale.
-    if (rapportinoOriginaleAutore) {
-      datiRapportino.tecnico_nome = rapportinoOriginaleAutore.tecnico_nome || datiRapportino.tecnico_nome;
-      datiRapportino.tecnico_id = rapportinoOriginaleAutore.tecnico_id || datiRapportino.tecnico_id;
-      datiRapportino.created_by = rapportinoOriginaleAutore.created_by || datiRapportino.created_by;
-      datiRapportino.updated_by = rapportinoOriginaleAutore.updated_by || rapportinoOriginaleAutore.created_by || rapportinoOriginaleAutore.tecnico_id || datiRapportino.updated_by;
+    // Serve per firme e PDF rigenerato: anche la rappresentazione del rapportino
+    // deve continuare a mostrare il tecnico originale, non l'admin modificatore.
+    if (rapportinoOriginaleAutore?.tecnico_nome) {
+      datiRapportino.tecnico_nome = rapportinoOriginaleAutore.tecnico_nome;
     }
 
     const { error: updateError } = await supabaseClient
@@ -5195,10 +5193,9 @@ async function aggiornaRapportinoEsistente() {
         cene: datiRapportino.cene,
         pernottamento: datiRapportino.pernottamento,
         tipo_addebito: datiRapportino.tipo_addebito,
-        tecnico_nome: datiRapportino.tecnico_nome,
-        tecnico_id: datiRapportino.tecnico_id,
-        created_by: datiRapportino.created_by,
-        updated_by: datiRapportino.updated_by
+        // L'autore originale non deve mai cambiare durante una modifica.
+        // tecnico_id, tecnico_nome e created_by vengono quindi omessi dal payload.
+        updated_by: user.id
       })
       .eq("id", rapportinoInModificaId);
 
@@ -5974,3 +5971,5 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
 </body>
 </html>
+
+
