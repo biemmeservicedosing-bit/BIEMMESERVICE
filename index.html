@@ -1432,8 +1432,10 @@
         <label>Data intervento</label>
         <input type="date" id="data_intervento" />
 
-        <label>Numero SO</label>
-        <input type="text" id="numero_so" placeholder="Facoltativo" />
+        <div id="numero_so_box">
+          <label>Numero SO</label>
+          <input type="text" id="numero_so" placeholder="Facoltativo" />
+        </div>
 
         <label>Committente</label>
         <select id="committente_select" onchange="selezionaCommittenteDaTendina()">
@@ -1449,11 +1451,15 @@
           <input type="text" id="descrizione_cliente" placeholder="Nome cliente / hotel / stabilimento" />
         </div>
 
-        <label>Indirizzo cliente</label>
-        <input type="text" id="indirizzo_cliente" placeholder="Indirizzo intervento" />
+        <div id="indirizzo_cliente_box">
+          <label>Indirizzo cliente</label>
+          <input type="text" id="indirizzo_cliente" placeholder="Indirizzo intervento" />
+        </div>
 
-        <label>Numero tecnici intervento</label>
-        <input type="number" id="numero_tecnici" min="1" step="1" value="1" />
+        <div id="numero_tecnici_box">
+          <label>Numero tecnici intervento</label>
+          <input type="number" id="numero_tecnici" min="1" step="1" value="1" />
+        </div>
 
         <div id="biossidoBox" class="biossido-section hidden">
           <h3>Dati produttore biossido di cloro</h3>
@@ -1541,7 +1547,7 @@
                 <label>Modello pompa</label>
                 <input type="text" id="bio_modello_pompa" placeholder="Es. DDA 7,5" />
               </div>
-              <div>
+              <div id="bio_codice_pompa_box">
                 <label>Codice pompa</label>
                 <input type="text" id="bio_codice_pompa" />
               </div>
@@ -1552,17 +1558,21 @@
                 <label>Modello cella / sensore</label>
                 <input type="text" id="bio_modello_cella" placeholder="Es. AQC-D11" />
               </div>
-              <div>
+              <div id="bio_codice_cella_box">
                 <label>Codice cella / sensore</label>
                 <input type="text" id="bio_codice_cella" />
               </div>
             </div>
 
-            <label>N. seriale cella / sensore</label>
-            <input type="text" id="bio_matricola_cella" />
+            <div id="bio_matricola_cella_box">
+              <label>N. seriale cella / sensore</label>
+              <input type="text" id="bio_matricola_cella" />
+            </div>
 
-            <label>Ubicazione / reparto</label>
-            <input type="text" id="bio_ubicazione_impianto" placeholder="Es. Centrale termica" />
+            <div id="bio_ubicazione_impianto_box">
+              <label>Ubicazione / reparto</label>
+              <input type="text" id="bio_ubicazione_impianto" placeholder="Es. Centrale termica" />
+            </div>
 
             <label>Modalità dosaggio</label>
             <input type="text" id="bio_modalita_dosaggio" placeholder="Es. Proporzionale" />
@@ -1936,7 +1946,9 @@
     { id:"th_sestriere", nome:"TH Sestriere", file:"TH_Sestriere", gruppo:"TH Resorts", indirizzo:"Via Sauze, 14 - 10058 Sestriere (TO)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",pompa:"DDA 7,5",modalita:"COMBINATO"}] },
     { id:"tocq", nome:"Tocq Hotel", file:"Tocq", gruppo:"Elleterm", indirizzo:"Via Alessio di Tocqueville, 7/D - 20124 Milano (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735160",matricola:"S/N: 10000093",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
     { id:"torre_galfa", nome:"Torre GalFa", file:"Torre_GalFa", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Gustavo Fara, 41 - 20124 Milano (MI)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95723427",matricola:"S/N: 11/037476",pompa:"DDI",cella:"AQC-D11",codiceCella:"95737681",modalita:"SET POINT"}] },
-    { id:"trastevere_roma", nome:"Trastevere Roma | UNA Esperienze", file:"Trastevere_Roma", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Emilio Morosini, 27 - 00153 Roma (RM)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735160",matricola:"S/N: 10000035",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] }
+    { id:"trastevere_roma", nome:"Trastevere Roma | UNA Esperienze", file:"Trastevere_Roma", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Emilio Morosini, 27 - 00153 Roma (RM)", impianti:[{n:1,taglia:"5",modello:"OCD-162 5",codice:"95735160",matricola:"S/N: 10000035",pompa:"DDA 7,5",cella:"AQC-D11",codiceCella:"95737681",modalita:"COMBINATO"}] },
+    { id:"una_hotels_naxos_beach_sicilia", nome:"UNA Hotels Naxos Beach Sicilia", file:"Hotel_Naxos", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Recanati, 26 - 98035 Giardini-Naxos (ME) - Italia", impianti:[{n:1,taglia:""}] },
+    { id:"una_hotels_capotaormina", nome:"UNA Hotels Capotaormina", file:"Hotel_Capotaormina", gruppo:"Gruppo UNA S.p.A.", indirizzo:"Via Nazionale, 105 - 98039 Taormina (ME) - Italia", impianti:[{n:1,taglia:""}] }
   ].map(cliente => ({ ...cliente, taglie: cliente.impianti.map(impianto => impianto.taglia || "") }))
     .sort((a, b) => a.nome.localeCompare(b.nome, "it", { sensitivity: "base" }));
 
@@ -1960,7 +1972,13 @@
     { codice:"95737691", descrizione:"AQC-D12, P-AU-X-X, QS-T-X", taglie:[], celle:["AQC-D12"] },
     { codice:"96609174", descrizione:"Chlorine electrode, reference AQC-D12", taglie:[], celle:["AQC-D12"] },
     { codice:"95717903", descrizione:"Solenoid valve 5-10 g/h", taglie:["5","10"] },
-    { codice:"99958495", descrizione:"Solenoid valve 230V OCD 162-030/060", taglie:["30","60"] }
+    { codice:"99958495", descrizione:"Solenoid valve 230V OCD 162-030/060", taglie:["30","60"] },
+    { codice:"98359993", descrizione:"Kit, valve/diaph. SD-S-PVC/T/C-1 ClO2", taglie:[] },
+    { codice:"97751629", descrizione:"Kit, valve SD-S-PVC/V/C-1", taglie:[] },
+    { codice:"95702990", descrizione:"Maintenance kit H2O", taglie:[] },
+    { codice:"96729439", descrizione:"KIT ClO2 Old", taglie:[] },
+    { codice:"95702991", descrizione:"Kit DMI OLD", taglie:[] },
+    { codice:"93242596", descrizione:"DDA 7.5-16 AR-C-PVC", taglie:[] }
   ];
 
   let ricambiExtraSelezionati = [];
@@ -3423,7 +3441,7 @@ async function rigeneraPdfRapportino(id) {
     mostraMessaggio("adminMsg", "Errore rigenerazione PDF: " + err.message, "danger");
   }
 }
-    async function creaSignedUrlPdf(path) {
+    async function creaSignedUrlPdf(path, forzaDownload = false) {
     if (!path || path === "null" || path === "undefined") {
       alert("PDF non disponibile per questo rapportino.");
       return null;
@@ -3432,7 +3450,11 @@ async function rigeneraPdfRapportino(id) {
     const { data, error } = await supabaseClient
       .storage
       .from("pdf")
-      .createSignedUrl(path, 60 * 10);
+      .createSignedUrl(
+        path,
+        60 * 10,
+        forzaDownload ? { download: path.split("/").pop() } : undefined
+      );
 
     if (error) {
       alert("PDF non trovato nello Storage.");
@@ -3456,7 +3478,7 @@ async function rigeneraPdfRapportino(id) {
   }
 
   async function scaricaPdf(path, rapportinoId = null) {
-    const url = await creaSignedUrlPdf(path);
+    const url = await creaSignedUrlPdf(path, true);
     if (!url) return;
 
     if (rapportinoId) {
@@ -3613,6 +3635,13 @@ async function rigeneraPdfRapportino(id) {
     };
   }
 
+  function dicituraPdfContratto(nome, dicituraSalvata = "") {
+    const chiave = normalizzaRicercaCliente(nome);
+    if (chiave === normalizzaRicercaCliente("UNA Hotels Naxos Beach Sicilia")) return "Hotel_Naxos";
+    if (chiave === normalizzaRicercaCliente("UNA Hotels Capotaormina")) return "Hotel_Capotaormina";
+    return dicituraSalvata;
+  }
+
   function clienteLocaleDaDb(riga) {
     const impianti = (riga.impianti_biossido_contratto || [])
       .filter(impianto => impianto.attivo !== false)
@@ -3622,7 +3651,7 @@ async function rigeneraPdfRapportino(id) {
       id: riga.chiave,
       dbId: riga.id,
       nome: riga.nome,
-      file: riga.dicitura_pdf,
+      file: dicituraPdfContratto(riga.nome, riga.dicitura_pdf),
       gruppo: riga.gruppo_committente || "",
       indirizzo: riga.indirizzo_completo || "",
       impianti,
@@ -4162,6 +4191,15 @@ async function rigeneraPdfRapportino(id) {
     document.getElementById("bio_visita_contratto").checked = contratto;
     document.getElementById("bio_cliente_contratto_box").classList.toggle("hidden", !contratto);
     document.getElementById("cliente_libero_box").classList.toggle("hidden", contratto);
+    [
+      "numero_so_box",
+      "indirizzo_cliente_box",
+      "numero_tecnici_box",
+      "bio_codice_pompa_box",
+      "bio_codice_cella_box",
+      "bio_matricola_cella_box",
+      "bio_ubicazione_impianto_box"
+    ].forEach(id => document.getElementById(id)?.classList.toggle("hidden", contratto));
     document.getElementById("spese_extra_box").classList.toggle("hidden", contratto);
     document.getElementById("spese_titolo").textContent = contratto ? "Percorrenza" : "Spese";
     if (contratto) {
@@ -4371,10 +4409,6 @@ async function rigeneraPdfRapportino(id) {
       const indirizzo = document.getElementById("indirizzo_cliente")?.value?.trim() || "";
       if (nuovoNome.length < 2) {
         alert("Seleziona un cliente esistente oppure scrivi il nome completo del nuovo cliente.");
-        return false;
-      }
-      if (!indirizzo) {
-        alert("Per salvare un nuovo cliente a contratto inserisci anche l'indirizzo dell'intervento.");
         return false;
       }
     }
@@ -5452,7 +5486,7 @@ async function aggiornaRapportinoEsistente() {
     doc.text(String(valore || "-"), x + 3, y + 9);
   }
 
-  function disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committenteObj) {
+  function disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committenteObj, mostraIndirizzoCliente = true) {
     doc.rect(12, y, 93, 38);
     doc.rect(105, y, 93, 38);
 
@@ -5463,10 +5497,9 @@ async function aggiornaRapportinoEsistente() {
 
     doc.setFont("helvetica", "normal");
 
-    const righeCliente = [
-      cliente || "-",
-      indirizzoCliente || "-"
-    ];
+    const righeCliente = mostraIndirizzoCliente
+      ? [cliente || "-", indirizzoCliente || "-"]
+      : [cliente || "-"];
 
     righeCliente.forEach((r, i) => {
       doc.text(String(r), 17, y + 14 + i * 5);
@@ -5836,17 +5869,20 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
     let y = 55;
 
-    disegnaRigaLabelValore(doc, 12, y, 93, "Data intervento", formattaDataSolo(dati.data_intervento));
-disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
+    if (bio.visita_contratto) {
+      disegnaRigaLabelValore(doc, 12, y, 186, "Data intervento", formattaDataSolo(dati.data_intervento));
+    } else {
+      disegnaRigaLabelValore(doc, 12, y, 93, "Data intervento", formattaDataSolo(dati.data_intervento));
+      disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
+    }
 
     y += 16;
 
-    y = disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committenteObj);
+    y = disegnaClienteCommittente(doc, y, cliente, indirizzoCliente, committenteObj, !bio.visita_contratto);
 
     if (bio.visita_contratto) {
-      disegnaRigaLabelValore(doc, 12, y, 60, "Intervento effettuato da", tecnico);
-      disegnaRigaLabelValore(doc, 72, y, 25, "N. tecnici", dati.numero_tecnici || 1);
-      disegnaRigaLabelValore(doc, 97, y, 55, "Tipologia intervento", bio.tipologia_intervento);
+      disegnaRigaLabelValore(doc, 12, y, 75, "Intervento effettuato da", tecnico);
+      disegnaRigaLabelValore(doc, 87, y, 65, "Tipologia intervento", bio.tipologia_intervento);
       disegnaRigaLabelValore(doc, 152, y, 46, "Numero visita", bio.numero_visita);
     } else {
       disegnaRigaLabelValore(doc, 12, y, 70, "Intervento effettuato da", tecnico);
@@ -5907,7 +5943,7 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
       document.getElementById("bio_visita_contratto").checked;
 
     if (visitaContratto) {
-      const dataNome = data.replace(/-/g, "_");
+      const dataNome = data;
       const tipoIntervento = pulisciNomeFileConUnderscore(
         document.getElementById("bio_tipologia_intervento").value || "Intervento"
       );
@@ -5971,5 +6007,3 @@ disegnaRigaLabelValore(doc, 105, y, 93, "Numero SO", dati.numero_so || "-");
 
 </body>
 </html>
-
-
